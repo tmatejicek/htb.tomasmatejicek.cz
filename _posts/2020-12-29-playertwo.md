@@ -88,9 +88,11 @@ dirb http://product.player2.htb/
 
 User flag zde slouží hlavně jako potvrzení, že už mám běžný uživatelský kontext a mohu pokračovat v lokální analýze systému.
 
-Klíčovým artefaktem byl soubor `generated.proto`, který v podstatě dokumentoval Twirp endpoint `GenCreds` na portu `8545`. Právě tímto RPC voláním šlo získat platné přihlašovací údaje pro `product.player2.htb`, takže následná enumerace produktové části už probíhala z autorizovaného kontextu, ne naslepo.
+Klíčovým artefaktem byl soubor `generated.proto`, který v podstatě dokumentoval Twirp endpoint `/twirp/twirp.player2.auth.Auth/GenCreds` na portu `8545`. Právě tímto RPC voláním šlo získat platné přihlašovací údaje pro `product.player2.htb`, takže následná enumerace produktové části už probíhala z autorizovaného kontextu, ne naslepo.
 
-Další řetězec pak vede přes zranitelnost v produktové aplikaci k prvnímu shellu a přes tajemství uložená v Git nebo související konfiguraci k běžnému SSH účtu. Poučení je jednoduché: když aplikace zveřejní definici RPC rozhraní, výrazně tím zlevní reverzní analýzu celé autentizační logiky.
+Další důležitý krok vedl přes `api/totp.php`, odkud šlo získat záložní kód pro druhý faktor a dokončit přihlášení do produktové části. Ta zpřístupnila dokumentaci, firmware ke stažení a stránku pro kontrolu podpisu, takže další směr už byl zřejmý: pokusit se upravit firmware a vrátit přes něj kód na server.
+
+Kontrola podpisu byla chybná, takže šlo nahrát upravený firmware s PHP reverse shellem a získat první foothold jako `www-data`. Ten ale ještě nestačil na stabilní přístup. V systému běžel Mosquitto a interní MQTT komunikace obsahovala SSH soukromý klíč uživatele `observer`, přes který už šlo přejít na stabilní SSH shell a ověřit `user.txt`.
 
 ## Eskalace oprávnění
 
@@ -100,16 +102,18 @@ Tento krok ukazuje, jak se nalezená slabina nebo chyba v delegaci oprávnění 
 
 Root část už nepatřila webu, ale lokálním oprávněním a doprovodné službě. Zneužitelný SUID helper se zde řetězil s tajemstvím získaným z interní konfigurace nebo zpráv na systému. Samotný SUID program tedy nebyl samospasitelný; rozhodující bylo, že důvěřoval datům, která mohl neprivilegovaný uživatel po předchozím footholdu ovlivnit.
 
-Přesný payload zde není nutné přeceňovat. Důležitá je technická logika celé root fáze: kombinace lokálně dosažitelného SUID helperu a sekundárního tajemství z interní služby.
+Uživatelský účet `observer` měl k dispozici SUID binárku `Protobs`, která běžela jako root. Reverzní analýza ukázala heap/off-by-one chybu při práci s konfigurací, takže šlo exploit připravit offline a následně jej spustit z SSH relace. Root část tedy stála na kombinaci stabilního přístupu jako `observer` a zneužitelné SUID binárky, ne na dalším webovém payloadu.
 
 ## Shrnutí klíčových poznatků
 
-- Rekonstruovat lze hlavně enumeraci a potvrzené artefakty, které určily další směr postupu.
-- Klíčové bylo správně vyhodnotit konfiguraci, přístupové údaje nebo chování služeb, ne mechanicky doplňovat chybějící kroky.
-- Tam, kde chybí celý řetězec k uživatelskému nebo root kontextu, zůstávají v textu jen technicky podložené části postupu.
+- `generated.proto` zdokumentoval útok lépe než běžný webový recon a dovedl přímo k platným credentialům.
+- User část stála na řetězci `GenCreds` -> TOTP backup code -> chybná validace firmwaru -> MQTT únik SSH klíče.
+- Root fáze už byla čistě lokální a opírala se o SUID binárku `Protobs` s paměťovou chybou.
 
 ## Co si odnést do praxe
 
-- Ve webové vrstvě je důležité omezit úniky citlivých souborů, testovacích endpointů a vývojových artefaktů, protože často otevírají cestu k dalším službám.
+- RPC a protobuf definice zpřístupněné bez omezení výrazně usnadňují reverzní analýzu autentizační a obchodní logiky.
+- Firmware update workflow musí mít skutečně důvěryhodnou kontrolu podpisu, jinak se z něj stává přímý RCE kanál.
 - Přístupové údaje je potřeba oddělovat mezi službami a minimalizovat jejich opětovné použití, jinak se z jedné slabiny rychle stane plnohodnotný vstup do systému.
+- Interní message bus nebo MQTT témata nesmí přenášet dlouhodobá tajemství v čitelné podobě.
 - Stejné techniky mají smysl pouze v laboratorním nebo jinak autorizovaném testovacím prostředí.

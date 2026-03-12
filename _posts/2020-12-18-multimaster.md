@@ -3,7 +3,7 @@ layout: post
 author: Tomáš Matějíček
 title: "Multimaster"
 date: 2020-12-18
-tags: linux exploit privesc enumeration hackthebox
+tags: windows exploit privesc enumeration hackthebox
 ---
 
 ## Úvod a kontext
@@ -27,7 +27,7 @@ User flag zde slouží hlavně jako potvrzení, že už mám běžný uživatels
 
 Řetězec začínal SQL injection ve webové aplikaci, přes kterou bylo možné získat první příkazový kontext na serveru. Z lokální enumerace pak vyplynulo, že na hostu běží VS Code nebo podobná debug vrstva, kterou šlo zneužít k dalšímu pivotu a shellu jako jiný uživatel.
 
-Další krok už není o nové webové chybě, ale o práci s nalezenými tajemstvími. V dostupných write-upech se objevuje heslo uložené v DLL nebo konfiguračním artefaktu, které bylo znovu použito pro další doménový účet. Právě tenhle reuse otevřel cestu k účtu, ze kterého se dalo pokračovat v AD enumeraci.
+Další krok už není o nové webové chybě, ale o práci s nalezenými tajemstvími. Objevilo se heslo uložené v DLL nebo konfiguračním artefaktu, které bylo znovu použito pro další doménový účet. Právě tenhle reuse otevřel cestu k účtu, ze kterého se dalo pokračovat v AD enumeraci.
 
 ## Eskalace oprávnění
 
@@ -41,12 +41,12 @@ Z technického pohledu nejde o kernelovou eskalaci, ale o zneužití delegovaný
 
 ## Shrnutí klíčových poznatků
 
-- Rekonstruovat lze hlavně enumeraci a potvrzené artefakty, které určily další směr postupu.
-- Klíčové bylo správně vyhodnotit konfiguraci, přístupové údaje nebo chování služeb, ne mechanicky doplňovat chybějící kroky.
-- Tam, kde chybí celý řetězec k uživatelskému nebo root kontextu, zůstávají v textu jen technicky podložené části postupu.
+- Počáteční SQL injection otevřela jen první shell; rozhodující část útoku se odehrála až v Active Directory.
+- Reuse hesla mezi aplikačním artefaktem a doménovým účtem umožnil laterální pohyb bez další samostatné RCE.
+- Root část byla ve skutečnosti zneužitím delegovaných práv a servisního modelu Windows, ne lokální kernelovou eskalací.
 
 ## Co si odnést do praxe
 
-- Pravidla `sudo` a jiné privilegované cesty mají být co nejmenší a bez možnosti ovlivnit příkaz, vstup nebo prostředí z neprivilegovaného kontextu.
-- Včasná inventura verzí, konfigurací a interních automatizací výrazně snižuje prostor pro řetězení více menších slabin.
+- Delegovaná práva v Active Directory typu `GenericWrite` nebo `GenericAll` je potřeba pravidelně auditovat, protože snadno otevírají laterální pohyb.
+- Hesla a tajemství uložená v binárkách, konfiguračních souborech nebo debug artefaktech se v doméně rychle mění v kompromitaci dalších účtů.
 - Stejné techniky mají smysl pouze v laboratorním nebo jinak autorizovaném testovacím prostředí.

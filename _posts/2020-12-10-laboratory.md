@@ -104,9 +104,9 @@ To je přesný příklad chyby v delegaci oprávnění: privilegovaný wrapper s
 
 ## Shrnutí klíčových poznatků
 
-- Rekonstruovat lze hlavně enumeraci a potvrzené artefakty, které určily další směr postupu.
-- Klíčové bylo správně vyhodnotit konfiguraci, přístupové údaje nebo chování služeb, ne mechanicky doplňovat chybějící kroky.
-- Tam, kde chybí celý řetězec k uživatelskému nebo root kontextu, zůstávají v textu jen technicky podložené části postupu.
+- Certifikát a vedlejší virtuální host nasměrovaly útok správně do GitLabu.
+- Rozhodující nebyla jen webová chyba, ale i reuse deploy key mezi GitLabem a systémovým účtem `dexter`.
+- Root část stála na PATH hijacku privilegovaného wrapperu, nikoli na chybě v Dockeru samotném.
 
 ## Co si odnést do praxe
 

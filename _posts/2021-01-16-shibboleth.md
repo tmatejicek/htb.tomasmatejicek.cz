@@ -71,16 +71,16 @@ User flag zde slouží hlavně jako potvrzení, že už mám běžný uživatels
 ```bash
 cat user.txt
 ```
-```
+```text
 __CENSORED__
+```
 
-## /etc/zabbix/zabbix_server.conf
+Další klíčový artefakt byl konfigurační soubor Zabbix serveru:
+```ini
 DBHost=localhost
 DBName=zabbix
 DBUser=zabbix
 DBPassword=__CENSORED__
-
-## CVE-2021-27928
 ```
 
 ### Spuštění exploitu (2)
@@ -98,7 +98,7 @@ Tento krok ukazuje, jak se nalezená slabina nebo chyba v delegaci oprávnění 
 ```bash
 cat /root/root.txt
 ```
-```
+```text
 __CENSORED__
 ```
 
