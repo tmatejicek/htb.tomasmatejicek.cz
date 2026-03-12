@@ -7,9 +7,9 @@ tags: linux exploit sudo
 ---
 ## Úvod a kontext
 
-OpenAdmin je hlavně ukázka toho, jak se z veřejně dostupného OpenNetAdmin stane stabilní SSH přístup a následně i root.
+OpenAdmin je dobrá ukázka řetězce, kde samotná RCE v OpenNetAdminu ještě nestačí. Skutečný posun přichází až ve chvíli, kdy z ní vytěžím lokální konfiguraci, objevím interní virtualhost `internal.openadmin.htb` a pochopím vztah mezi účty `jimmy` a `joanna`.
 
-Didakticky je na něm důležité hlavně propojení RCE v `ona/`, interního virtualhostu `internal.openadmin.htb` a práce s klíčem uživatele `joanna`.
+Didakticky je tenhle stroj cenný hlavně tím, že user část nestojí na „dalším exploitu“, ale na interpretaci lokálních artefaktů. Root pak není důsledkem nové zranitelnosti, ale špatně navrženého `sudo` pravidla pro editor.
 
 ## Počáteční průzkum
 
@@ -290,12 +290,12 @@ __CENSORED__
 
 ## Shrnutí klíčových poznatků
 
-- Klíčový posun nepřinesl samotný scan, ale interpretace toho, co znamenaly `internal.openadmin.htb`, OpenNetAdmin a převod dokumentů a server-side render.
-- Uživatelský přístup dává v tomhle řetězci smysl až ve chvíli, kdy vyjde SSH se získaným soukromým klíčem.
-- Root/admin část nepřišla zkratkou; klíčovou roli tu hraje příliš široká `sudo` oprávnění a navazující lokální enumerace.
+- Veřejně dostupné `ona/` otevřelo jen první krok; skutečný průlom přineslo až čtení lokálních konfigurací a objevení interního webu na `127.0.0.1:52846`.
+- User část stojí na tom, že z RCE nevytěžím jen jednorázový shell, ale i klíč `joanna` a jeho heslo pro stabilní SSH přístup.
+- Root je tady čistě provozní chyba: `sudo` povoluje `nano` nad konkrétním souborem, ale editor sám umí spouštět další akce.
 
 ## Co si odnést do praxe
 
-- První obranná lekce míří na `internal.openadmin.htb`, OpenNetAdmin a převod dokumentů a server-side render. Síťové a administrační nástroje jako OpenNetAdmin nesmí být vystavené bez segmentace; jakmile jsou dostupné z internetu, stávají se privilegovaným vstupním bodem.
-- Druhá lekce je o tom, jak rychle se ze zjištění stane SSH se získaným soukromým klíčem. SSH klíče nesmějí být sdílené mezi rolemi ani uložené v procesech, exportech nebo webrootu; uniklý privátní klíč je stabilnější foothold než jednorázový shell.
-- Třetí lekce připomíná riziko, které v praxi představuje příliš široká `sudo` oprávnění. Široká `sudo` oprávnění je potřeba pravidelně revidovat; wrapper, install helper nebo diagnostický příkaz často udělá z běžného účtu roota.
+- OpenNetAdmin a podobné síťové administrační nástroje nesmějí být veřejně dostupné bez segmentace; jakmile jsou z internetu dosažitelné, útočník získává přístup přímo do správcovské roviny.
+- Interní virtualhosty a lokální-only služby nejsou obrana samy o sobě. Pokud se k nim dá dostat přes již kompromitovaný účet nebo port forward, mají být navržené stejně opatrně jako veřejná část.
+- `sudo` pravidlo pro interaktivní editor je v praxi téměř totéž jako shell. U podobných programů je nutné hodnotit celé jejich chování, ne jen binární cestu.

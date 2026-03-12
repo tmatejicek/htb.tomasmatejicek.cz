@@ -43,12 +43,12 @@ Zranitelnosti Null Byte Injection využívá toho, že starší verze PHP umož�
 
 ## Shrnutí klíčových poznatků
 
-- Z hlediska rozhodování bylo nejdůležitější správně přečíst vazbu mezi local file inclusion a webová aplikace v PHP.
-- K uživatelskému kontextu vedl konkrétní a ověřitelný krok: stabilní uživatelský přístup.
-- Poslední část ukazuje, že po získání shellu rozhoduje hlavně to, jakou roli hraje lokální enumerace po získání shellu.
+- LFI samo o sobě neznamená totéž co RCE; zásadní je, zda aplikace soubor jen čte, nebo ho předává interpretru přes `include`.
+- Oba uvedené scénáře ukazují, že dopad stejné chyby se mění podle toho, jak aplikace skládá výslednou cestu a jakou verzi PHP provozuje.
+- `Path Truncation` i `Null Byte Injection` jsou historické techniky navázané na starší verze PHP, takže je potřeba je chápat v kontextu konkrétní platformy, ne jako obecně platný trik.
 
 ## Co si odnést do praxe
 
-- Pokud se zanedbá oblast local file inclusion a webová aplikace v PHP, vznikne stejný typ vstupu jako tady. LFI je potřeba brát jako únik citlivých souborů, ne jen jako čtení textu; konfigurace, klíče a šablony často stačí k plnohodnotnému přístupu.
-- Jakmile útočník ověří stabilní uživatelský přístup, je potřeba počítat s dlouhodobým přístupem. Jakmile se v prostředí objeví použitelný klíč, heslo nebo token, je potřeba předpokládat okamžitý pivot na stabilní shell; obrana proto stojí na segmentaci a oddělení přístupů mezi službami.
-- Stejně důležitá je i obrana proti mechanice lokální enumerace po získání shellu. Root/admin část obvykle nepadá na nové CVE, ale na lokální delegaci práv, reuse tajemství nebo pomocném skriptu; právě tyto mechaniky je potřeba po footholdu auditovat nejdřív.
+- Uživatelský vstup se nesmí přímo dostat do `include`, `require` ani podobných funkcí. Bezpečný přístup je whitelist logických identifikátorů a mapování na pevně definované soubory.
+- LFI je potřeba hodnotit jako únik citlivých lokálních dat, ne jako „jen čtení textu“. Konfigurace, session soubory, logy nebo klíče často otevřou další fázi útoku i bez přímého RCE.
+- Staré obchvaty jako `Null Byte Injection` nebo `Path Truncation` dnes slouží hlavně jako připomínka, že bezpečnostní vlastnosti jazyka se mění v čase. Obrana proto nesmí stát na domněnkách o chování dávno neudržované verze runtime.
