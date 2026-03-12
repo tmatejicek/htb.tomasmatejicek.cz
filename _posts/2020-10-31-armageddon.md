@@ -7,9 +7,9 @@ tags: linux ssh sudo php exploit enumeration
 ---
 ## Úvod a kontext
 
-Na Armageddon je nejzajímavější, jak se propojí nezáplatovaný Drupal, webová aplikace v PHP a Apache.
+Armageddon je přímočará, ale velmi praktická ukázka toho, jak veřejně dostupné CMS selže ve dvou vrstvách najednou. Nejdřív otevře cestu `Drupalgeddon2`, potom z lokální konfigurace a databáze vyplynou údaje, které fungují i pro systémový účet `brucetherealadmin`.
 
-Bez pochopení této návaznosti by nedával smysl ani SSH s nalezenými přihlašovacími údaji, ani závěrečná příliš široká `sudo` oprávnění.
+Hodnota článku není v samotném exploitu Drupalu, ale v přechodu od jednorázového webového RCE ke stabilnímu SSH přístupu. Root pak znovu nepřináší novou zranitelnost, jen špatně navržené `sudo` pravidlo pro `snap install`.
 
 ## Počáteční průzkum
 
@@ -111,12 +111,12 @@ __CENSORED__
 
 ## Shrnutí klíčových poznatků
 
-- Klíčový posun nepřinesl samotný scan, ale interpretace toho, co znamenaly nezáplatovaný Drupal, webová aplikace v PHP a Apache.
-- Uživatelský přístup dává v tomhle řetězci smysl až ve chvíli, kdy vyjde SSH s nalezenými přihlašovacími údaji.
-- Root/admin část nepřišla zkratkou; klíčovou roli tu hraje příliš široká `sudo` oprávnění a navazující lokální enumerace.
+- První krok je jednoduchý: veřejně dostupný Drupal 7.56 je zranitelný vůči `Drupalgeddon2`.
+- Důležitější je ale druhá část řetězce, kdy lokální data z webu a databáze vedou k použitelnému heslu pro `brucetherealadmin`.
+- Root vzniká čistě provozní chybou: možnost spouštět `snap install` přes `sudo` znamená možnost nahrát vlastní balíček se skripty pod rootem.
 
 ## Co si odnést do praxe
 
-- První obranná lekce míří na nezáplatovaný Drupal, webová aplikace v PHP a Apache. CMS vrstvy jako Drupal musí být inventarizované a záplatované; veřejně dostupný admin nebo formulářová chyba je na internetu prakticky okamžitě zneužitelná.
-- Druhá lekce je o tom, jak rychle se ze zjištění stane SSH s nalezenými přihlašovacími údaji. Hesla a klíče je potřeba oddělovat mezi službami; jakmile stejné přihlašovací údaje fungují i na SSH, z lokálního úniku je plnohodnotný systémový přístup.
-- Třetí lekce připomíná riziko, které v praxi představuje příliš široká `sudo` oprávnění. Široká `sudo` oprávnění je potřeba pravidelně revidovat; wrapper, install helper nebo diagnostický příkaz často udělá z běžného účtu roota.
+- Veřejně vystavené CMS jako Drupal je potřeba patchovat bez odkladu. U známých RCE se čas mezi zveřejněním chyby a reálným zneužíváním obvykle počítá na hodiny nebo dny.
+- Tajemství z webové aplikace nesmějí být reuseovaná na systémových účtech. Jakmile stejné heslo funguje i pro SSH, webová chyba se okamžitě mění v plnohodnotný shell.
+- `sudo` pravidla pro balíčkovací nebo instalační nástroje je nutné hodnotit podle jejich reálného chování. U `snap`, `pip` nebo podobných nástrojů často nejde o omezenou administrativní akci, ale o nepřímé spuštění kódu jako root.

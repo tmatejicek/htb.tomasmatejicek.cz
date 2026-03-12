@@ -7,9 +7,9 @@ tags: windows rce smb ssh php
 ---
 ## Úvod a kontext
 
-Bankrobber dobře ukazuje, že průlom často nezačíná jedním exploitem, ale kombinací signálů jako převod dokumentů a server-side render, SMB sdílení a webová aplikace v PHP.
+Bankrobber je vícekrokový řetězec, kde samotný web nestačí. Důležité jsou až mezikroky kolem `link.php`, odcizené administrátorské cookie, zpřístupnění interní služby přes `chisel` a nakonec buffer overflow na portu `910`, pro který je potřeba Unicode-safe payload.
 
-Praktická část pak stojí na tom, jak se tyto zjištěné vazby promění v přístup přes SMB sdílení a jak je po user části využitelná lokální enumeraci po získání shellu.
+Didakticky je tenhle stroj zajímavý hlavně tím, že kombinuje webový vstup, pivot do interního rozhraní a klasickou desktopovou reverzní analýzu v `OllyDbg`. Nejde tedy o jeden exploit, ale o návaznost několika různých disciplín.
 
 ## Počáteční průzkum
 
@@ -200,12 +200,12 @@ __CENSORED__
 
 ## Shrnutí klíčových poznatků
 
-- První skutečně užitečný závěr plynul z toho, jak do sebe zapadly převod dokumentů a server-side render, SMB sdílení a webová aplikace v PHP.
-- User fáze se opírala o přístup přes SMB sdílení, takže přístup byl reprodukovatelný a ne jen jednorázový.
-- Finální kontrolu nad systémem otevřela až mechanika typu lokální enumerace po získání shellu.
+- První skutečný posun přinesla práce s webem: `link.php`, administrátorská cookie a interní funkce dostupné až po převzetí session.
+- Další krok dává smysl teprve po tunelování interní služby přes `chisel`, protože samotný buffer overflow běží mimo veřejně dostupnou část aplikace.
+- Závěrečná kompromitace stojí na ručně připraveném Unicode-safe payloadu a analýze offsetu v `OllyDbg`, ne na dalším webovém endpointu.
 
 ## Co si odnést do praxe
 
-- Tento řetězec začal u převod dokumentů a server-side render, SMB sdílení a webová aplikace v PHP; právě tam má obrana největší návratnost. Převod dokumentů a server-side render je potřeba sandboxovat a oddělit od citlivého filesystemu; parser nebo převodník nesmí mít přístup k tajemstvím hostu.
-- Foothold navázal na přístup přes SMB sdílení, takže oddělení účtů a tajemství není jen teorie. Share s dokumenty a exporty je potřeba posuzovat jako zdroj identit a tajemství; obsah sdílení bývá pro další pivot důležitější než samotná síťová služba.
-- Poslední krok stojí na lokální enumerace po získání shellu, a proto je nutné auditovat i lokální delegaci práv. Po získání shellu je rozhodující systematická lokální enumerace; i bez další CVE často rozhodne kombinace špatných oprávnění, reuse tajemství a pomocných skriptů.
+- Session cookies a administrativní workflow v interních bankovních nebo transakčních aplikacích je potřeba chránit stejně přísně jako hesla. Jakmile útočník převezme admin session, získá přístup k úplně jiné vrstvě funkcí než běžný uživatel.
+- Reverzní tunely typu `chisel` jsou v interních segmentech velmi praktický pivot. Obrana proto musí sledovat nejen příchozí přístupy, ale i neobvyklá odchozí spojení z hostu.
+- Interní klientské nebo desktopové komponenty naslouchající na localhostu nejsou mimo riziko. Pokud mají paměťovou chybu, útočník se k nim po prvním pivotu dostane stejně snadno jako k veřejné službě.
