@@ -110,6 +110,6 @@ __CENSORED__
 
 ## Co si odnést do praxe
 
-- Přístupové údaje je potřeba oddělovat mezi službami a minimalizovat jejich opětovné použití, jinak se z jedné slabiny rychle stane plnohodnotný vstup do systému.
+- Veřejně dostupné webové aplikace a administrační endpointy je potřeba průběžně inventarizovat a zavírat, protože právě ony často otevírají první krok celého řetězce.
+- Hashe, exporty hesel a password vaulty je potřeba chránit jako produkční tajemství, protože offline crack nebo opětovné použití hesla často otevře další vrstvu prostředí.
 - Inventura verzí a včasné záplatování snižují prostor pro přímé zneužití známých chyb i pro slepé spoléhání na zastaralé komponenty.
-- Stejné techniky mají smysl pouze v laboratorním nebo jinak autorizovaném testovacím prostředí.

@@ -125,7 +125,7 @@ __CENSORED__
 
 ## Co si odnést do praxe
 
-- Pravidla `sudo` mají být co nejmenší a bez zbytečných možností typu `SETENV`, volného zápisu nebo vyhodnocování neověřeného vstupu.
-- Přístupové údaje je potřeba oddělovat mezi službami a minimalizovat jejich opětovné použití, jinak se z jedné slabiny rychle stane plnohodnotný vstup do systému.
+- WordPress a jeho pluginy je potřeba průběžně záplatovat a omezit jejich dopad na hostu, protože jedna slabina v pluginu často stačí k úplnému footholdu.
+- SSH klíče, hesla a uložené tokeny je nutné oddělovat mezi účty i službami; znovupoužití přístupů rychle mění lokální únik ve stabilní shell.
+- Pravidla `sudo` mají být co nejmenší a bez možnosti ovlivnit příkaz, argumenty nebo prostředí z neprivilegovaného kontextu.
 - Inventura verzí a včasné záplatování snižují prostor pro přímé zneužití známých chyb i pro slepé spoléhání na zastaralé komponenty.
-- Stejné techniky mají smysl pouze v laboratorním nebo jinak autorizovaném testovacím prostředí.

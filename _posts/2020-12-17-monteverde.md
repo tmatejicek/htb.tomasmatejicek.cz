@@ -140,7 +140,6 @@ gc root.txt
 
 ## Co si odnést do praxe
 
-- V prostředí Active Directory je klíčové hlídat oprávnění ke sdílením, servisním účtům a delegacím; i malý únik informací se snadno řetězí do dalších kroků.
-- Přístupové údaje je potřeba oddělovat mezi službami a minimalizovat jejich opětovné použití, jinak se z jedné slabiny rychle stane plnohodnotný vstup do systému.
-- Inventura verzí a včasné záplatování snižují prostor pro přímé zneužití známých chyb i pro slepé spoléhání na zastaralé komponenty.
-- Stejné techniky mají smysl pouze v laboratorním nebo jinak autorizovaném testovacím prostředí.
+- Veřejně dostupné webové aplikace a administrační endpointy je potřeba průběžně inventarizovat a zavírat, protože právě ony často otevírají první krok celého řetězce.
+- V Active Directory je potřeba hlídat delegace, vztahy mezi účty a přístup ke sdílením, protože i malý únik identity se snadno řetězí do dalších kroků.
+- Stejně důležité jako samotná oprava zranitelnosti je omezit i dosah běžných servisních účtů a pomocných služeb, aby se jeden průnik neřetězil dál.

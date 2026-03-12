@@ -109,7 +109,6 @@ JET{0v3rfL0w_f0r_73h_lulz}
 
 ## Co si odnést do praxe
 
-- Ve webové vrstvě je důležité omezit úniky citlivých souborů, testovacích endpointů a vývojových artefaktů, protože často slouží jako odrazový můstek k dalším službám.
-- Přístupové údaje je potřeba oddělovat mezi službami a minimalizovat jejich opětovné použití, jinak se z jedné slabiny rychle stane plnohodnotný vstup do systému.
+- Vstupy do databázových dotazů musí být parametrizované a oddělené od další aplikační logiky; SQL injection málokdy končí jen čtením jedné tabulky.
+- SSH klíče, hesla a uložené tokeny je nutné oddělovat mezi účty i službami; znovupoužití přístupů rychle mění lokální únik ve stabilní shell.
 - Inventura verzí a včasné záplatování snižují prostor pro přímé zneužití známých chyb i pro slepé spoléhání na zastaralé komponenty.
-- Stejné techniky mají smysl pouze v laboratorním nebo jinak autorizovaném testovacím prostředí.

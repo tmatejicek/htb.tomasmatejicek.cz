@@ -146,7 +146,6 @@ __CENSORED__
 
 ## Co si odnést do praxe
 
-- Ve webové vrstvě je důležité omezit úniky citlivých souborů, testovacích endpointů a vývojových artefaktů, protože často slouží jako odrazový můstek k dalším službám.
-- I zdánlivě dílčí úniky konfigurace, lokálních tajemství nebo interních rozhraní je potřeba brát vážně, protože právě jejich řetězení často rozhodne o kompromitaci hostu.
-- Přístupové údaje je potřeba oddělovat mezi službami a minimalizovat jejich opětovné použití, jinak se z jedné slabiny rychle stane plnohodnotný vstup do systému.
-- Inventura verzí a včasné záplatování snižují prostor pro přímé zneužití známých chyb i pro slepé spoléhání na zastaralé komponenty.
+- Vstupy do databázových dotazů musí být parametrizované a oddělené od další aplikační logiky; SQL injection málokdy končí jen čtením jedné tabulky.
+- SMB sdílení mají být auditovaná podle skutečné potřeby a bez zbytečně čitelných dokumentů, protože i read-only přístup často odhalí další identity nebo tajemství.
+- Stejně důležité jako samotná oprava zranitelnosti je omezit i dosah běžných servisních účtů a pomocných služeb, aby se jeden průnik neřetězil dál.

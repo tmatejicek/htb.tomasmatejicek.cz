@@ -295,7 +295,7 @@ __CENSORED__
 
 ## Co si odnést do praxe
 
-- Ve webové vrstvě je důležité omezit úniky citlivých souborů, testovacích endpointů a vývojových artefaktů, protože často slouží jako odrazový můstek k dalším službám.
-- Pravidla `sudo` mají být co nejmenší a bez zbytečných možností typu `SETENV`, volného zápisu nebo vyhodnocování neověřeného vstupu.
-- Přístupové údaje je potřeba oddělovat mezi službami a minimalizovat jejich opětovné použití, jinak se z jedné slabiny rychle stane plnohodnotný vstup do systému.
+- Veřejně dostupné webové aplikace a administrační endpointy je potřeba průběžně inventarizovat a zavírat, protože právě ony často otevírají první krok celého řetězce.
+- Hashe, exporty hesel a password vaulty je potřeba chránit jako produkční tajemství, protože offline crack nebo opětovné použití hesla často otevře další vrstvu prostředí.
+- Pravidla `sudo` mají být co nejmenší a bez možnosti ovlivnit příkaz, argumenty nebo prostředí z neprivilegovaného kontextu.
 - Inventura verzí a včasné záplatování snižují prostor pro přímé zneužití známých chyb i pro slepé spoléhání na zastaralé komponenty.

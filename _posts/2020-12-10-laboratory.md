@@ -110,6 +110,7 @@ To je přesný příklad chyby v delegaci oprávnění: privilegovaný wrapper s
 
 ## Co si odnést do praxe
 
-- Přístupové údaje je potřeba oddělovat mezi službami a minimalizovat jejich opětovné použití, jinak se z jedné slabiny rychle stane plnohodnotný vstup do systému.
-- Pravidla `sudo` a jiné privilegované cesty mají být co nejmenší a bez možnosti ovlivnit příkaz, vstup nebo prostředí z neprivilegovaného kontextu.
-- Stejné techniky mají smysl pouze v laboratorním nebo jinak autorizovaném testovacím prostředí.
+- GitLab a jeho návazné služby je potřeba záplatovat jako celek, protože slabina v aplikaci rychle odhalí repozitáře, klíče i návazné systémové účty.
+- SSH klíče, hesla a uložené tokeny je nutné oddělovat mezi účty i službami; znovupoužití přístupů rychle mění lokální únik ve stabilní shell.
+- Privilegované wrappery nad Dockerem a podobnými nástroji musí používat absolutní cesty a čisté prostředí; jinak stačí ovlivnit `PATH` nebo vstup a běží cizí kód jako root.
+- Inventura verzí a včasné záplatování snižují prostor pro přímé zneužití známých chyb i pro slepé spoléhání na zastaralé komponenty.

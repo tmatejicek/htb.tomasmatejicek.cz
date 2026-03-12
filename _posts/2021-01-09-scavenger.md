@@ -152,7 +152,6 @@ touch /dev/shm/flag;(sleep 0.1 ; echo HELO foo ; sleep 0.1 ; echo 'MAIL FROM:<>'
 
 ## Co si odnést do praxe
 
-- Ve webové vrstvě je důležité omezit úniky citlivých souborů, testovacích endpointů a vývojových artefaktů, protože často slouží jako odrazový můstek k dalším službám.
-- Přístupové údaje je potřeba oddělovat mezi službami a minimalizovat jejich opětovné použití, jinak se z jedné slabiny rychle stane plnohodnotný vstup do systému.
-- Inventura verzí a včasné záplatování snižují prostor pro přímé zneužití známých chyb i pro slepé spoléhání na zastaralé komponenty.
-- Stejné techniky mají smysl pouze v laboratorním nebo jinak autorizovaném testovacím prostředí.
+- Upload a import souborů musí validovat typ, obsah i následné zpracování, protože právě tyto workflow často mění běžnou funkci aplikace v RCE.
+- SSH klíče, hesla a uložené tokeny je nutné oddělovat mezi účty i službami; znovupoužití přístupů rychle mění lokální únik ve stabilní shell.
+- SMTP, IMAP a další podpůrné služby nesmějí nést zbytečně čitelné tajemství bokem od hlavní aplikace; právě vedlejší infrastruktura často prozradí další přístup.

@@ -103,7 +103,7 @@ __CENSORED__
 
 ## Co si odnést do praxe
 
-- Pravidla `sudo` mají být co nejmenší a bez zbytečných možností typu `SETENV`, volného zápisu nebo vyhodnocování neověřeného vstupu.
-- Přístupové údaje je potřeba oddělovat mezi službami a minimalizovat jejich opětovné použití, jinak se z jedné slabiny rychle stane plnohodnotný vstup do systému.
-- Inventura verzí a včasné záplatování snižují prostor pro přímé zneužití známých chyb i pro slepé spoléhání na zastaralé komponenty.
-- Stejné techniky mají smysl pouze v laboratorním nebo jinak autorizovaném testovacím prostředí.
+- Legacy síťové služby typu UnrealIRCd nebo Nostromo je potřeba průběžně vyřazovat a nahrazovat; jejich známé chyby bývají snadno zneužitelné a často dlouho nezalepené.
+- SSH klíče, hesla a uložené tokeny je nutné oddělovat mezi účty i službami; znovupoužití přístupů rychle mění lokální únik ve stabilní shell.
+- Pravidla `sudo` mají být co nejmenší a bez možnosti ovlivnit příkaz, argumenty nebo prostředí z neprivilegovaného kontextu.
+- Backupy, `.bak` soubory a zapomenuté exporty musí být ukládané mimo veřejný webroot; právě ty často odhalí zdrojové kódy, klíče nebo serializační gadgety.

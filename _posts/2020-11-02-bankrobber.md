@@ -205,7 +205,6 @@ __CENSORED__
 
 ## Co si odnést do praxe
 
-- Ve webové vrstvě je důležité omezit úniky citlivých souborů, testovacích endpointů a vývojových artefaktů, protože často slouží jako odrazový můstek k dalším službám.
-- I zdánlivě dílčí úniky konfigurace, lokálních tajemství nebo interních rozhraní je potřeba brát vážně, protože právě jejich řetězení často rozhodne o kompromitaci hostu.
-- Přístupové údaje je potřeba oddělovat mezi službami a minimalizovat jejich opětovné použití, jinak se z jedné slabiny rychle stane plnohodnotný vstup do systému.
+- Veřejně dostupné webové aplikace a administrační endpointy je potřeba průběžně inventarizovat a zavírat, protože právě ony často otevírají první krok celého řetězce.
+- Účty bez Kerberos preautentizace, přehnané delegace a privilegované servisní skupiny jsou v AD vysoce rizikové, protože umožňují levný přechod z enumerace k převzetí domény.
 - Inventura verzí a včasné záplatování snižují prostor pro přímé zneužití známých chyb i pro slepé spoléhání na zastaralé komponenty.
