@@ -389,6 +389,6 @@ __CENSORED__
 ## Co si odnést do praxe
 
 - Ve webové vrstvě je důležité omezit úniky citlivých souborů, testovacích endpointů a vývojových artefaktů, protože často slouží jako odrazový můstek k dalším službám.
-- V prostředí Active Directory je klíčové hlídat oprávnění ke sdílením, servisním účtům a delegacím; i malý únik informací se snadno řetězí do dalších kroků.
+- I zdánlivě dílčí úniky konfigurace, lokálních tajemství nebo interních rozhraní je potřeba brát vážně, protože právě jejich řetězení často rozhodne o kompromitaci hostu.
 - Přístupové údaje je potřeba oddělovat mezi službami a minimalizovat jejich opětovné použití, jinak se z jedné slabiny rychle stane plnohodnotný vstup do systému.
 - Stejné techniky mají smysl pouze v laboratorním nebo jinak autorizovaném testovacím prostředí.

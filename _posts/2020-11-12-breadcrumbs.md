@@ -3,7 +3,7 @@ layout: post
 author: Tomáš Matějíček
 title: "Breadcrumbs"
 date: 2020-11-12
-tags: windows linux sql-injection smb ssh php
+tags: windows sql-injection smb ssh php
 ---
 
 ## Úvod a kontext
@@ -147,6 +147,6 @@ __CENSORED__
 ## Co si odnést do praxe
 
 - Ve webové vrstvě je důležité omezit úniky citlivých souborů, testovacích endpointů a vývojových artefaktů, protože často slouží jako odrazový můstek k dalším službám.
-- V prostředí Active Directory je klíčové hlídat oprávnění ke sdílením, servisním účtům a delegacím; i malý únik informací se snadno řetězí do dalších kroků.
+- I zdánlivě dílčí úniky konfigurace, lokálních tajemství nebo interních rozhraní je potřeba brát vážně, protože právě jejich řetězení často rozhodne o kompromitaci hostu.
 - Přístupové údaje je potřeba oddělovat mezi službami a minimalizovat jejich opětovné použití, jinak se z jedné slabiny rychle stane plnohodnotný vstup do systému.
 - Inventura verzí a včasné záplatování snižují prostor pro přímé zneužití známých chyb i pro slepé spoléhání na zastaralé komponenty.

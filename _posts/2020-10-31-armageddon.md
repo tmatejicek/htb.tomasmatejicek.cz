@@ -3,7 +3,7 @@ layout: post
 author: Tomáš Matějíček
 title: "Armageddon"
 date: 2020-10-31
-tags: sql-injection ssh sudo php exploit enumeration
+tags: linux ssh sudo php exploit enumeration
 ---
 
 ## Úvod a kontext
@@ -63,9 +63,9 @@ Drupal < 8.6.9 - REST Module Remote Code Execution                              
 Shellcodes: No Results
 ```
 
-### Identifikace a hledání exploitu (2)
+### Přechod od webového RCE k systémovému účtu
 
-Zjišťuji technologii a ověřuji známé zranitelnosti.
+Samotný seznam exploitů nestačí. Důležité bylo, co šlo po prvotním RCE číst z lokální instalace Drupalu. Konfigurační data vedla k přístupům do MySQL a databáze pak poskytla hash, který se podařilo svázat i se systémovým účtem `brucetherealadmin`. Právě v ten moment se webová chyba změnila z jednorázového vykonání příkazu na opakovatelný přístup do systému.
 ```bash
 searchsploit -p 44449
 ```
@@ -78,34 +78,21 @@ File Type: Ruby script, ASCII text, with CRLF line terminators
 
 ## Získání přístupu
 
-### Přihlášení na cíl
+### Přechod z webového RCE na SSH
 
-Jakmile mám pověření nebo jednorázový shell, snažím se přejít na stabilní a reprodukovatelný přístup, aby bylo možné bezpečně pokračovat v interní enumeraci.
+První shell přes Drupal byl jen mezistupeň. Jakmile bylo k dispozici heslo znovupoužité i pro systémový účet, dávalo smysl přejít na SSH: získám stabilní terminál, pohodlnější lokální enumeraci a zároveň rychle ověřím, zda má účet další delegovaná oprávnění.
 ```bash
 ssh brucetherealadmin@$IP
-```
-```
-
-## cat user.txt
-__CENSORED__
-
-## sudo -l
-=>     (root) NOPASSWD: __CENSORED__ install *
 ```
 
 ### Získání user flagu
 
-User flag zde slouží hlavně jako potvrzení, že už mám běžný uživatelský kontext a mohu pokračovat v lokální analýze systému.
-
-Následující úsek zachycuje přechod k uživatelskému přístupu a jeho ověření přes `user.txt`.
-
 ```text
-ssh brucetherealadmin@$IP
-
-## cat user.txt
+$ ssh brucetherealadmin@$IP
+$ cat user.txt
 f13a151e923b81d9f5e318b555d09ce5
 
-## sudo -l
+$ sudo -l
 =>     (root) NOPASSWD: /usr/bin/snap install *
 ```
 
@@ -113,7 +100,7 @@ f13a151e923b81d9f5e318b555d09ce5
 
 ### Získání root flagu
 
-Tento krok ukazuje, jak se nalezená slabina nebo chyba v delegaci oprávnění mění v privilegovaný přístup.
+Rozhodující nebyl samotný `sudo` záznam, ale jeho dopad: možnost spouštět `snap install` jako root prakticky deleguje instalaci vlastního balíčku se skripty běžícími během nasazení. Jakmile si útočník připraví škodlivý snap, mění se takové pravidlo přímo ve vektor eskalace oprávnění.
 ```bash
 cat root.txt
 ```
@@ -123,13 +110,12 @@ __CENSORED__
 
 ## Shrnutí klíčových poznatků
 
-- Úvodní směr určovala webová enumerace: důležité nebylo jen něco najít, ale správně vyhodnotit, který artefakt skutečně otevírá další krok.
-- K uživatelskému přístupu vedla práce s nalezenými přihlašovacími údaji, klíči nebo hashi a jejich ověření proti reálně dostupné službě.
-- Eskalace oprávnění stála na příliš širokém `sudo` pravidle nebo na možnosti ovlivnit vstup či prostředí privilegovaného procesu.
+- Drupal RCE byla jen vstupní bod; skutečný posun přišel až s lokální enumerací a vyhodnocením toho, co lze získat z konfiguračních a databázových dat.
+- K uživatelskému přístupu vedlo znovupoužití hesla mezi webovou aplikací a systémovým účtem, což je častější problém než samotná zranitelnost CMS.
+- Eskalace oprávnění stála na příliš širokém `sudo` pravidle nad `snap install`, tedy nad nástrojem, který umí spouštět instalační logiku s root právy.
 
 ## Co si odnést do praxe
 
-- Ve webové vrstvě je důležité omezit úniky citlivých souborů, testovacích endpointů a vývojových artefaktů, protože často slouží jako odrazový můstek k dalším službám.
-- Pravidla `sudo` mají být co nejmenší a bez zbytečných možností typu `SETENV`, volného zápisu nebo vyhodnocování neověřeného vstupu.
-- Přístupové údaje je potřeba oddělovat mezi službami a minimalizovat jejich opětovné použití, jinak se z jedné slabiny rychle stane plnohodnotný vstup do systému.
-- Inventura verzí a včasné záplatování snižují prostor pro přímé zneužití známých chyb i pro slepé spoléhání na zastaralé komponenty.
+- U veřejně přístupných CMS nestačí řešit jen samotné RCE; stejně důležité je chránit konfigurační soubory a databázová tajemství, která z něj mohou být dosažitelná.
+- Hesla se nesmí znovu používat mezi aplikací, databází a systémovými účty, protože právě tato vazba mění lokální únik v plnohodnotný shell.
+- Delegace `snap install` přes `sudo` je v praxi delegace root kódu a má být zakázaná nebo velmi přísně omezená.

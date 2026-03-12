@@ -3,7 +3,7 @@ layout: post
 author: Tomáš Matějíček
 title: "Monteverde"
 date: 2020-12-17
-tags: windows linux kerberos ldap winrm active-directory
+tags: windows kerberos ldap winrm active-directory
 ---
 
 ## Úvod a kontext

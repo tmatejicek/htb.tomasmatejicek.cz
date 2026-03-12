@@ -88,13 +88,13 @@ User flag zde slouží hlavně jako potvrzení, že už mám běžný uživatels
 Následující úsek zachycuje přechod k uživatelskému přístupu a jeho ověření přes `user.txt`.
 
 ```text
-ssh strapi@horizontall.htb
-bash
+$ ssh strapi@horizontall.htb
+$ bash
 
-## cat /home/developer/user.txt
+$ cat /home/developer/user.txt
 f6da5b3556062cbd5233fda6c7298960
 
-## netstat -natp
+$ netstat -natp
 Proto Recv-Q Send-Q Local Address           Foreign Address         State       PID/Program name
 tcp        0      0 0.0.0.0:22              0.0.0.0:*               LISTEN      -
 tcp        0      0 127.0.0.1:1337          0.0.0.0:*               LISTEN      1896/node /usr/bin/

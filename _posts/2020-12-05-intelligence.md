@@ -3,7 +3,7 @@ layout: post
 author: Tomáš Matějíček
 title: "Intelligence"
 date: 2020-12-05
-tags: windows linux smb kerberos ldap sudo active-directory
+tags: windows smb kerberos ldap active-directory
 ---
 
 ## Úvod a kontext
