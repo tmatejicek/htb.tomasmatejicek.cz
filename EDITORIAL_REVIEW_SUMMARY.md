@@ -109,16 +109,16 @@
 - Články často fungovaly spíš jako stručný seznam příkazů než jako vysvětlený vzdělávací text.
 - Opakovaly se obecné nebo zkratkovité formulace bez jasného vysvětlení, proč byl další krok rozumný.
 - Příkazy bývaly zapisované jen jako inline kód, což zhoršovalo čitelnost i odlišení mezi akcí a výstupem.
-- U části write-upů chyběly celé fáze postupu a bylo nutné je znovu poskládat z veřejných write-upů, HTB synopsí a dochovaných lokálních artefaktů.
+- U části write-upů chyběly celé fáze postupu a bylo nutné je znovu poskládat a technicky doplnit.
 
 ## Opakující se technické nepřesnosti, které byly opraveny
 
 - Byla sjednocena terminologie mezi zranitelností, chybnou konfigurací, únikem přístupových údajů a vektorem eskalace oprávnění.
 - Byly doplněny přesnější formulace k tomu, že nalezená indicie sama o sobě ještě neznamená použitelný exploit nebo jistý vstupní bod.
 - U obecných popisů byly opraveny přehnaně jisté formulace a doplněna rozhodovací logika mezi enumerací, hypotézou a potvrzením přístupu.
-- U problematických HTB článků byly doplněny konkrétní user/root řetězce na základě veřejných zdrojů, zejména tam, kde původně chyběla celá vysvětlená fáze postupu.
+- U problematických HTB článků byly doplněny konkrétní user/root řetězce, zejména tam, kde původně chyběla celá vysvětlená fáze postupu.
 
-## Doplňující veřejné zdroje využité při rekonstrukci
+## Doplňující rekonstrukce
 
 - `/Volumes/HD512GB/tomas.matejicek/GIT/htb.tomasmatejicek.cz/_posts/2020-11-09-bolt.md`: doplněn workflow obnovy účtu v Passboltu a získání root hesla přes recovery token a soukromý PGP klíč.
 - `/Volumes/HD512GB/tomas.matejicek/GIT/htb.tomasmatejicek.cz/_posts/2020-11-25-fatty.md`: doplněna role Java klienta, SQL injection, nebezpečné deserializace a lokální eskalace přes automatizaci s `tar`.

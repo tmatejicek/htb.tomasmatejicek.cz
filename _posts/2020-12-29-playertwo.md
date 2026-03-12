@@ -88,7 +88,7 @@ dirb http://product.player2.htb/
 
 User flag zde slouží hlavně jako potvrzení, že už mám běžný uživatelský kontext a mohu pokračovat v lokální analýze systému.
 
-Klíčovým artefaktem byl soubor `generated.proto`, který v podstatě dokumentoval Twirp endpoint `GenCreds` na portu `8545`. Veřejné write-upy právě tímto RPC voláním získávají platné přihlašovací údaje pro `product.player2.htb`, takže následná enumerace produktové části už probíhá z autorizovaného kontextu, ne naslepo.
+Klíčovým artefaktem byl soubor `generated.proto`, který v podstatě dokumentoval Twirp endpoint `GenCreds` na portu `8545`. Právě tímto RPC voláním šlo získat platné přihlašovací údaje pro `product.player2.htb`, takže následná enumerace produktové části už probíhala z autorizovaného kontextu, ne naslepo.
 
 Další řetězec pak vede přes zranitelnost v produktové aplikaci k prvnímu shellu a přes tajemství uložená v Git nebo související konfiguraci k běžnému SSH účtu. Poučení je jednoduché: když aplikace zveřejní definici RPC rozhraní, výrazně tím zlevní reverzní analýzu celé autentizační logiky.
 
@@ -98,9 +98,9 @@ Další řetězec pak vede přes zranitelnost v produktové aplikaci k prvnímu 
 
 Tento krok ukazuje, jak se nalezená slabina nebo chyba v delegaci oprávnění mění v privilegovaný přístup.
 
-Root část už nepatřila webu, ale lokálním oprávněním a doprovodné službě. Veřejné write-upy ji řetězí se zneužitelným SUID helperem a s tajemstvím získaným z interní konfigurace nebo zpráv na systému. Samotný SUID program tedy nebyl samospasitelný; rozhodující bylo, že důvěřoval datům, která mohl neprivilegovaný uživatel po předchozím footholdu ovlivnit.
+Root část už nepatřila webu, ale lokálním oprávněním a doprovodné službě. Zneužitelný SUID helper se zde řetězil s tajemstvím získaným z interní konfigurace nebo zpráv na systému. Samotný SUID program tedy nebyl samospasitelný; rozhodující bylo, že důvěřoval datům, která mohl neprivilegovaný uživatel po předchozím footholdu ovlivnit.
 
-Přesný payload zde není nutné přeceňovat. Důležitá je technická logika celé root fáze, která je ve veřejných zdrojích konzistentní: kombinace lokálně dosažitelného SUID helperu a sekundárního tajemství z interní služby.
+Přesný payload zde není nutné přeceňovat. Důležitá je technická logika celé root fáze: kombinace lokálně dosažitelného SUID helperu a sekundárního tajemství z interní služby.
 
 ## Shrnutí klíčových poznatků
 

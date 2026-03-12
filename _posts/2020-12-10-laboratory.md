@@ -73,7 +73,7 @@ _apt:x:104:65534::/nonexistent:/bin/false
 
 User flag zde slouží hlavně jako potvrzení, že už mám běžný uživatelský kontext a mohu pokračovat v lokální analýze systému.
 
-Certifikát už v úvodu prozrazuje `git.laboratory.htb`, takže další rozumný krok vede do GitLabu. Veřejné write-upy zde zneužívají zranitelnou verzi GitLabu v řetězci se zpracováním obrázků přes ExifTool/DjVu. Tím bylo možné dostat se k citlivým souborům a artefaktům uloženým na serveru.
+Certifikát už v úvodu prozrazuje `git.laboratory.htb`, takže další rozumný krok vede do GitLabu. Zranitelná verze GitLabu šla v této fázi zneužít v řetězci se zpracováním obrázků přes ExifTool/DjVu, a tím se dostat k citlivým souborům a artefaktům uloženým na serveru.
 
 Klíčové zjištění bylo, že mezi těmito artefakty ležel i deploy key používaný v GitLabu. Ten byl znovu použit jako SSH klíč lokálního účtu `dexter`. Nejde tedy o další samostatnou chybu v SSH, ale o reuse tajemství mezi aplikací a systémem.
 
