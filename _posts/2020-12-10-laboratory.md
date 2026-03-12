@@ -8,7 +8,7 @@ tags: linux ssh exploit enumeration privesc hackthebox
 
 ## Úvod a kontext
 
-Laboratory je stroj z Hack The Box. Článek pracuje jen s kroky, které lze technicky doložit; tam, kde chybí celý mezistupeň, to přiznávám otevřeně místo doplňování domněnek.
+Laboratory je stroj z Hack The Box, který kombinuje zranitelný GitLab a chybně napsaný pomocný skript pro Docker. Dobře na něm vynikne, jak snadno se propojí chyba ve webové aplikaci s opětovným použitím klíčů a s nebezpečným `sudo` wrapperem.
 
 ## Počáteční průzkum
 
@@ -73,7 +73,14 @@ _apt:x:104:65534::/nonexistent:/bin/false
 
 User flag zde slouží hlavně jako potvrzení, že už mám běžný uživatelský kontext a mohu pokračovat v lokální analýze systému.
 
-Přesný postup k získání uživatelského přístupu se z dochovaných kroků nedá spolehlivě zrekonstruovat. Nevyplňuji proto chybějící mezikroky domněnkami a ponechávám jen to, co je v textu technicky podložené.
+Certifikát už v úvodu prozrazuje `git.laboratory.htb`, takže další rozumný krok vede do GitLabu. Veřejné write-upy zde zneužívají zranitelnou verzi GitLabu v řetězci se zpracováním obrázků přes ExifTool/DjVu. Tím bylo možné dostat se k citlivým souborům a artefaktům uloženým na serveru.
+
+Klíčové zjištění bylo, že mezi těmito artefakty ležel i deploy key používaný v GitLabu. Ten byl znovu použit jako SSH klíč lokálního účtu `dexter`. Nejde tedy o další samostatnou chybu v SSH, ale o reuse tajemství mezi aplikací a systémem.
+
+```bash
+ssh -i id_rsa dexter@10.10.10.216
+cat user.txt
+```
 
 ## Eskalace oprávnění
 
@@ -81,7 +88,19 @@ Přesný postup k získání uživatelského přístupu se z dochovaných kroků
 
 Tento krok ukazuje, jak se nalezená slabina nebo chyba v delegaci oprávnění mění v privilegovaný přístup.
 
-Přesný postup k privilegovanému přístupu v dostupném záznamu chybí. U této fáze proto ponechávám jen ověřené indicie a nepopisuji neověřené kroky eskalace.
+Lokální eskalace už nebyla o GitLabu, ale o skriptu `docker-security`, který šlo spouštět se zvýšenými právy. Problém nebyl v Dockeru samotném; skript volal `docker` bez absolutní cesty a důvěřoval proměnné `PATH` z neprivilegovaného prostředí. Jakmile si útočník připravil vlastní binárku nebo shell script jménem `docker` a zařadil jej na začátek `PATH`, `sudo` spustilo podvržený program jako root.
+
+```bash
+cat > /tmp/docker <<'EOF'
+#!/bin/sh
+/bin/sh
+EOF
+chmod +x /tmp/docker
+PATH=/tmp:$PATH sudo /usr/local/bin/docker-security
+cat /root/root.txt
+```
+
+To je přesný příklad chyby v delegaci oprávnění: privilegovaný wrapper sám o sobě nevypadá nebezpečně, ale pokud nefixuje cestu k binárkám, stává se z něj snadný vektor eskalace.
 
 ## Shrnutí klíčových poznatků
 

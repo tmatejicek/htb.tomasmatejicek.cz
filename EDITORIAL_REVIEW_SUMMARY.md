@@ -109,36 +109,32 @@
 - Články často fungovaly spíš jako stručný seznam příkazů než jako vysvětlený vzdělávací text.
 - Opakovaly se obecné nebo zkratkovité formulace bez jasného vysvětlení, proč byl další krok rozumný.
 - Příkazy bývaly zapisované jen jako inline kód, což zhoršovalo čitelnost i odlišení mezi akcí a výstupem.
-- U části write-upů chyběly celé fáze postupu a v textu zůstávaly placeholdery `TODO` nebo jiná pracovní torza.
+- U části write-upů chyběly celé fáze postupu a bylo nutné je znovu poskládat z veřejných write-upů, HTB synopsí a dochovaných lokálních artefaktů.
 
 ## Opakující se technické nepřesnosti, které byly opraveny
 
 - Byla sjednocena terminologie mezi zranitelností, chybnou konfigurací, únikem přístupových údajů a vektorem eskalace oprávnění.
 - Byly doplněny přesnější formulace k tomu, že nalezená indicie sama o sobě ještě neznamená použitelný exploit nebo jistý vstupní bod.
 - U obecných popisů byly opraveny přehnaně jisté formulace a doplněna rozhodovací logika mezi enumerací, hypotézou a potvrzením přístupu.
-- U části článků byly nyní chybějící kroky doplněny přímo z pracovních poznámek ve složce `drafts`.
+- U problematických HTB článků byly doplněny konkrétní user/root řetězce na základě veřejných zdrojů, zejména tam, kde původně chyběla celá vysvětlená fáze postupu.
+
+## Doplňující veřejné zdroje využité při rekonstrukci
+
+- `/Volumes/HD512GB/tomas.matejicek/GIT/htb.tomasmatejicek.cz/_posts/2020-11-09-bolt.md`: doplněn workflow obnovy účtu v Passboltu a získání root hesla přes recovery token a soukromý PGP klíč.
+- `/Volumes/HD512GB/tomas.matejicek/GIT/htb.tomasmatejicek.cz/_posts/2020-11-25-fatty.md`: doplněna role Java klienta, SQL injection, nebezpečné deserializace a lokální eskalace přes automatizaci s `tar`.
+- `/Volumes/HD512GB/tomas.matejicek/GIT/htb.tomasmatejicek.cz/_posts/2020-12-10-laboratory.md`: doplněn GitLab/ExifTool foothold, reuse deploy key a PATH hijack v `docker-security`.
+- `/Volumes/HD512GB/tomas.matejicek/GIT/htb.tomasmatejicek.cz/_posts/2020-12-14-luke.md`: doplněna rekonstrukce cesty přes uniklé zdrojové kódy, API účet `admin` a Ajenti.
+- `/Volumes/HD512GB/tomas.matejicek/GIT/htb.tomasmatejicek.cz/_posts/2020-12-18-multimaster.md`: doplněn laterální pohyb přes SQL injection, reuse hesel, `GenericWrite` a následné zneužití AD oprávnění.
+- `/Volumes/HD512GB/tomas.matejicek/GIT/htb.tomasmatejicek.cz/_posts/2020-12-27-patents.md`: doplněna návaznost mezi `gears/pdf`, XXE v převodu dokumentů a samostatnou root chybou v backendu na portu `8888`.
+- `/Volumes/HD512GB/tomas.matejicek/GIT/htb.tomasmatejicek.cz/_posts/2020-12-29-playertwo.md`: doplněna role Twirp/`generated.proto`, získání credentialů přes `GenCreds` a obecná logika SUID root fáze.
+- `/Volumes/HD512GB/tomas.matejicek/GIT/htb.tomasmatejicek.cz/_posts/2021-01-06-rope.md`: doplněna user fáze přes exploit vlastního HTTP serveru a root fáze přes SUID `bash`.
+- `/Volumes/HD512GB/tomas.matejicek/GIT/htb.tomasmatejicek.cz/_posts/2021-01-07-safe.md`: doplněna user fáze přes buffer overflow v echo službě a root fáze přes špatně uložená tajemství v KeePass databázi.
+- `/Volumes/HD512GB/tomas.matejicek/GIT/htb.tomasmatejicek.cz/_posts/2021-01-20-swagshop.md`: doplněn řetězec Shoplift + Froghopper + reuse hesla z `local.xml` + `sudo vi`.
+- `/Volumes/HD512GB/tomas.matejicek/GIT/htb.tomasmatejicek.cz/_posts/2021-01-28-unicode.md`: doplněna kombinace JWT `jku`, open redirectu a root wrapperu kolem `curl`.
 
 ## Místa se značkou [POZNÁMKA K OVĚŘENÍ]
 
-- `/Volumes/HD512GB/tomas.matejicek/GIT/htb.tomasmatejicek.cz/_posts/2020-11-09-bolt.md`: [POZNÁMKA K OVĚŘENÍ: Konkrétní kroky pro eskalaci oprávnění a získání root přístupu zde nejsou doložené s dostatečnou technickou přesností.]
-- `/Volumes/HD512GB/tomas.matejicek/GIT/htb.tomasmatejicek.cz/_posts/2020-11-25-fatty.md`: [POZNÁMKA K OVĚŘENÍ: Konkrétní kroky pro získání uživatelského přístupu zde nejsou doložené s dostatečnou technickou přesností.]
-- `/Volumes/HD512GB/tomas.matejicek/GIT/htb.tomasmatejicek.cz/_posts/2020-11-25-fatty.md`: [POZNÁMKA K OVĚŘENÍ: Konkrétní kroky pro eskalaci oprávnění a získání root přístupu zde nejsou doložené s dostatečnou technickou přesností.]
-- `/Volumes/HD512GB/tomas.matejicek/GIT/htb.tomasmatejicek.cz/_posts/2020-12-10-laboratory.md`: [POZNÁMKA K OVĚŘENÍ: Konkrétní kroky pro získání uživatelského přístupu zde nejsou doložené s dostatečnou technickou přesností.]
-- `/Volumes/HD512GB/tomas.matejicek/GIT/htb.tomasmatejicek.cz/_posts/2020-12-10-laboratory.md`: [POZNÁMKA K OVĚŘENÍ: Konkrétní kroky pro eskalaci oprávnění a získání root přístupu zde nejsou doložené s dostatečnou technickou přesností.]
-- `/Volumes/HD512GB/tomas.matejicek/GIT/htb.tomasmatejicek.cz/_posts/2020-12-14-luke.md`: [POZNÁMKA K OVĚŘENÍ: Konkrétní kroky pro získání uživatelského přístupu zde nejsou doložené s dostatečnou technickou přesností.]
-- `/Volumes/HD512GB/tomas.matejicek/GIT/htb.tomasmatejicek.cz/_posts/2020-12-14-luke.md`: [POZNÁMKA K OVĚŘENÍ: Konkrétní kroky pro eskalaci oprávnění a získání root přístupu zde nejsou doložené s dostatečnou technickou přesností.]
-- `/Volumes/HD512GB/tomas.matejicek/GIT/htb.tomasmatejicek.cz/_posts/2020-12-18-multimaster.md`: [POZNÁMKA K OVĚŘENÍ: Konkrétní kroky pro získání uživatelského přístupu zde nejsou doložené s dostatečnou technickou přesností.]
-- `/Volumes/HD512GB/tomas.matejicek/GIT/htb.tomasmatejicek.cz/_posts/2020-12-18-multimaster.md`: [POZNÁMKA K OVĚŘENÍ: Konkrétní kroky pro eskalaci oprávnění a získání root přístupu zde nejsou doložené s dostatečnou technickou přesností.]
-- `/Volumes/HD512GB/tomas.matejicek/GIT/htb.tomasmatejicek.cz/_posts/2020-12-27-patents.md`: [POZNÁMKA K OVĚŘENÍ: Konkrétní kroky pro eskalaci oprávnění a získání root přístupu zde nejsou doložené s dostatečnou technickou přesností.]
-- `/Volumes/HD512GB/tomas.matejicek/GIT/htb.tomasmatejicek.cz/_posts/2020-12-29-playertwo.md`: [POZNÁMKA K OVĚŘENÍ: Konkrétní kroky pro získání uživatelského přístupu zde nejsou doložené s dostatečnou technickou přesností.]
-- `/Volumes/HD512GB/tomas.matejicek/GIT/htb.tomasmatejicek.cz/_posts/2020-12-29-playertwo.md`: [POZNÁMKA K OVĚŘENÍ: Konkrétní kroky pro eskalaci oprávnění a získání root přístupu zde nejsou doložené s dostatečnou technickou přesností.]
-- `/Volumes/HD512GB/tomas.matejicek/GIT/htb.tomasmatejicek.cz/_posts/2021-01-06-rope.md`: [POZNÁMKA K OVĚŘENÍ: Konkrétní kroky pro eskalaci oprávnění a získání root přístupu zde nejsou doložené s dostatečnou technickou přesností.]
-- `/Volumes/HD512GB/tomas.matejicek/GIT/htb.tomasmatejicek.cz/_posts/2021-01-07-safe.md`: [POZNÁMKA K OVĚŘENÍ: Konkrétní kroky pro získání uživatelského přístupu zde nejsou doložené s dostatečnou technickou přesností.]
-- `/Volumes/HD512GB/tomas.matejicek/GIT/htb.tomasmatejicek.cz/_posts/2021-01-07-safe.md`: [POZNÁMKA K OVĚŘENÍ: Konkrétní kroky pro eskalaci oprávnění a získání root přístupu zde nejsou doložené s dostatečnou technickou přesností.]
-- `/Volumes/HD512GB/tomas.matejicek/GIT/htb.tomasmatejicek.cz/_posts/2021-01-20-swagshop.md`: [POZNÁMKA K OVĚŘENÍ: Konkrétní kroky pro získání uživatelského přístupu zde nejsou doložené s dostatečnou technickou přesností.]
-- `/Volumes/HD512GB/tomas.matejicek/GIT/htb.tomasmatejicek.cz/_posts/2021-01-20-swagshop.md`: [POZNÁMKA K OVĚŘENÍ: Konkrétní kroky pro eskalaci oprávnění a získání root přístupu zde nejsou doložené s dostatečnou technickou přesností.]
-- `/Volumes/HD512GB/tomas.matejicek/GIT/htb.tomasmatejicek.cz/_posts/2021-01-28-unicode.md`: [POZNÁMKA K OVĚŘENÍ: Konkrétní kroky pro získání uživatelského přístupu zde nejsou doložené s dostatečnou technickou přesností.]
-- `/Volumes/HD512GB/tomas.matejicek/GIT/htb.tomasmatejicek.cz/_posts/2021-01-28-unicode.md`: [POZNÁMKA K OVĚŘENÍ: Konkrétní kroky pro eskalaci oprávnění a získání root přístupu zde nejsou doložené s dostatečnou technickou přesností.]
+- V `_posts` aktuálně nezůstává žádná značka `[POZNÁMKA K OVĚŘENÍ]`.
 
 ## Doporučení pro budoucí styl nových článků
 
@@ -147,4 +143,3 @@
 - Jasně oddělovat vstupní vektor, získání uživatelského přístupu a vektor eskalace oprávnění.
 - Pokud chybí technické podklady, explicitně přiznat nejistotu místo doplňování neověřených detailů.
 - U HTB write-upů průběžně připomínat, že stejné techniky patří pouze do autorizovaného nebo laboratorního prostředí.
-

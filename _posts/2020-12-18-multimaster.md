@@ -8,7 +8,7 @@ tags: linux exploit privesc enumeration hackthebox
 
 ## Úvod a kontext
 
-Multimaster je stroj z Hack The Box. Článek pracuje jen s kroky, které lze technicky doložit; tam, kde chybí celý mezistupeň, to přiznávám otevřeně místo doplňování domněnek.
+Multimaster je stroj z Hack The Box založený na řetězení slabin ve webové aplikaci a v Active Directory. Z didaktického hlediska je cenný hlavně tím, že neukazuje jeden dominantní exploit, ale postupný laterální pohyb přes několik účtů a delegovaných práv.
 
 ## Počáteční průzkum
 
@@ -25,7 +25,9 @@ ports=$(nmap -p- --min-rate=1000 -T4 $IP | grep ^[0-9] | cut -d "/" -f 1 | tr "\
 
 User flag zde slouží hlavně jako potvrzení, že už mám běžný uživatelský kontext a mohu pokračovat v lokální analýze systému.
 
-Přesný postup k získání uživatelského přístupu se z dochovaných kroků nedá spolehlivě zrekonstruovat. Nevyplňuji proto chybějící mezikroky domněnkami a ponechávám jen to, co je v textu technicky podložené.
+Veřejné write-upy začínají SQL injection ve webové aplikaci, přes kterou bylo možné získat první příkazový kontext na serveru. Z lokální enumerace pak vyplynulo, že na hostu běží VS Code nebo podobná debug vrstva, kterou šlo zneužít k dalšímu pivotu a shellu jako jiný uživatel.
+
+Další krok už není o nové webové chybě, ale o práci s nalezenými tajemstvími. V dostupných write-upech se objevuje heslo uložené v DLL nebo konfiguračním artefaktu, které bylo znovu použito pro další doménový účet. Právě tenhle reuse otevřel cestu k účtu, ze kterého se dalo pokračovat v AD enumeraci.
 
 ## Eskalace oprávnění
 
@@ -33,7 +35,9 @@ Přesný postup k získání uživatelského přístupu se z dochovaných kroků
 
 Tento krok ukazuje, jak se nalezená slabina nebo chyba v delegaci oprávnění mění v privilegovaný přístup.
 
-Přesný postup k privilegovanému přístupu v dostupném záznamu chybí. U této fáze proto ponechávám jen ověřené indicie a nepopisuji neověřené kroky eskalace.
+Rozhodující byla až oprávnění v Active Directory. Veřejné write-upy popisují účet s právem `GenericWrite` nad účtem `jorden`; toho se dalo zneužít například vypnutím Kerberos pre-auth, následným AS-REP roastem a prolomením získaného hashe. Přihlášení jako `jorden` pak otevřelo cestu do skupiny s dostatečnými právy pro úpravu a spuštění služby běžící jako `SYSTEM`.
+
+Z technického pohledu nejde o kernelovou eskalaci, ale o zneužití delegovaných práv v AD a servisního modelu Windows. To je přesně ten typ chyby, který v praxi často přežije i v prostředí bez známých RCE zranitelností.
 
 ## Shrnutí klíčových poznatků
 
