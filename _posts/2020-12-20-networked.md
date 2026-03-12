@@ -76,6 +76,12 @@ PORT      STATE         SERVICE
 61319/udp open|filtered unknown
 ```
 
+## Analýza zjištění
+
+### Přílohy
+
+![Networked-shell.php.gif](/assets/images/posts/Networked/Networked-shell.php.gif)
+
 ## Získání přístupu
 
 ### Přihlášení na cíl
@@ -112,12 +118,6 @@ cat root.txt
 ```
 __CENSORED__
 ```
-
-## Analýza zjištění
-
-### Přílohy
-
-![Networked-shell.php.gif](/drafts/Networked/Networked-shell.php.gif)
 
 ## Shrnutí klíčových poznatků
 

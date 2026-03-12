@@ -8,7 +8,8 @@ tags: linux exploit privesc enumeration hackthebox
 
 ## Úvod a kontext
 
-Multimaster je stroj z Hack The Box. Níže ponechávám pouze technicky doložitelné kroky a místa, která nelze spolehlivě doložit, výslovně označuji k ověření.
+Multimaster je stroj z Hack The Box. Článek pracuje jen s kroky, které lze technicky doložit; tam, kde chybí celý mezistupeň, to přiznávám otevřeně místo doplňování domněnek.
+
 ## Počáteční průzkum
 
 ### Vyhledání otevřených portů
@@ -24,7 +25,7 @@ ports=$(nmap -p- --min-rate=1000 -T4 $IP | grep ^[0-9] | cut -d "/" -f 1 | tr "\
 
 User flag zde slouží hlavně jako potvrzení, že už mám běžný uživatelský kontext a mohu pokračovat v lokální analýze systému.
 
-[POZNÁMKA K OVĚŘENÍ: Konkrétní kroky pro získání uživatelského přístupu zde nejsou doložené s dostatečnou technickou přesností.]
+Přesný postup k získání uživatelského přístupu se z dochovaných kroků nedá spolehlivě zrekonstruovat. Nevyplňuji proto chybějící mezikroky domněnkami a ponechávám jen to, co je v textu technicky podložené.
 
 ## Eskalace oprávnění
 
@@ -32,16 +33,16 @@ User flag zde slouží hlavně jako potvrzení, že už mám běžný uživatels
 
 Tento krok ukazuje, jak se nalezená slabina nebo chyba v delegaci oprávnění mění v privilegovaný přístup.
 
-[POZNÁMKA K OVĚŘENÍ: Konkrétní kroky pro eskalaci oprávnění a získání root přístupu zde nejsou doložené s dostatečnou technickou přesností.]
+Přesný postup k privilegovanému přístupu v dostupném záznamu chybí. U této fáze proto ponechávám jen ověřené indicie a nepopisuji neověřené kroky eskalace.
 
 ## Shrnutí klíčových poznatků
 
-- Článek zachycuje jen část postupu, proto jsou místa bez dostatečné technické opory označena ověřovací poznámkou místo domněnek.
-- Záměrně nedoplňuji neověřené detaily o exploitu, kredenciálech ani eskalaci; publikovatelná verze musí stát jen na dohledatelných krocích.
-- Chybějící mezikroky mezi enumerací, potvrzením přístupu a finální eskalací zůstávají explicitně otevřené, protože je nelze doložit s dostatečnou technickou přesností.
+- Rekonstruovat lze hlavně enumeraci a potvrzené artefakty, které určily další směr postupu.
+- Klíčové bylo správně vyhodnotit konfiguraci, přístupové údaje nebo chování služeb, ne mechanicky doplňovat chybějící kroky.
+- Tam, kde chybí celý řetězec k uživatelskému nebo root kontextu, zůstávají v textu jen technicky podložené části postupu.
 
 ## Co si odnést do praxe
 
-- Pro publikovatelný HTB write-up je nutné uložit i mezikroky mezi enumerací, hypotézou a potvrzením přístupu; samotné placeholdery nestačí.
-- Pokud chybí výstupy nebo přesná argumentace, je lepší explicitně přiznat nejistotu než doplňovat neověřené technické detaily.
+- Pravidla `sudo` a jiné privilegované cesty mají být co nejmenší a bez možnosti ovlivnit příkaz, vstup nebo prostředí z neprivilegovaného kontextu.
+- Včasná inventura verzí, konfigurací a interních automatizací výrazně snižuje prostor pro řetězení více menších slabin.
 - Stejné techniky mají smysl pouze v laboratorním nebo jinak autorizovaném testovacím prostředí.

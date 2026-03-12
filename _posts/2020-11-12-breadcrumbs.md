@@ -9,6 +9,7 @@ tags: windows linux sql-injection smb ssh php
 ## Úvod a kontext
 
 Breadcrumbs je stroj z Hack The Box. Článek sleduje cestu od prvotní enumerace k ověřenému přístupu a průběžně vysvětluje, proč měl každý další krok technický smysl.
+
 ## Počáteční průzkum
 
 ### Vyhledání otevřených portů
@@ -113,20 +114,6 @@ ssh juliette@$IP
 gc C:\Users\juliette\AppData\Local\Packages\Microsoft.MicrosoftStickyNotes_8wekyb3d8bbwe\LocalState\plum.sqlite* .
 ```
 
-## Eskalace oprávnění
-
-### Získání root flagu
-
-Tento krok ukazuje, jak se nalezená slabina nebo chyba v delegaci oprávnění mění v privilegovaný přístup.
-```bash
-more root.txt
-```
-```
-__CENSORED__
-```
-
-## Získání přístupu
-
 ### Získání user flagu
 
 User flag zde slouží hlavně jako potvrzení, že už mám běžný uživatelský kontext a mohu pokračovat v lokální analýze systému.
@@ -137,6 +124,18 @@ Následující úsek zachycuje přechod k prvnímu stabilnímu uživatelskému p
 ssh development@$IP
 fN3)sN5Ee@g
 http://passmanager.htb:1234/index.phpmethod=select&username=administrator&table=passwords
+```
+
+## Eskalace oprávnění
+
+### Získání root flagu
+
+Tento krok ukazuje, jak se nalezená slabina nebo chyba v delegaci oprávnění mění v privilegovaný přístup.
+```bash
+more root.txt
+```
+```
+__CENSORED__
 ```
 
 ## Shrnutí klíčových poznatků

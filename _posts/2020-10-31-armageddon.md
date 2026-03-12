@@ -9,6 +9,7 @@ tags: sql-injection ssh sudo php exploit enumeration
 ## Úvod a kontext
 
 Armageddon je stroj z Hack The Box. Článek sleduje cestu od prvotní enumerace k ověřenému přístupu a průběžně vysvětluje, proč měl každý další krok technický smysl.
+
 ## Počáteční průzkum
 
 ### Vyhledání otevřených portů
@@ -84,11 +85,28 @@ Jakmile mám pověření nebo jednorázový shell, snažím se přejít na stabi
 ssh brucetherealadmin@$IP
 ```
 ```
+
 ## cat user.txt
 __CENSORED__
 
 ## sudo -l
 =>     (root) NOPASSWD: __CENSORED__ install *
+```
+
+### Získání user flagu
+
+User flag zde slouží hlavně jako potvrzení, že už mám běžný uživatelský kontext a mohu pokračovat v lokální analýze systému.
+
+Následující úsek zachycuje přechod k uživatelskému přístupu a jeho ověření přes `user.txt`.
+
+```text
+ssh brucetherealadmin@$IP
+
+## cat user.txt
+f13a151e923b81d9f5e318b555d09ce5
+
+## sudo -l
+=>     (root) NOPASSWD: /usr/bin/snap install *
 ```
 
 ## Eskalace oprávnění
@@ -101,23 +119,6 @@ cat root.txt
 ```
 ```
 __CENSORED__
-```
-
-## Získání přístupu
-
-### Získání user flagu
-
-User flag zde slouží hlavně jako potvrzení, že už mám běžný uživatelský kontext a mohu pokračovat v lokální analýze systému.
-
-Následující úsek zachycuje přechod k uživatelskému přístupu a jeho ověření přes `user.txt`.
-
-```text
-ssh brucetherealadmin@$IP
-## cat user.txt
-f13a151e923b81d9f5e318b555d09ce5
-
-## sudo -l
-=>     (root) NOPASSWD: /usr/bin/snap install *
 ```
 
 ## Shrnutí klíčových poznatků

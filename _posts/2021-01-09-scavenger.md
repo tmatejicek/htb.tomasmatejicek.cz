@@ -9,6 +9,7 @@ tags: linux rce ssh php exploit enumeration
 ## Úvod a kontext
 
 Scavenger je stroj z Hack The Box. Článek sleduje cestu od prvotní enumerace k ověřenému přístupu a průběžně vysvětluje, proč měl každý další krok technický smysl.
+
 ## Počáteční průzkum
 
 ### Vyhledání otevřených portů

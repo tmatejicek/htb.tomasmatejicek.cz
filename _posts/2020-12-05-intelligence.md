@@ -109,18 +109,6 @@ U SMB sdílení ověřuji, jaká data jsou dostupná bez dalších oprávnění 
 impacket-smbclient Tiffany.Molina:NewIntelligenceCorpUser9876@intelligence.htb
 ```
 
-## Získání přístupu
-
-### Získání user flagu
-
-User flag zde slouží hlavně jako potvrzení, že už mám běžný uživatelský kontext a mohu pokračovat v lokální analýze systému.
-```bash
-cat user.txt
-```
-```
-__CENSORED__
-```
-
 ## Analýza zjištění
 
 ### Lámání hesel nebo hashů
@@ -131,6 +119,18 @@ john hash.txt --wordlist=/usr/share/wordlists/rockyou.txt
 ```
 ```
 => Mr.Teddy         (Ted.Graves)
+```
+
+## Získání přístupu
+
+### Získání user flagu
+
+User flag zde slouží hlavně jako potvrzení, že už mám běžný uživatelský kontext a mohu pokračovat v lokální analýze systému.
+```bash
+cat user.txt
+```
+```
+__CENSORED__
 ```
 
 ## Eskalace oprávnění

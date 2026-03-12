@@ -9,6 +9,7 @@ tags: linux sql-injection ssh php exploit enumeration
 ## Úvod a kontext
 
 Fortress-Jet je stroj z Hack The Box. Článek sleduje cestu od prvotní enumerace k ověřenému přístupu a průběžně vysvětluje, proč měl každý další krok technický smysl.
+
 ## Počáteční průzkum
 
 ### Vyhledání otevřených portů
@@ -65,6 +66,12 @@ V dalším kroku si zpřesňuji verze služeb a jejich charakteristiky, protože
 nginx[1.10.3], HTTPServer[Ubuntu Linux][nginx/1.10.3 (Ubuntu)], HTML5
 ```
 
+## Analýza zjištění
+
+### Přílohy
+
+![fade.gif](/assets/images/posts/Fortress-Jet/fade.gif)
+
 ## Získání přístupu
 
 ### Získání user flagu
@@ -93,12 +100,6 @@ cd /home/alex
 cat flag.txt
 JET{0v3rfL0w_f0r_73h_lulz}
 ```
-
-## Analýza zjištění
-
-### Přílohy
-
-![fade.gif](/drafts/Fortress-Jet/fade.gif)
 
 ## Shrnutí klíčových poznatků
 
