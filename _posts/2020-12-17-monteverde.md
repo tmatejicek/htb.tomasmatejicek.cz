@@ -125,7 +125,7 @@ __CENSORED__
 
 Tento krok ukazuje, jak se nalezená slabina nebo chyba v delegaci oprávnění mění v privilegovaný přístup.
 
-V poznámkách je zachycen i postup, kterým se potvrzuje privilegovaný přístup a načtení `root.txt`.
+Následující úsek zachycuje i postup, kterým se potvrzuje privilegovaný přístup a načtení `root.txt`.
 
 ```text
 ./evil-winrm/evil-winrm.rb -i $IP -u administrator -p "d0m@in4dminyeah!"

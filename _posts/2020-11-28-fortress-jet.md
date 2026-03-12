@@ -71,7 +71,7 @@ nginx[1.10.3], HTTPServer[Ubuntu Linux][nginx/1.10.3 (Ubuntu)], HTML5
 
 User flag zde slouží hlavně jako potvrzení, že už mám běžný uživatelský kontext a mohu pokračovat v lokální analýze systému.
 
-V pracovních poznámkách se dochoval úsek, který zachycuje přechod k uživatelskému přístupu a jeho ověření přes `user.txt`.
+Následující úsek zachycuje přechod k uživatelskému přístupu a jeho ověření přes `user.txt`.
 
 ```text
 python3 -c 'import pty; pty.spawn("/bin/bash")'
@@ -86,7 +86,7 @@ JET{pr3g_r3pl4c3_g3ts_y0u_pwn3d}
 
 Tento krok ukazuje, jak se nalezená slabina nebo chyba v delegaci oprávnění mění v privilegovaný přístup.
 
-V poznámkách je zachycen i postup, kterým se potvrzuje privilegovaný přístup a načtení `root.txt`.
+Následující úsek zachycuje i postup, kterým se potvrzuje privilegovaný přístup a načtení `root.txt`.
 
 ```text
 cd /home/alex

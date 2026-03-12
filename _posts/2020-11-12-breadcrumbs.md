@@ -131,7 +131,7 @@ __CENSORED__
 
 User flag zde slouží hlavně jako potvrzení, že už mám běžný uživatelský kontext a mohu pokračovat v lokální analýze systému.
 
-V pracovních poznámkách se dochoval úsek, který zachycuje přechod k prvnímu stabilnímu uživatelskému přístupu nebo shellu.
+Následující úsek zachycuje přechod k prvnímu stabilnímu uživatelskému přístupu nebo shellu.
 
 ```text
 ssh development@$IP
