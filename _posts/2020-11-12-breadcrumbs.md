@@ -7,9 +7,9 @@ tags: windows sql-injection smb ssh php
 ---
 ## Úvod a kontext
 
-Breadcrumbs dobře ukazuje, že průlom často nezačíná jedním exploitem, ale kombinací signálů jako webová aplikace v PHP a Apache.
+Breadcrumbs je typický příklad řetězce z malých, zdánlivě nesouvisejících stop. Webový portál dovolí upload a práci se session tokenem, v lokálních datech pak leží JSON objednávky s dalším heslem a Sticky Notes doplní přístup k internímu účtu `development`.
 
-Praktická část pak stojí na tom, jak se tyto zjištěné vazby promění v SSH s nalezenými přihlašovacími údaji a jak je po user části využitelná lokální enumeraci po získání shellu.
+Nejdůležitější je právě návaznost jednotlivých pivotů. Útok nejde přímo z webu na `Administrator`, ale přes `www-data`, `juliette`, `development` a teprve potom na interní `passmanager.htb`, kde leží finální tajemství pro administrátorský účet.
 
 ## Počáteční průzkum
 
@@ -60,9 +60,9 @@ http://10.10.10.228/portal/uploads/
 
 ## Analýza zjištění
 
-### Lámání hesel nebo hashů
+### Crack hesel z portálu
 
-Hash nebo zašifrovaný artefakt má smysl lámat jen tehdy, pokud může otevřít další službu, účet nebo vrstvu prostředí; právě to zde ověřuji.
+Dump uživatelských hashů z portálu má smysl právě proto, že může otevřít další účet nebo potvrdit heslové vzorce v prostředí. Tady byl nejdůležitější účet `juliette`, který se později objeví i v lokálních datech.
 ```text
 john	__CENSORED__
 ```
@@ -75,18 +75,18 @@ juliette	__CENSORED__
 support	__CENSORED__
 ```
 
-### Lámání hesel nebo hashů (2)
+### Ověření slabých hesel
 
-Hash nebo zašifrovaný artefakt má smysl lámat jen tehdy, pokud může otevřít další službu, účet nebo vrstvu prostředí; právě to zde ověřuji.
+`hashcat` tady neřeší finální root, ale připravuje další mezikroky. V prostředí s více uživateli je důležité vědět, které účty mají slabší hesla a kde se může vyplatit další pivot.
 ```bash
 hashcat -m100 -a 0 hashes /usr/share/wordlists/rockyou.txt
 ```
 
 ## Získání přístupu
 
-### Přihlášení na cíl
+### Upload webshellu a účet `www-data`
 
-Jakmile mám pověření nebo jednorázový shell, snažím se přejít na stabilní a reprodukovatelný přístup, aby bylo možné bezpečně pokračovat v interní enumeraci.
+První vstup vedl přes upload do portálu s platným session/JWT tokenem. Webshell potom odhalil lokální AutoLogon údaje a ty dovolily přepnout se na `www-data` přes SSH, místo aby se celý další průzkum dělal v křehkém webovém procesu.
 ```bash
 ssh www-data@$IP
 ```
@@ -105,9 +105,9 @@ PS C:\Users\www-data\Desktop\xampp\htdocs\portal\pizzaDeliveryUserData> cat .\ju
 }
 ```
 
-### Přihlášení na cíl (2)
+### Přechod na `juliette`
 
-Jakmile mám pověření nebo jednorázový shell, snažím se přejít na stabilní a reprodukovatelný přístup, aby bylo možné bezpečně pokračovat v interní enumeraci.
+V `pizzaDeliveryUserData` leží soubory jednotlivých uživatelů. `juliette.json` je cenný právě proto, že obsahuje alternativní heslo, které otevře další účet bez potřeby další exploitační chyby.
 ```bash
 ssh juliette@$IP
 ```
@@ -117,22 +117,22 @@ gc C:\Users\juliette\AppData\Local\Packages\Microsoft.MicrosoftStickyNotes_8weky
 
 ### Získání user flagu
 
-User flag zde slouží hlavně jako potvrzení, že už mám běžný uživatelský kontext a mohu pokračovat v lokální analýze systému.
-
-Následující úsek zachycuje přechod k prvnímu stabilnímu uživatelskému přístupu nebo shellu.
+Sticky Notes v `plum.sqlite` doplnily ještě heslo k účtu `development`. To je důležitý mezikrok, protože právě `development` vidí interní službu `passmanager.htb` na portu `1234`.
 
 ```text
 ssh development@$IP
 fN3)sN5Ee@g
-http://passmanager.htb:1234/index.phpmethod=select&username=administrator&table=passwords
 ```
 
 ## Eskalace oprávnění
 
 ### Získání root flagu
 
-Tento krok ukazuje, jak se nalezená slabina nebo chyba v delegaci oprávnění mění v privilegovaný přístup.
+Root část začíná až u interního `passmanager.htb`. Po přesměrování portu `1234` se ukáže SQL injection v parametru `method`, ze které jde vytáhnout AES klíč i šifrované heslo administrátora. Po dešifrování vznikne přístup pro účet `Administrator`, který už otevře `root.txt` přímo.
 ```bash
+ssh -N -L 1234:127.0.0.1:1234 development@10.10.10.228
+sqlmap --dump -u "http://127.0.0.1:1234/index.php?method=select&username=administrator&table=passwords"
+ssh administrator@10.10.10.228
 more root.txt
 ```
 ```
@@ -141,12 +141,12 @@ __CENSORED__
 
 ## Shrnutí klíčových poznatků
 
-- První skutečně užitečný závěr plynul z toho, jak do sebe zapadly webová aplikace v PHP a Apache.
-- User fáze se opírala o SSH s nalezenými přihlašovacími údaji, takže přístup byl reprodukovatelný a ne jen jednorázový.
-- Finální kontrolu nad systémem otevřela až mechanika typu lokální enumerace po získání shellu.
+- První foothold stál na uploadu do portálu a přechodu z webshellu na stabilní účet `www-data`.
+- Další posun otevřely lokální artefakty: `juliette.json` s heslem a Sticky Notes `plum.sqlite`, které přidaly účet `development`.
+- Root nevznikl lokálním exploitem, ale až po pivotu na interní `passmanager.htb`, SQL injection a dešifrování hesla pro `Administrator`.
 
 ## Co si odnést do praxe
 
-- První obranná lekce míří na webová aplikace v PHP a Apache. SMB sdílení mají mít opravdu minimální ACL a průběžný audit obsahu; i read-only přístup často útočníkovi dá víc než samotná zranitelnost služby.
-- Druhá lekce je o tom, jak rychle se ze zjištění stane SSH s nalezenými přihlašovacími údaji. Hesla a klíče je potřeba oddělovat mezi službami; jakmile stejné přihlašovací údaje fungují i na SSH, z lokálního úniku je plnohodnotný systémový přístup.
-- Třetí lekce připomíná riziko, které v praxi představuje lokální enumerace po získání shellu. Po získání shellu je rozhodující systematická lokální enumerace; i bez další CVE často rozhodne kombinace špatných oprávnění, reuse tajemství a pomocných skriptů.
+- Uploady v interních portálech musí být přísně omezené a session tokeny správně vázané na roli a akci. Jakmile portál dovolí nahrát vlastní soubor, webová vrstva se mění v přímý shell.
+- Uživatelské artefakty jako JSON objednávky nebo databáze Sticky Notes nejsou nevinná metadata. V praxi často obsahují přesně ta hesla, která propojí několik oddělených účtů do jednoho útočného řetězce.
+- Interní služby za localhostem nejsou bezpečné samy o sobě. Pokud se k nim dá dopivotovat přes běžný účet a obsahují SQL injection nebo vlastní šifrovací logiku, skončí jako finální zdroj privilegovaných tajemství.

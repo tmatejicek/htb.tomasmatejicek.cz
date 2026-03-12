@@ -7,9 +7,9 @@ tags: linux rce ssh sudo php exploit
 ---
 ## Úvod a kontext
 
-Na BountyHunter je nejzajímavější, jak se propojí webová aplikace v PHP, Apache a SSH.
+BountyHunter je přímočarý, ale velmi instruktivní řetězec. Nenápadný tracker formulář zpracovává XML a přes `tracker_diRbPr00f314.php` se z něj stane XXE, které dovolí číst lokální soubory. Přes `/etc/passwd` se dá potvrdit účet `development` a přes `db.php` vytáhnout heslo správce databáze.
 
-Bez pochopení této návaznosti by nedával smysl ani SSH s nalezenými přihlašovacími údaji, ani závěrečná příliš široká `sudo` oprávnění.
+Hodnota článku ale neleží jen v prvním footholdu. Root část ukazuje úplně jinou třídu chyby: `sudo` pravidlo pro `ticketValidator.py`, které používá `eval` nad obsahem markdown ticketu. To je dobrý příklad, jak se z interní utility stane přímý privesc vektor.
 
 ## Počáteční průzkum
 
@@ -63,9 +63,9 @@ Ve webové vrstvě hledám neveřejné cesty, vývojové artefakty a chybně vys
 
 ## Získání přístupu
 
-### Spuštění exploitu
+### XXE v trackeru
 
-V této fázi převádím předchozí zjištění do praktického kroku, který má vést k ověřitelnému přístupu nebo k dalším citlivým datům.
+`README.txt` sice mluví jen o tracker skriptu a test účtu, ale skutečný problém je v parseru XML. `tracker_diRbPr00f314.php` načítá externí entity a bez další ochrany vrací obsah lokálních souborů.
 ```text
 http://10.10.11.100/resources/README.txt
 ```
@@ -78,9 +78,9 @@ Tasks:
 [X] Fix developer group permissions
 ```
 
-### Spuštění exploitu (2)
+### Čtení zdrojáku a `db.php`
 
-V této fázi převádím předchozí zjištění do praktického kroku, který má vést k ověřitelnému přístupu nebo k dalším citlivým datům.
+Po potvrzení XXE dává smysl číst nejdřív zdroják trackeru a potom `db.php`. Právě tam leží heslo `m19RoAU0hP41A1sTsq6K`, které se ukáže jako použitelné i pro účet `development`.
 ```bash
 curl -v 'http://10.10.11.100/tracker_diRbPr00f314.php' --data-urlencode "data=$(echo '<?xml version="1.0" encoding="ISO-8859-1"?><!DOCTYPE bugreport [<!ENTITY harmless SYSTEM "php://filter/read=convert.base64-encode/resource=/var/www/html/tracker_diRbPr00f314.php">]><bugreport><title>aa</title><cwe>aa</cwe><cvss>aa</cvss><reward>&harmless;</reward></bugreport>' | base64 -w 0)"
 ```
@@ -116,18 +116,16 @@ If DB were ready, would have added:
 </table>
 ```
 
-### Přihlášení na cíl (2)
+### Přihlášení na cíl
 
-Jakmile mám pověření nebo jednorázový shell, snažím se přejít na stabilní a reprodukovatelný přístup, aby bylo možné bezpečně pokračovat v interní enumeraci.
+Jakmile už XXE vrátí heslo z `db.php`, je rozumné přejít na SSH. Webový vektor tím splnil účel a stabilní shell pod `development` usnadní čtení `sudo` pravidel i analýzu interních skriptů.
 ```bash
 ssh development@10.10.11.100
 ```
 
 ### Získání user flagu
 
-User flag zde slouží hlavně jako potvrzení, že už mám běžný uživatelský kontext a mohu pokračovat v lokální analýze systému.
-
-Následující úsek zachycuje přechod k uživatelskému přístupu a jeho ověření přes `user.txt`.
+SSH pod `development` je už stabilní foothold. `user.txt` proto slouží hlavně jako ověření, že reuse hesla z `db.php` opravdu vedl k interaktivnímu přístupu do hostu.
 
 ```text
 ssh development@10.10.11.100
@@ -171,12 +169,12 @@ cat /root/root.txt
 
 ## Shrnutí klíčových poznatků
 
-- První skutečně užitečný závěr přinesl až rozbor `tracker_diRbPr00f314.php` a XXE v parseru XML.
-- User fáze se opírala o SSH účet `development`, takže přístup byl stabilní a ne jen jednorázový webový zásah.
-- Root část stojí na `eval` v `ticketValidator.py`, tedy na chybné delegaci přes `sudo`, ne na další síťové zranitelnosti.
+- Klíčový vstup neležel v celé aplikaci, ale v jediném XML endpointu `tracker_diRbPr00f314.php`, který umožnil XXE a čtení lokálních souborů.
+- User přístup vznikl z hesla vytaženého z `db.php`, které bylo znovu použité pro SSH účet `development`.
+- Root nevznikl z další webové chyby, ale z interní utility `ticketValidator.py`, kde `eval` nad ticketem běžel přes `sudo` jako root.
 
 ## Co si odnést do praxe
 
-- Tento řetězec začal u webová aplikace v PHP, Apache a SSH; právě tam má obrana největší návratnost. Převod dokumentů a server-side render je potřeba sandboxovat a oddělit od citlivého filesystemu; parser nebo převodník nesmí mít přístup k tajemstvím hostu.
-- Foothold navázal na SSH s nalezenými přihlašovacími údaji, takže oddělení účtů a tajemství není jen teorie. Hesla a klíče je potřeba oddělovat mezi službami; jakmile stejné přihlašovací údaje fungují i na SSH, z lokálního úniku je plnohodnotný systémový přístup.
-- Poslední krok stojí na příliš široká `sudo` oprávnění, a proto je nutné auditovat i lokální delegaci práv. Široká `sudo` oprávnění je potřeba pravidelně revidovat; wrapper, install helper nebo diagnostický příkaz často udělá z běžného účtu roota.
+- XML parsery a knihovny pro import dokumentů musí mít zakázané externí entity. Jakmile lze přes XXE číst lokální soubory, útočník si velmi rychle vytáhne hesla a zdrojáky.
+- Tajemství uložená v pomocných souborech typu `db.php` nesmějí být reuseovaná pro shellové účty. Tady přesně tohle změnilo čtení souboru v plnohodnotný SSH přístup.
+- `sudo` wrappery nad interpretry je potřeba číst stejně přísně jako vlastní kód. `eval` v `ticketValidator.py` ukazuje, že i interní validační utilita může bez problémů skončit root shellem.
