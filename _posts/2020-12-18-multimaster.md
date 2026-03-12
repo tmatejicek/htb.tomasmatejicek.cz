@@ -9,7 +9,6 @@ tags: linux exploit privesc enumeration hackthebox
 ## Úvod a kontext
 
 Multimaster je stroj z Hack The Box. Dochované podklady zachycují jen část postupu, proto níže ponechávám pouze technicky doložitelné kroky a chybějící části výslovně označuji k ověření.
-
 ## Počáteční průzkum
 
 ### Vyhledání otevřených portů

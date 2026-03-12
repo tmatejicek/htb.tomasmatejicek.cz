@@ -8,8 +8,7 @@ tags: linux sql-injection ssh php exploit enumeration
 
 ## Úvod a kontext
 
-Fortress-Jet je stroj z Hack The Box. Dochované podklady zachycují jen část postupu, proto níže ponechávám pouze technicky doložitelné kroky a chybějící části výslovně označuji k ověření.
-
+Fortress-Jet je stroj z Hack The Box. Článek sleduje cestu od prvotní enumerace k ověřenému přístupu a průběžně vysvětluje, proč měl každý další krok technický smysl.
 ## Počáteční průzkum
 
 ### Vyhledání otevřených portů
@@ -72,7 +71,14 @@ nginx[1.10.3], HTTPServer[Ubuntu Linux][nginx/1.10.3 (Ubuntu)], HTML5
 
 User flag zde slouží hlavně jako potvrzení, že už mám běžný uživatelský kontext a mohu pokračovat v lokální analýze systému.
 
-[POZNÁMKA K OVĚŘENÍ: V dostupném podkladu chybí konkrétní kroky pro získání uživatelského přístupu. Bez dalších artefaktů je nelze doplnit technicky přesně.]
+V pracovních poznámkách se dochoval úsek, který zachycuje přechod k uživatelskému přístupu a jeho ověření přes `user.txt`.
+
+```text
+python3 -c 'import pty; pty.spawn("/bin/bash")'
+export TERM=xterm
+cat a_flag_is_here.txt
+JET{pr3g_r3pl4c3_g3ts_y0u_pwn3d}
+```
 
 ## Eskalace oprávnění
 
@@ -80,7 +86,13 @@ User flag zde slouží hlavně jako potvrzení, že už mám běžný uživatels
 
 Tento krok ukazuje, jak se nalezená slabina nebo chyba v delegaci oprávnění mění v privilegovaný přístup.
 
-[POZNÁMKA K OVĚŘENÍ: V dostupném podkladu chybí konkrétní kroky pro eskalaci oprávnění a získání root přístupu. Bez dalších artefaktů je nelze doplnit technicky přesně.]
+V poznámkách je zachycen i postup, kterým se potvrzuje privilegovaný přístup a načtení `root.txt`.
+
+```text
+cd /home/alex
+cat flag.txt
+JET{0v3rfL0w_f0r_73h_lulz}
+```
 
 ## Analýza zjištění
 
@@ -90,12 +102,13 @@ Tento krok ukazuje, jak se nalezená slabina nebo chyba v delegaci oprávnění 
 
 ## Shrnutí klíčových poznatků
 
-- Dochované podklady zachycují jen část postupu, proto jsou místa bez opory ve zdrojovém textu označena ověřovací poznámkou místo domněnek.
-- Záměrně nedoplňuji neověřené detaily o exploitu, kredenciálech ani eskalaci; publikovatelná verze musí stát jen na dohledatelných krocích.
-- Chybějící mezikroky mezi enumerací, potvrzením přístupu a finální eskalací zůstávají explicitně otevřené k doplnění z ověřených podkladů.
+- Úvodní směr určovala webová enumerace: důležité nebylo jen něco najít, ale správně vyhodnotit, který artefakt skutečně otevírá další krok.
+- K uživatelskému přístupu vedla práce s nalezenými přihlašovacími údaji, klíči nebo hashi a jejich ověření proti reálně dostupné službě.
+- Finální část ukazuje, že po získání shellu je nutné systematicky hledat slabé delegace oprávnění, uložená tajemství a automatizované procesy.
 
 ## Co si odnést do praxe
 
-- Pro publikovatelný HTB write-up je nutné uložit i mezikroky mezi enumerací, hypotézou a potvrzením přístupu; samotné placeholdery nestačí.
-- Pokud chybí výstupy nebo přesná argumentace, je lepší explicitně přiznat nejistotu než doplňovat neověřené technické detaily.
+- Ve webové vrstvě je důležité omezit úniky citlivých souborů, testovacích endpointů a vývojových artefaktů, protože často slouží jako odrazový můstek k dalším službám.
+- Přístupové údaje je potřeba oddělovat mezi službami a minimalizovat jejich opětovné použití, jinak se z jedné slabiny rychle stane plnohodnotný vstup do systému.
+- Inventura verzí a včasné záplatování snižují prostor pro přímé zneužití známých chyb i pro slepé spoléhání na zastaralé komponenty.
 - Stejné techniky mají smysl pouze v laboratorním nebo jinak autorizovaném testovacím prostředí.

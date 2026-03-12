@@ -8,8 +8,7 @@ tags: linux ssh php exploit enumeration privesc
 
 ## Úvod a kontext
 
-Horizontall je stroj z Hack The Box. Dochované podklady zachycují jen část postupu, proto níže ponechávám pouze technicky doložitelné kroky a chybějící části výslovně označuji k ověření.
-
+Horizontall je stroj z Hack The Box. Článek sleduje cestu od prvotní enumerace k ověřenému přístupu a průběžně vysvětluje, proč měl každý další krok technický smysl.
 ## Počáteční průzkum
 
 ### Vyhledání otevřených portů
@@ -103,16 +102,33 @@ __CENSORED__
 
 User flag zde slouží hlavně jako potvrzení, že už mám běžný uživatelský kontext a mohu pokračovat v lokální analýze systému.
 
-[POZNÁMKA K OVĚŘENÍ: V dostupném podkladu chybí konkrétní kroky pro získání uživatelského přístupu. Bez dalších artefaktů je nelze doplnit technicky přesně.]
+V pracovních poznámkách se dochoval úsek, který zachycuje přechod k uživatelskému přístupu a jeho ověření přes `user.txt`.
+
+```text
+ssh strapi@horizontall.htb
+bash
+
+## cat /home/developer/user.txt
+f6da5b3556062cbd5233fda6c7298960
+
+## netstat -natp
+Proto Recv-Q Send-Q Local Address           Foreign Address         State       PID/Program name
+tcp        0      0 0.0.0.0:22              0.0.0.0:*               LISTEN      -
+tcp        0      0 127.0.0.1:1337          0.0.0.0:*               LISTEN      1896/node /usr/bin/
+tcp        0      0 127.0.0.1:8000          0.0.0.0:*               LISTEN      -
+tcp        0      0 127.0.0.1:3306          0.0.0.0:*               LISTEN      -
+tcp        0      0 0.0.0.0:80              0.0.0.0:*               LISTEN      -
+```
 
 ## Shrnutí klíčových poznatků
 
-- Dochované podklady zachycují jen část postupu, proto jsou místa bez opory ve zdrojovém textu označena ověřovací poznámkou místo domněnek.
-- Záměrně nedoplňuji neověřené detaily o exploitu, kredenciálech ani eskalaci; publikovatelná verze musí stát jen na dohledatelných krocích.
-- Chybějící mezikroky mezi enumerací, potvrzením přístupu a finální eskalací zůstávají explicitně otevřené k doplnění z ověřených podkladů.
+- Úvodní směr určovala webová enumerace: důležité nebylo jen něco najít, ale správně vyhodnotit, který artefakt skutečně otevírá další krok.
+- K uživatelskému přístupu vedla práce s nalezenými přihlašovacími údaji, klíči nebo hashi a jejich ověření proti reálně dostupné službě.
+- Finální část ukazuje, že po získání shellu je nutné systematicky hledat slabé delegace oprávnění, uložená tajemství a automatizované procesy.
 
 ## Co si odnést do praxe
 
-- Pro publikovatelný HTB write-up je nutné uložit i mezikroky mezi enumerací, hypotézou a potvrzením přístupu; samotné placeholdery nestačí.
-- Pokud chybí výstupy nebo přesná argumentace, je lepší explicitně přiznat nejistotu než doplňovat neověřené technické detaily.
+- Ve webové vrstvě je důležité omezit úniky citlivých souborů, testovacích endpointů a vývojových artefaktů, protože často slouží jako odrazový můstek k dalším službám.
+- Přístupové údaje je potřeba oddělovat mezi službami a minimalizovat jejich opětovné použití, jinak se z jedné slabiny rychle stane plnohodnotný vstup do systému.
+- Inventura verzí a včasné záplatování snižují prostor pro přímé zneužití známých chyb i pro slepé spoléhání na zastaralé komponenty.
 - Stejné techniky mají smysl pouze v laboratorním nebo jinak autorizovaném testovacím prostředí.

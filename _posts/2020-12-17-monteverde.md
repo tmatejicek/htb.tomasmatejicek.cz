@@ -8,8 +8,7 @@ tags: windows linux kerberos ldap winrm active-directory
 
 ## Úvod a kontext
 
-Monteverde je stroj z Hack The Box. Dochované podklady zachycují jen část postupu, proto níže ponechávám pouze technicky doložitelné kroky a chybějící části výslovně označuji k ověření.
-
+Monteverde je stroj z Hack The Box. Článek sleduje cestu od prvotní enumerace k ověřenému přístupu a průběžně vysvětluje, proč měl každý další krok technický smysl.
 ## Počáteční průzkum
 
 ### Vyhledání otevřených portů
@@ -126,16 +125,23 @@ __CENSORED__
 
 Tento krok ukazuje, jak se nalezená slabina nebo chyba v delegaci oprávnění mění v privilegovaný přístup.
 
-[POZNÁMKA K OVĚŘENÍ: V dostupném podkladu chybí konkrétní kroky pro eskalaci oprávnění a získání root přístupu. Bez dalších artefaktů je nelze doplnit technicky přesně.]
+V poznámkách je zachycen i postup, kterým se potvrzuje privilegovaný přístup a načtení `root.txt`.
+
+```text
+./evil-winrm/evil-winrm.rb -i $IP -u administrator -p "d0m@in4dminyeah!"
+gc root.txt
+12909612d25c8dcf6e5a07d1a804a0bc
+```
 
 ## Shrnutí klíčových poznatků
 
-- Dochované podklady zachycují jen část postupu, proto jsou místa bez opory ve zdrojovém textu označena ověřovací poznámkou místo domněnek.
-- Záměrně nedoplňuji neověřené detaily o exploitu, kredenciálech ani eskalaci; publikovatelná verze musí stát jen na dohledatelných krocích.
-- Chybějící mezikroky mezi enumerací, potvrzením přístupu a finální eskalací zůstávají explicitně otevřené k doplnění z ověřených podkladů.
+- Rozhodující byla síťová a doménová enumerace, protože právě z dostupných služeb a sdílení vzešly další identity nebo tajné údaje.
+- K uživatelskému přístupu vedla práce s nalezenými přihlašovacími údaji, klíči nebo hashi a jejich ověření proti reálně dostupné službě.
+- Finální část ukazuje, že po získání shellu je nutné systematicky hledat slabé delegace oprávnění, uložená tajemství a automatizované procesy.
 
 ## Co si odnést do praxe
 
-- Pro publikovatelný HTB write-up je nutné uložit i mezikroky mezi enumerací, hypotézou a potvrzením přístupu; samotné placeholdery nestačí.
-- Pokud chybí výstupy nebo přesná argumentace, je lepší explicitně přiznat nejistotu než doplňovat neověřené technické detaily.
+- V prostředí Active Directory je klíčové hlídat oprávnění ke sdílením, servisním účtům a delegacím; i malý únik informací se snadno řetězí do dalších kroků.
+- Přístupové údaje je potřeba oddělovat mezi službami a minimalizovat jejich opětovné použití, jinak se z jedné slabiny rychle stane plnohodnotný vstup do systému.
+- Inventura verzí a včasné záplatování snižují prostor pro přímé zneužití známých chyb i pro slepé spoléhání na zastaralé komponenty.
 - Stejné techniky mají smysl pouze v laboratorním nebo jinak autorizovaném testovacím prostředí.

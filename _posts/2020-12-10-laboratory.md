@@ -9,7 +9,6 @@ tags: linux ssh exploit enumeration privesc hackthebox
 ## Úvod a kontext
 
 Laboratory je stroj z Hack The Box. Dochované podklady zachycují jen část postupu, proto níže ponechávám pouze technicky doložitelné kroky a chybějící části výslovně označuji k ověření.
-
 ## Počáteční průzkum
 
 ### Vyhledání otevřených portů
