@@ -5,10 +5,11 @@ title: "Scavenger"
 date: 2021-01-09
 tags: linux rce ssh php exploit enumeration
 ---
-
 ## Úvod a kontext
 
-Scavenger je stroj z Hack The Box. Článek sleduje cestu od prvotní enumerace k ověřenému přístupu a průběžně vysvětluje, proč měl každý další krok technický smysl.
+Scavenger stojí na řetězení několika konkrétních slabin a artefaktů: `ib01.supersechosting.htb`, `www.supersechosting.htb` a anonymní FTP.
+
+Důležitější než samotný exploit je tady interpretace mezikroků, protože právě z těchto indicií vzniká stabilní uživatelský přístup opřený o `shell.php` a `authorized_keys` a teprve na něj navazuje lokální enumeraci po získání shellu.
 
 ## Počáteční průzkum
 
@@ -146,12 +147,12 @@ touch /dev/shm/flag;(sleep 0.1 ; echo HELO foo ; sleep 0.1 ; echo 'MAIL FROM:<>'
 
 ## Shrnutí klíčových poznatků
 
-- Úvodní směr určovala webová enumerace: důležité nebylo jen něco najít, ale správně vyhodnotit, který artefakt skutečně otevírá další krok.
-- K uživatelskému přístupu vedla práce s nalezenými přihlašovacími údaji, klíči nebo hashi a jejich ověření proti reálně dostupné službě.
-- Finální část ukazuje, že po získání shellu je nutné systematicky hledat slabé delegace oprávnění, uložená tajemství a automatizované procesy.
+- Klíčový posun nepřinesl samotný scan, ale interpretace toho, co znamenaly `ib01.supersechosting.htb`, `www.supersechosting.htb` a anonymní FTP.
+- Uživatelský přístup dává v tomhle řetězci smysl až ve chvíli, kdy vyjde stabilní uživatelský přístup opřený o `shell.php` a `authorized_keys`.
+- Root/admin část nepřišla zkratkou; klíčovou roli tu hraje lokální enumerace po získání shellu a navazující lokální enumerace.
 
 ## Co si odnést do praxe
 
-- Upload a import souborů musí validovat typ, obsah i následné zpracování, protože právě tyto workflow často mění běžnou funkci aplikace v RCE.
-- SSH klíče, hesla a uložené tokeny je nutné oddělovat mezi účty i službami; znovupoužití přístupů rychle mění lokální únik ve stabilní shell.
-- SMTP, IMAP a další podpůrné služby nesmějí nést zbytečně čitelné tajemství bokem od hlavní aplikace; právě vedlejší infrastruktura často prozradí další přístup.
+- Pokud se zanedbá oblast `ib01.supersechosting.htb`, `www.supersechosting.htb` a anonymní FTP, vznikne stejný typ vstupu jako tady. Anonymní FTP a podobná odkladiště je potřeba vnímat jako veřejný publikační kanál; často prozradí další hostname, workflow nebo interní soubory.
+- Jakmile útočník ověří stabilní uživatelský přístup opřený o `shell.php` a `authorized_keys`, je potřeba počítat s dlouhodobým přístupem. Jakmile se v prostředí objeví použitelný klíč, heslo nebo token, je potřeba předpokládat okamžitý pivot na stabilní shell; obrana proto stojí na segmentaci a oddělení přístupů mezi službami.
+- Stejně důležitá je i obrana proti mechanice lokální enumerace po získání shellu. Po získání shellu je rozhodující systematická lokální enumerace; i bez další CVE často rozhodne kombinace špatných oprávnění, reuse tajemství a pomocných skriptů.

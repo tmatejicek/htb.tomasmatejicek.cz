@@ -5,10 +5,11 @@ title: "OpenAdmin"
 date: 2020-12-25
 tags: linux exploit sudo
 ---
-
 ## Úvod a kontext
 
-OpenAdmin je stroj z Hack The Box. Článek sleduje cestu od prvotní enumerace k ověřenému přístupu a průběžně vysvětluje, proč měl každý další krok technický smysl.
+OpenAdmin stojí na řetězení několika konkrétních slabin a artefaktů: `internal.openadmin.htb`, OpenNetAdmin a převod dokumentů a server-side render.
+
+Důležitější než samotný exploit je tady interpretace mezikroků, protože právě z těchto indicií vzniká SSH se získaným soukromým klíčem a teprve na něj navazuje příliš široká `sudo` oprávnění.
 
 ## Počáteční průzkum
 
@@ -289,13 +290,12 @@ __CENSORED__
 
 ## Shrnutí klíčových poznatků
 
-- Úvodní směr určovala webová enumerace: důležité nebylo jen něco najít, ale správně vyhodnotit, který artefakt skutečně otevírá další krok.
-- K uživatelskému přístupu vedla práce s nalezenými přihlašovacími údaji, klíči nebo hashi a jejich ověření proti reálně dostupné službě.
-- Eskalace oprávnění stála na příliš širokém `sudo` pravidle nebo na možnosti ovlivnit vstup či prostředí privilegovaného procesu.
+- Z hlediska rozhodování bylo nejdůležitější správně přečíst vazbu mezi `internal.openadmin.htb`, OpenNetAdmin a převod dokumentů a server-side render.
+- K uživatelskému kontextu vedl konkrétní a ověřitelný krok: SSH se získaným soukromým klíčem.
+- Poslední část ukazuje, že po získání shellu rozhoduje hlavně to, jakou roli hraje příliš široká `sudo` oprávnění.
 
 ## Co si odnést do praxe
 
-- Veřejně dostupné webové aplikace a administrační endpointy je potřeba průběžně inventarizovat a zavírat, protože právě ony často otevírají první krok celého řetězce.
-- Hashe, exporty hesel a password vaulty je potřeba chránit jako produkční tajemství, protože offline crack nebo opětovné použití hesla často otevře další vrstvu prostředí.
-- Pravidla `sudo` mají být co nejmenší a bez možnosti ovlivnit příkaz, argumenty nebo prostředí z neprivilegovaného kontextu.
-- Inventura verzí a včasné záplatování snižují prostor pro přímé zneužití známých chyb i pro slepé spoléhání na zastaralé komponenty.
+- Tento řetězec začal u `internal.openadmin.htb`, OpenNetAdmin a převod dokumentů a server-side render; právě tam má obrana největší návratnost. Síťové a administrační nástroje jako OpenNetAdmin nesmí být vystavené bez segmentace; jakmile jsou dostupné z internetu, stávají se privilegovaným vstupním bodem.
+- Foothold navázal na SSH se získaným soukromým klíčem, takže oddělení účtů a tajemství není jen teorie. SSH klíče nesmějí být sdílené mezi rolemi ani uložené v procesech, exportech nebo webrootu; uniklý privátní klíč je stabilnější foothold než jednorázový shell.
+- Poslední krok stojí na příliš široká `sudo` oprávnění, a proto je nutné auditovat i lokální delegaci práv. Široká `sudo` oprávnění je potřeba pravidelně revidovat; wrapper, install helper nebo diagnostický příkaz často udělá z běžného účtu roota.

@@ -5,7 +5,6 @@ title: "Multimaster"
 date: 2020-12-18
 tags: windows exploit privesc enumeration hackthebox
 ---
-
 ## Úvod a kontext
 
 Multimaster je stroj z Hack The Box založený na řetězení slabin ve webové aplikaci a v Active Directory. Z didaktického hlediska je cenný hlavně tím, že neukazuje jeden dominantní exploit, ale postupný laterální pohyb přes několik účtů a delegovaných práv.
@@ -41,12 +40,12 @@ Z technického pohledu nejde o kernelovou eskalaci, ale o zneužití delegovaný
 
 ## Shrnutí klíčových poznatků
 
-- Počáteční SQL injection otevřela jen první shell; rozhodující část útoku se odehrála až v Active Directory.
-- Reuse hesla mezi aplikačním artefaktem a doménovým účtem umožnil laterální pohyb bez další samostatné RCE.
-- Root část byla ve skutečnosti zneužitím delegovaných práv a servisního modelu Windows, ne lokální kernelovou eskalací.
+- První skutečně užitečný závěr plynul z toho, jak do sebe zapadly Kerberos, Active Directory a SQL injection.
+- User fáze se opírala o stabilní uživatelský přístup, takže přístup byl reprodukovatelný a ne jen jednorázový.
+- Finální kontrolu nad systémem otevřela až mechanika typu lokální enumerace po získání shellu.
 
 ## Co si odnést do praxe
 
-- Delegovaná práva v Active Directory typu `GenericWrite` nebo `GenericAll` je potřeba pravidelně auditovat, protože snadno otevírají laterální pohyb.
-- Hesla a tajemství uložená v binárkách, konfiguračních souborech nebo debug artefaktech se v doméně rychle mění v kompromitaci dalších účtů.
-- Stejné techniky mají smysl pouze v laboratorním nebo jinak autorizovaném testovacím prostředí.
+- Pokud se zanedbá oblast Kerberos, Active Directory a SQL injection, vznikne stejný typ vstupu jako tady. Vstupy do databázových dotazů musí být parametrizované a oddělené od aplikační logiky; SQL injection stále patří mezi nejrychlejší cesty k datům i dalšímu pivota.
+- Jakmile útočník ověří stabilní uživatelský přístup, je potřeba počítat s dlouhodobým přístupem. Jakmile se v prostředí objeví použitelný klíč, heslo nebo token, je potřeba předpokládat okamžitý pivot na stabilní shell; obrana proto stojí na segmentaci a oddělení přístupů mezi službami.
+- Stejně důležitá je i obrana proti mechanice lokální enumerace po získání shellu. Root/admin část obvykle nepadá na nové CVE, ale na lokální delegaci práv, reuse tajemství nebo pomocném skriptu; právě tyto mechaniky je potřeba po footholdu auditovat nejdřív.

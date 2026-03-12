@@ -5,10 +5,11 @@ title: "Obscurity"
 date: 2020-12-22
 tags: linux rce ssh sudo wordpress exploit
 ---
-
 ## Úvod a kontext
 
-Obscurity je stroj z Hack The Box. Článek sleduje cestu od prvotní enumerace k ověřenému přístupu a průběžně vysvětluje, proč měl každý další krok technický smysl.
+Obscurity stojí na řetězení několika konkrétních slabin a artefaktů: WordPress a jeho pluginy a SSH.
+
+Důležitější než samotný exploit je tady interpretace mezikroků, protože právě z těchto indicií vzniká SSH s nalezenými přihlašovacími údaji a teprve na něj navazuje příliš široká `sudo` oprávnění.
 
 ## Počáteční průzkum
 
@@ -119,13 +120,12 @@ __CENSORED__
 
 ## Shrnutí klíčových poznatků
 
-- Úvodní sken služeb vymezil reálnou útočnou plochu a pomohl oddělit relevantní stopy od šumu.
-- K uživatelskému přístupu vedla práce s nalezenými přihlašovacími údaji, klíči nebo hashi a jejich ověření proti reálně dostupné službě.
-- Eskalace oprávnění stála na příliš širokém `sudo` pravidle nebo na možnosti ovlivnit vstup či prostředí privilegovaného procesu.
+- Počáteční průzkum se z obecné enumerace změnil v použitelný směr teprve po propojení indicií jako WordPress a jeho pluginy a SSH.
+- User část stála na ověřeném kroku typu SSH s nalezenými přihlašovacími údaji, ne na odhadu bez technického potvrzení.
+- Závěrečná eskalace pak stála na tom, co představuje příliš široká `sudo` oprávnění, takže rozhodující byla práce s lokálním kontextem po footholdu.
 
 ## Co si odnést do praxe
 
-- WordPress a jeho pluginy je potřeba průběžně záplatovat a omezit jejich dopad na hostu, protože jedna slabina v pluginu často stačí k úplnému footholdu.
-- SSH klíče, hesla a uložené tokeny je nutné oddělovat mezi účty i službami; znovupoužití přístupů rychle mění lokální únik ve stabilní shell.
-- Pravidla `sudo` mají být co nejmenší a bez možnosti ovlivnit příkaz, argumenty nebo prostředí z neprivilegovaného kontextu.
-- Inventura verzí a včasné záplatování snižují prostor pro přímé zneužití známých chyb i pro slepé spoléhání na zastaralé komponenty.
+- V tomhle článku se první slabé místo otevřelo přes WordPress a jeho pluginy a SSH. WordPress a jeho pluginy potřebují tvrdé oddělení administrace, minimální sadu rozšíření a rychlé patchování; právě pluginy často tvoří první vstup.
+- Stabilní foothold pak stojí na principu SSH s nalezenými přihlašovacími údaji. Hesla a klíče je potřeba oddělovat mezi službami; jakmile stejné přihlašovací údaje fungují i na SSH, z lokálního úniku je plnohodnotný systémový přístup.
+- Pro závěrečnou fázi je podstatné, že rozhodla příliš široká `sudo` oprávnění. Široká `sudo` oprávnění je potřeba pravidelně revidovat; wrapper, install helper nebo diagnostický příkaz často udělá z běžného účtu roota.

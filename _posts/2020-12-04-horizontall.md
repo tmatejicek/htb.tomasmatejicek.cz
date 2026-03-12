@@ -5,10 +5,11 @@ title: "Horizontall"
 date: 2020-12-04
 tags: linux ssh php exploit enumeration privesc
 ---
-
 ## Úvod a kontext
 
-Horizontall je stroj z Hack The Box. Článek sleduje cestu od prvotní enumerace k ověřenému přístupu a průběžně vysvětluje, proč měl každý další krok technický smysl.
+U Horizontall není hlavní hodnota v jednom efektním kroku, ale ve vazbě mezi `api-prod.horizontall.htb`, webová aplikace v PHP a nginx.
+
+Článek dává smysl číst hlavně jako rozbor rozhodování: proč právě tyto stopy vedou k SSH s nalezenými přihlašovacími údaji a proč po získání shellu dává smysl řešit lokální enumeraci po získání shellu.
 
 ## Počáteční průzkum
 
@@ -117,12 +118,12 @@ __CENSORED__
 
 ## Shrnutí klíčových poznatků
 
-- Úvodní směr určovala webová enumerace: důležité nebylo jen něco najít, ale správně vyhodnotit, který artefakt skutečně otevírá další krok.
-- K uživatelskému přístupu vedla práce s nalezenými přihlašovacími údaji, klíči nebo hashi a jejich ověření proti reálně dostupné službě.
-- Finální část ukazuje, že po získání shellu je nutné systematicky hledat slabé delegace oprávnění, uložená tajemství a automatizované procesy.
+- První skutečně užitečný závěr plynul z toho, jak do sebe zapadly `api-prod.horizontall.htb`, webová aplikace v PHP a nginx.
+- User fáze se opírala o SSH s nalezenými přihlašovacími údaji, takže přístup byl reprodukovatelný a ne jen jednorázový.
+- Finální kontrolu nad systémem otevřela až mechanika typu lokální enumerace po získání shellu.
 
 ## Co si odnést do praxe
 
-- Strapi a podobná administrační rozhraní nesmí být veřejně vystavená bez segmentace a patch managementu; kompromitace CMS bývá jen první krok k serveru.
-- SSH klíče, hesla a uložené tokeny je nutné oddělovat mezi účty i službami; znovupoužití přístupů rychle mění lokální únik ve stabilní shell.
-- Inventura verzí a včasné záplatování snižují prostor pro přímé zneužití známých chyb i pro slepé spoléhání na zastaralé komponenty.
+- V tomhle článku se první slabé místo otevřelo přes `api-prod.horizontall.htb`, webová aplikace v PHP a nginx. Webová vrstva nesmí publikovat víc, než je nezbytné; vedlejší vhost, debug endpoint nebo zapomenutý soubor často odhalí skutečný vstup do řetězce.
+- Stabilní foothold pak stojí na principu SSH s nalezenými přihlašovacími údaji. Hesla a klíče je potřeba oddělovat mezi službami; jakmile stejné přihlašovací údaje fungují i na SSH, z lokálního úniku je plnohodnotný systémový přístup.
+- Pro závěrečnou fázi je podstatné, že rozhodla lokální enumerace po získání shellu. Po získání shellu je rozhodující systematická lokální enumerace; i bez další CVE často rozhodne kombinace špatných oprávnění, reuse tajemství a pomocných skriptů.

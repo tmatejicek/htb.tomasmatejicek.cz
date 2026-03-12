@@ -5,7 +5,6 @@ title: "Laboratory"
 date: 2020-12-10
 tags: linux ssh exploit enumeration privesc hackthebox
 ---
-
 ## Úvod a kontext
 
 Laboratory je stroj z Hack The Box, který kombinuje zranitelný GitLab a chybně napsaný pomocný skript pro Docker. Dobře na něm vynikne, jak snadno se propojí chyba ve webové aplikaci s opětovným použitím klíčů a s nebezpečným `sudo` wrapperem.
@@ -104,13 +103,12 @@ To je přesný příklad chyby v delegaci oprávnění: privilegovaný wrapper s
 
 ## Shrnutí klíčových poznatků
 
-- Certifikát a vedlejší virtuální host nasměrovaly útok správně do GitLabu.
-- Rozhodující nebyla jen webová chyba, ale i reuse deploy key mezi GitLabem a systémovým účtem `dexter`.
-- Root část stála na PATH hijacku privilegovaného wrapperu, nikoli na chybě v Dockeru samotném.
+- První skutečně užitečný závěr plynul z toho, jak do sebe zapadly `git.laboratory.htb`, Apache a SSH.
+- User fáze se opírala o SSH se získaným soukromým klíčem, takže přístup byl reprodukovatelný a ne jen jednorázový.
+- Finální kontrolu nad systémem otevřela až mechanika typu práce s Dockerem nebo image vrstvami.
 
 ## Co si odnést do praxe
 
-- GitLab a jeho návazné služby je potřeba záplatovat jako celek, protože slabina v aplikaci rychle odhalí repozitáře, klíče i návazné systémové účty.
-- SSH klíče, hesla a uložené tokeny je nutné oddělovat mezi účty i službami; znovupoužití přístupů rychle mění lokální únik ve stabilní shell.
-- Privilegované wrappery nad Dockerem a podobnými nástroji musí používat absolutní cesty a čisté prostředí; jinak stačí ovlivnit `PATH` nebo vstup a běží cizí kód jako root.
-- Inventura verzí a včasné záplatování snižují prostor pro přímé zneužití známých chyb i pro slepé spoléhání na zastaralé komponenty.
+- Pokud se zanedbá oblast `git.laboratory.htb`, Apache a SSH, vznikne stejný typ vstupu jako tady. Zdrojové repozitáře a jejich pomocné služby musí být oddělené od produkce; únik issue, CI konfigurace nebo secretu z GitLabu často zkrátí celý průzkum.
+- Jakmile útočník ověří SSH se získaným soukromým klíčem, je potřeba počítat s dlouhodobým přístupem. SSH klíče nesmějí být sdílené mezi rolemi ani uložené v procesech, exportech nebo webrootu; uniklý privátní klíč je stabilnější foothold než jednorázový shell.
+- Stejně důležitá je i obrana proti mechanice práce s Dockerem nebo image vrstvami. Členství v dockerové skupině nebo přístup k image vrstvám je z pohledu hostu privilegium; v obraně se s ním musí zacházet téměř jako s rootem.

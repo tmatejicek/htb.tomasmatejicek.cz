@@ -5,10 +5,11 @@ title: "TheNotebook"
 date: 2021-01-24
 tags: linux ssh sudo php exploit enumeration
 ---
-
 ## Úvod a kontext
 
-TheNotebook je stroj z Hack The Box. Článek sleduje cestu od prvotní enumerace k ověřenému přístupu a průběžně vysvětluje, proč měl každý další krok technický smysl.
+TheNotebook stojí na řetězení několika konkrétních slabin a artefaktů: převod dokumentů a server-side render, nginx a SSH.
+
+Důležitější než samotný exploit je tady interpretace mezikroků, protože právě z těchto indicií vzniká stabilní uživatelský přístup a teprve na něj navazuje příliš široká `sudo` oprávnění.
 
 ## Počáteční průzkum
 
@@ -99,13 +100,12 @@ __CENSORED__
 
 ## Shrnutí klíčových poznatků
 
-- Úvodní směr určovala webová enumerace: důležité nebylo jen něco najít, ale správně vyhodnotit, který artefakt skutečně otevírá další krok.
-- K uživatelskému přístupu vedla práce s nalezenými přihlašovacími údaji, klíči nebo hashi a jejich ověření proti reálně dostupné službě.
-- Eskalace oprávnění stála na příliš širokém `sudo` pravidle nebo na možnosti ovlivnit vstup či prostředí privilegovaného procesu.
+- První skutečně užitečný závěr plynul z toho, jak do sebe zapadly převod dokumentů a server-side render, nginx a SSH.
+- User fáze se opírala o stabilní uživatelský přístup, takže přístup byl reprodukovatelný a ne jen jednorázový.
+- Finální kontrolu nad systémem otevřela až mechanika typu příliš široká `sudo` oprávnění.
 
 ## Co si odnést do praxe
 
-- Podepisovací klíče pro JWT musí být chráněné stejně jako hesla a po úniku okamžitě rotované; jinak se z tokenu stává jen přenosný bypass autorizace.
-- SSH klíče, hesla a uložené tokeny je nutné oddělovat mezi účty i službami; znovupoužití přístupů rychle mění lokální únik ve stabilní shell.
-- Pravidla `sudo` mají být co nejmenší a bez možnosti ovlivnit příkaz, argumenty nebo prostředí z neprivilegovaného kontextu.
-- Inventura verzí a včasné záplatování snižují prostor pro přímé zneužití známých chyb i pro slepé spoléhání na zastaralé komponenty.
+- První obranná lekce míří na převod dokumentů a server-side render, nginx a SSH. Tokeny, redirecty a validace JWT musí být navržené jako bezpečnostní hranice, ne jen jako aplikační detail; chyba v důvěře k externím klíčům nebo redirectům rychle obchází autorizaci.
+- Druhá lekce je o tom, jak rychle se ze zjištění stane stabilní uživatelský přístup. Jakmile se v prostředí objeví použitelný klíč, heslo nebo token, je potřeba předpokládat okamžitý pivot na stabilní shell; obrana proto stojí na segmentaci a oddělení přístupů mezi službami.
+- Třetí lekce připomíná riziko, které v praxi představuje příliš široká `sudo` oprávnění. Široká `sudo` oprávnění je potřeba pravidelně revidovat; wrapper, install helper nebo diagnostický příkaz často udělá z běžného účtu roota.

@@ -5,10 +5,11 @@ title: "Fortress-Jet"
 date: 2020-11-28
 tags: linux sql-injection ssh php exploit enumeration
 ---
-
 ## Úvod a kontext
 
-Fortress-Jet je stroj z Hack The Box. Článek sleduje cestu od prvotní enumerace k ověřenému přístupu a průběžně vysvětluje, proč měl každý další krok technický smysl.
+Fortress-Jet dobře ukazuje, že průlom často nezačíná jedním exploitem, ale kombinací signálů jako nginx a SSH.
+
+Praktická část pak stojí na tom, jak se tyto zjištěné vazby promění v stabilní uživatelský přístup a jak je po user části využitelná lokální enumeraci po získání shellu.
 
 ## Počáteční průzkum
 
@@ -103,12 +104,12 @@ JET{0v3rfL0w_f0r_73h_lulz}
 
 ## Shrnutí klíčových poznatků
 
-- Úvodní směr určovala webová enumerace: důležité nebylo jen něco najít, ale správně vyhodnotit, který artefakt skutečně otevírá další krok.
-- K uživatelskému přístupu vedla práce s nalezenými přihlašovacími údaji, klíči nebo hashi a jejich ověření proti reálně dostupné službě.
-- Finální část ukazuje, že po získání shellu je nutné systematicky hledat slabé delegace oprávnění, uložená tajemství a automatizované procesy.
+- Z hlediska rozhodování bylo nejdůležitější správně přečíst vazbu mezi nginx a SSH.
+- K uživatelskému kontextu vedl konkrétní a ověřitelný krok: stabilní uživatelský přístup.
+- Poslední část ukazuje, že po získání shellu rozhoduje hlavně to, jakou roli hraje lokální enumerace po získání shellu.
 
 ## Co si odnést do praxe
 
-- Vstupy do databázových dotazů musí být parametrizované a oddělené od další aplikační logiky; SQL injection málokdy končí jen čtením jedné tabulky.
-- SSH klíče, hesla a uložené tokeny je nutné oddělovat mezi účty i službami; znovupoužití přístupů rychle mění lokální únik ve stabilní shell.
-- Inventura verzí a včasné záplatování snižují prostor pro přímé zneužití známých chyb i pro slepé spoléhání na zastaralé komponenty.
+- Pokud se zanedbá oblast nginx a SSH, vznikne stejný typ vstupu jako tady. Vstupy do databázových dotazů musí být parametrizované a oddělené od aplikační logiky; SQL injection stále patří mezi nejrychlejší cesty k datům i dalšímu pivota.
+- Jakmile útočník ověří stabilní uživatelský přístup, je potřeba počítat s dlouhodobým přístupem. Jakmile se v prostředí objeví použitelný klíč, heslo nebo token, je potřeba předpokládat okamžitý pivot na stabilní shell; obrana proto stojí na segmentaci a oddělení přístupů mezi službami.
+- Stejně důležitá je i obrana proti mechanice lokální enumerace po získání shellu. Po získání shellu je rozhodující systematická lokální enumerace; i bez další CVE často rozhodne kombinace špatných oprávnění, reuse tajemství a pomocných skriptů.

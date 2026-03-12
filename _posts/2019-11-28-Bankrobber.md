@@ -5,10 +5,11 @@ title: "Bankrobber"
 date: 2019-11-28
 tags: windows xss sql-injection command-injection brute-force buffer-overflow
 ---
-
 ## Úvod a kontext
 
-Bankrobber je stroj z Hack The Box. Článek sleduje cestu od prvotní enumerace k ověřenému přístupu a průběžně vysvětluje, proč měl každý další krok technický smysl.
+Bankrobber dobře ukazuje, že průlom často nezačíná jedním exploitem, ale kombinací signálů jako převod dokumentů a server-side render, SQL injection a XSS.
+
+Praktická část pak stojí na tom, jak se tyto zjištěné vazby promění v reverse shell přes webovou vrstvu a jak je po user části využitelná lokální enumeraci po získání shellu.
 
 ## Počáteční průzkum
 
@@ -383,12 +384,12 @@ __CENSORED__
 
 ## Shrnutí klíčových poznatků
 
-- Rozhodující byla síťová a doménová enumerace, protože právě z dostupných služeb a sdílení vzešly další identity nebo tajné údaje.
-- K uživatelskému přístupu vedla práce s nalezenými přihlašovacími údaji, klíči nebo hashi a jejich ověření proti reálně dostupné službě.
+- Z hlediska rozhodování bylo nejdůležitější správně přečíst vazbu mezi převod dokumentů a server-side render, SQL injection a XSS.
+- K uživatelskému kontextu vedl konkrétní a ověřitelný krok: reverse shell přes webovou vrstvu.
+- Poslední část ukazuje, že po získání shellu rozhoduje hlavně to, jakou roli hraje lokální enumerace po získání shellu.
 
 ## Co si odnést do praxe
 
-- Ve webové vrstvě je důležité omezit úniky citlivých souborů, testovacích endpointů a vývojových artefaktů, protože často slouží jako odrazový můstek k dalším službám.
-- I zdánlivě dílčí úniky konfigurace, lokálních tajemství nebo interních rozhraní je potřeba brát vážně, protože právě jejich řetězení často rozhodne o kompromitaci hostu.
-- Přístupové údaje je potřeba oddělovat mezi službami a minimalizovat jejich opětovné použití, jinak se z jedné slabiny rychle stane plnohodnotný vstup do systému.
-- Stejné techniky mají smysl pouze v laboratorním nebo jinak autorizovaném testovacím prostředí.
+- První obranná lekce míří na převod dokumentů a server-side render, SQL injection a XSS. Převod dokumentů a server-side render je potřeba sandboxovat a oddělit od citlivého filesystemu; parser nebo převodník nesmí mít přístup k tajemstvím hostu.
+- Druhá lekce je o tom, jak rychle se ze zjištění stane reverse shell přes webovou vrstvu. Jednorázové RCE je potřeba detekovat i na aplikační vrstvě; upload, template injection nebo command injection často vypadají v logu nenápadně, ale vedou ke stabilnímu shellu.
+- Třetí lekce připomíná riziko, které v praxi představuje lokální enumerace po získání shellu. Po získání shellu je rozhodující systematická lokální enumerace; i bez další CVE často rozhodne kombinace špatných oprávnění, reuse tajemství a pomocných skriptů.

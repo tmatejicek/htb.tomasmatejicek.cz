@@ -5,10 +5,11 @@ title: "Monteverde"
 date: 2020-12-17
 tags: windows kerberos ldap winrm active-directory
 ---
-
 ## Úvod a kontext
 
-Monteverde je stroj z Hack The Box. Článek sleduje cestu od prvotní enumerace k ověřenému přístupu a průběžně vysvětluje, proč měl každý další krok technický smysl.
+U Monteverde není hlavní hodnota v jednom efektním kroku, ale ve vazbě mezi SMB sdílení, Kerberos a LDAP.
+
+Článek dává smysl číst hlavně jako rozbor rozhodování: proč právě tyto stopy vedou k WinRM s ověřeným heslem a proč po získání shellu dává smysl řešit lokální enumeraci po získání shellu.
 
 ## Počáteční průzkum
 
@@ -134,12 +135,12 @@ gc root.txt
 
 ## Shrnutí klíčových poznatků
 
-- Rozhodující byla síťová a doménová enumerace, protože právě z dostupných služeb a sdílení vzešly další identity nebo tajné údaje.
-- K uživatelskému přístupu vedla práce s nalezenými přihlašovacími údaji, klíči nebo hashi a jejich ověření proti reálně dostupné službě.
-- Finální část ukazuje, že po získání shellu je nutné systematicky hledat slabé delegace oprávnění, uložená tajemství a automatizované procesy.
+- Počáteční průzkum začal dávat smysl až po spojení password spray a souboru `azure.xml` v domovském adresáři `mhope`.
+- User část stála na ověřeném WinRM přístupu k `mhope`, takže šlo o stabilní a reprodukovatelný foothold.
+- Poslední krok už nebyl o nové zranitelnosti, ale o dalším reuse doménových hesel až k účtu `administrator`.
 
 ## Co si odnést do praxe
 
-- Veřejně dostupné webové aplikace a administrační endpointy je potřeba průběžně inventarizovat a zavírat, protože právě ony často otevírají první krok celého řetězce.
-- V Active Directory je potřeba hlídat delegace, vztahy mezi účty a přístup ke sdílením, protože i malý únik identity se snadno řetězí do dalších kroků.
-- Stejně důležité jako samotná oprava zranitelnosti je omezit i dosah běžných servisních účtů a pomocných služeb, aby se jeden průnik neřetězil dál.
+- V tomhle článku se první slabé místo otevřelo přes SMB sdílení, Kerberos a LDAP. SMB sdílení mají mít opravdu minimální ACL a průběžný audit obsahu; i read-only přístup často útočníkovi dá víc než samotná zranitelnost služby.
+- Stabilní foothold pak stojí na principu WinRM s ověřeným heslem. WinRM má být dostupný jen z management sítě a s unikátními přístupy; jinak z každého úniku hesla vznikne okamžitý administrativní kanál.
+- Pro závěrečnou fázi je podstatné, že rozhodla lokální enumerace po získání shellu. Po získání shellu je rozhodující systematická lokální enumerace; i bez další CVE často rozhodne kombinace špatných oprávnění, reuse tajemství a pomocných skriptů.

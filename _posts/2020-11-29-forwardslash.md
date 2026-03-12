@@ -5,10 +5,11 @@ title: "ForwardSlash"
 date: 2020-11-29
 tags: linux lfi rce ssh sudo php
 ---
-
 ## Úvod a kontext
 
-ForwardSlash je stroj z Hack The Box. Článek sleduje cestu od prvotní enumerace k ověřenému přístupu a průběžně vysvětluje, proč měl každý další krok technický smysl.
+Na ForwardSlash je nejzajímavější, jak se propojí `fuzz.forwardslash.htb`, `backup.forwardslash.htb` a webová aplikace v PHP.
+
+Bez pochopení této návaznosti by nedával smysl ani SSH s nalezenými přihlašovacími údaji, ani závěrečná příliš široká `sudo` oprávnění.
 
 ## Počáteční průzkum
 
@@ -150,13 +151,12 @@ __CENSORED__
 
 ## Shrnutí klíčových poznatků
 
-- Úvodní směr určovala webová enumerace: důležité nebylo jen něco najít, ale správně vyhodnotit, který artefakt skutečně otevírá další krok.
-- K uživatelskému přístupu vedla práce s nalezenými přihlašovacími údaji, klíči nebo hashi a jejich ověření proti reálně dostupné službě.
-- Eskalace oprávnění stála na příliš širokém `sudo` pravidle nebo na možnosti ovlivnit vstup či prostředí privilegovaného procesu.
+- První skutečně užitečný závěr plynul z toho, jak do sebe zapadly `fuzz.forwardslash.htb`, `backup.forwardslash.htb` a webová aplikace v PHP.
+- User fáze se opírala o SSH s nalezenými přihlašovacími údaji, takže přístup byl reprodukovatelný a ne jen jednorázový.
+- Finální kontrolu nad systémem otevřela až mechanika typu příliš široká `sudo` oprávnění.
 
 ## Co si odnést do praxe
 
-- Veřejně dostupné webové aplikace a administrační endpointy je potřeba průběžně inventarizovat a zavírat, protože právě ony často otevírají první krok celého řetězce.
-- SSH klíče, hesla a uložené tokeny je nutné oddělovat mezi účty i službami; znovupoužití přístupů rychle mění lokální únik ve stabilní shell.
-- Pravidla `sudo` mají být co nejmenší a bez možnosti ovlivnit příkaz, argumenty nebo prostředí z neprivilegovaného kontextu.
-- Backupy, `.bak` soubory a zapomenuté exporty musí být ukládané mimo veřejný webroot; právě ty často odhalí zdrojové kódy, klíče nebo serializační gadgety.
+- V tomhle článku se první slabé místo otevřelo přes `fuzz.forwardslash.htb`, `backup.forwardslash.htb` a webová aplikace v PHP. Webová vrstva nesmí publikovat víc, než je nezbytné; vedlejší vhost, debug endpoint nebo zapomenutý soubor často odhalí skutečný vstup do řetězce.
+- Stabilní foothold pak stojí na principu SSH s nalezenými přihlašovacími údaji. Hesla a klíče je potřeba oddělovat mezi službami; jakmile stejné přihlašovací údaje fungují i na SSH, z lokálního úniku je plnohodnotný systémový přístup.
+- Pro závěrečnou fázi je podstatné, že rozhodla příliš široká `sudo` oprávnění. Široká `sudo` oprávnění je potřeba pravidelně revidovat; wrapper, install helper nebo diagnostický příkaz často udělá z běžného účtu roota.

@@ -5,10 +5,11 @@ title: "BountyHunter"
 date: 2020-11-11
 tags: linux rce ssh sudo php exploit
 ---
-
 ## Úvod a kontext
 
-BountyHunter je stroj z Hack The Box. Článek sleduje cestu od prvotní enumerace k ověřenému přístupu a průběžně vysvětluje, proč měl každý další krok technický smysl.
+Na BountyHunter je nejzajímavější, jak se propojí webová aplikace v PHP, Apache a SSH.
+
+Bez pochopení této návaznosti by nedával smysl ani SSH s nalezenými přihlašovacími údaji, ani závěrečná příliš široká `sudo` oprávnění.
 
 ## Počáteční průzkum
 
@@ -170,13 +171,12 @@ cat /root/root.txt
 
 ## Shrnutí klíčových poznatků
 
-- Úvodní směr určovala webová enumerace: důležité nebylo jen něco najít, ale správně vyhodnotit, který artefakt skutečně otevírá další krok.
-- K uživatelskému přístupu vedla práce s nalezenými přihlašovacími údaji, klíči nebo hashi a jejich ověření proti reálně dostupné službě.
-- Eskalace oprávnění stála na příliš širokém `sudo` pravidle nebo na možnosti ovlivnit vstup či prostředí privilegovaného procesu.
+- První skutečně užitečný závěr přinesl až rozbor `tracker_diRbPr00f314.php` a XXE v parseru XML.
+- User fáze se opírala o SSH účet `development`, takže přístup byl stabilní a ne jen jednorázový webový zásah.
+- Root část stojí na `eval` v `ticketValidator.py`, tedy na chybné delegaci přes `sudo`, ne na další síťové zranitelnosti.
 
 ## Co si odnést do praxe
 
-- Veřejně dostupné webové aplikace a administrační endpointy je potřeba průběžně inventarizovat a zavírat, protože právě ony často otevírají první krok celého řetězce.
-- SSH klíče, hesla a uložené tokeny je nutné oddělovat mezi účty i službami; znovupoužití přístupů rychle mění lokální únik ve stabilní shell.
-- Pravidla `sudo` mají být co nejmenší a bez možnosti ovlivnit příkaz, argumenty nebo prostředí z neprivilegovaného kontextu.
-- Inventura verzí a včasné záplatování snižují prostor pro přímé zneužití známých chyb i pro slepé spoléhání na zastaralé komponenty.
+- Tento řetězec začal u webová aplikace v PHP, Apache a SSH; právě tam má obrana největší návratnost. Převod dokumentů a server-side render je potřeba sandboxovat a oddělit od citlivého filesystemu; parser nebo převodník nesmí mít přístup k tajemstvím hostu.
+- Foothold navázal na SSH s nalezenými přihlašovacími údaji, takže oddělení účtů a tajemství není jen teorie. Hesla a klíče je potřeba oddělovat mezi službami; jakmile stejné přihlašovací údaje fungují i na SSH, z lokálního úniku je plnohodnotný systémový přístup.
+- Poslední krok stojí na příliš široká `sudo` oprávnění, a proto je nutné auditovat i lokální delegaci práv. Široká `sudo` oprávnění je potřeba pravidelně revidovat; wrapper, install helper nebo diagnostický příkaz často udělá z běžného účtu roota.

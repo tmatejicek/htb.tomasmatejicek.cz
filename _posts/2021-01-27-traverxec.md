@@ -5,10 +5,11 @@ title: "Traverxec"
 date: 2021-01-27
 tags: ssh sudo exploit enumeration privesc hackthebox
 ---
-
 ## Úvod a kontext
 
-Traverxec je stroj z Hack The Box. Článek sleduje cestu od prvotní enumerace k ověřenému přístupu a průběžně vysvětluje, proč měl každý další krok technický smysl.
+Na Traverxec je nejzajímavější, jak se propojí SSH, `Traverxec-htpasswd.txt` a `id_rsa`.
+
+Bez pochopení této návaznosti by nedával smysl ani SSH se získaným soukromým klíčem, ani závěrečná lokální enumeraci po získání shellu.
 
 ## Počáteční průzkum
 
@@ -97,13 +98,12 @@ __CENSORED__
 
 ## Shrnutí klíčových poznatků
 
-- Úvodní sken služeb vymezil reálnou útočnou plochu a pomohl oddělit relevantní stopy od šumu.
-- K uživatelskému přístupu vedla práce s nalezenými přihlašovacími údaji, klíči nebo hashi a jejich ověření proti reálně dostupné službě.
-- Eskalace oprávnění stála na příliš širokém `sudo` pravidle nebo na možnosti ovlivnit vstup či prostředí privilegovaného procesu.
+- Počáteční průzkum se z obecné enumerace změnil v použitelný směr teprve po propojení indicií jako SSH, `Traverxec-htpasswd.txt` a `id_rsa`.
+- User část stála na ověřeném kroku typu SSH se získaným soukromým klíčem, ne na odhadu bez technického potvrzení.
+- Závěrečná eskalace pak stála na tom, co představuje lokální enumerace po získání shellu, takže rozhodující byla práce s lokálním kontextem po footholdu.
 
 ## Co si odnést do praxe
 
-- Legacy síťové služby typu UnrealIRCd nebo Nostromo je potřeba průběžně vyřazovat a nahrazovat; jejich známé chyby bývají snadno zneužitelné a často dlouho nezalepené.
-- SSH klíče, hesla a uložené tokeny je nutné oddělovat mezi účty i službami; znovupoužití přístupů rychle mění lokální únik ve stabilní shell.
-- Pravidla `sudo` mají být co nejmenší a bez možnosti ovlivnit příkaz, argumenty nebo prostředí z neprivilegovaného kontextu.
-- Backupy, `.bak` soubory a zapomenuté exporty musí být ukládané mimo veřejný webroot; právě ty často odhalí zdrojové kódy, klíče nebo serializační gadgety.
+- V tomhle článku se první slabé místo otevřelo přes SSH, `Traverxec-htpasswd.txt` a `id_rsa`. První vstup do systému často nevzniká na hlavní doméně, ale na vedlejší službě, pomocném endpointu nebo chybně publikovaném souboru; i tyto plochy je potřeba aktivně inventarizovat.
+- Stabilní foothold pak stojí na principu SSH se získaným soukromým klíčem. SSH klíče nesmějí být sdílené mezi rolemi ani uložené v procesech, exportech nebo webrootu; uniklý privátní klíč je stabilnější foothold než jednorázový shell.
+- Pro závěrečnou fázi je podstatné, že rozhodla lokální enumerace po získání shellu. Po získání shellu je rozhodující systematická lokální enumerace; i bez další CVE často rozhodne kombinace špatných oprávnění, reuse tajemství a pomocných skriptů.

@@ -5,10 +5,11 @@ title: "Shibboleth"
 date: 2021-01-16
 tags: linux rce exploit enumeration privesc hackthebox
 ---
-
 ## Úvod a kontext
 
-Shibboleth je stroj z Hack The Box. Článek sleduje cestu od prvotní enumerace k ověřenému přístupu a průběžně vysvětluje, proč měl každý další krok technický smysl.
+U Shibboleth není hlavní hodnota v jednom efektním kroku, ale ve vazbě mezi Apache a D-Bus.
+
+Článek dává smysl číst hlavně jako rozbor rozhodování: proč právě tyto stopy vedou k shell získaný exploitací zranitelné služby a proč po získání shellu dává smysl řešit zneužití D-Bus a práce s `iptables`.
 
 ## Počáteční průzkum
 
@@ -104,12 +105,12 @@ __CENSORED__
 
 ## Shrnutí klíčových poznatků
 
-- Úvodní sken služeb vymezil reálnou útočnou plochu a pomohl oddělit relevantní stopy od šumu.
-- K uživatelskému přístupu vedla práce s nalezenými přihlašovacími údaji, klíči nebo hashi a jejich ověření proti reálně dostupné službě.
-- Finální část ukazuje, že po získání shellu je nutné systematicky hledat slabé delegace oprávnění, uložená tajemství a automatizované procesy.
+- Počáteční průzkum se z obecné enumerace změnil v použitelný směr teprve po propojení indicií jako Apache, command injection a D-Bus.
+- User část stála na ověřeném kroku typu shell získaný exploitací zranitelné služby, ne na odhadu bez technického potvrzení.
+- Závěrečná eskalace pak stála na tom, co představuje zneužití D-Bus a práce s `iptables`, takže rozhodující byla práce s lokálním kontextem po footholdu.
 
 ## Co si odnést do praxe
 
-- Veřejně dostupné webové aplikace a administrační endpointy je potřeba průběžně inventarizovat a zavírat, protože právě ony často otevírají první krok celého řetězce.
-- Hashe, exporty hesel a password vaulty je potřeba chránit jako produkční tajemství, protože offline crack nebo opětovné použití hesla často otevře další vrstvu prostředí.
-- Inventura verzí a včasné záplatování snižují prostor pro přímé zneužití známých chyb i pro slepé spoléhání na zastaralé komponenty.
+- První obranná lekce míří na Apache, command injection a D-Bus. Příkazy skládající shell řetězce z neověřeného vstupu patří mezi nejrizikovější konstrukce; i zdánlivě omezený parametr se obvykle dá převést na RCE.
+- Druhá lekce je o tom, jak rychle se ze zjištění stane shell získaný exploitací zranitelné služby. Jednorázové RCE je potřeba detekovat i na aplikační vrstvě; upload, template injection nebo command injection často vypadají v logu nenápadně, ale vedou ke stabilnímu shellu.
+- Třetí lekce připomíná riziko, které v praxi představuje zneužití D-Bus a práce s `iptables`. Privilegované procesy komunikující přes D-Bus nebo podobné sběrnice musí důsledně ověřovat, kdo a s jakými parametry požadavek posílá; jinak se z pomocné automatiky stává privesc kanál.

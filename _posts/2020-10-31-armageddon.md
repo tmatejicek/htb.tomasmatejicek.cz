@@ -5,10 +5,11 @@ title: "Armageddon"
 date: 2020-10-31
 tags: linux ssh sudo php exploit enumeration
 ---
-
 ## Úvod a kontext
 
-Armageddon je stroj z Hack The Box. Článek sleduje cestu od prvotní enumerace k ověřenému přístupu a průběžně vysvětluje, proč měl každý další krok technický smysl.
+Na Armageddon je nejzajímavější, jak se propojí nezáplatovaný Drupal, webová aplikace v PHP a Apache.
+
+Bez pochopení této návaznosti by nedával smysl ani SSH s nalezenými přihlašovacími údaji, ani závěrečná příliš široká `sudo` oprávnění.
 
 ## Počáteční průzkum
 
@@ -110,12 +111,12 @@ __CENSORED__
 
 ## Shrnutí klíčových poznatků
 
-- Drupal RCE byla jen vstupní bod; skutečný posun přišel až s lokální enumerací a vyhodnocením toho, co lze získat z konfiguračních a databázových dat.
-- K uživatelskému přístupu vedlo znovupoužití hesla mezi webovou aplikací a systémovým účtem, což je častější problém než samotná zranitelnost CMS.
-- Eskalace oprávnění stála na příliš širokém `sudo` pravidle nad `snap install`, tedy nad nástrojem, který umí spouštět instalační logiku s root právy.
+- Klíčový posun nepřinesl samotný scan, ale interpretace toho, co znamenaly nezáplatovaný Drupal, webová aplikace v PHP a Apache.
+- Uživatelský přístup dává v tomhle řetězci smysl až ve chvíli, kdy vyjde SSH s nalezenými přihlašovacími údaji.
+- Root/admin část nepřišla zkratkou; klíčovou roli tu hraje příliš široká `sudo` oprávnění a navazující lokální enumerace.
 
 ## Co si odnést do praxe
 
-- U veřejně přístupných CMS nestačí řešit jen samotné RCE; stejně důležité je chránit konfigurační soubory a databázová tajemství, která z něj mohou být dosažitelná.
-- Hesla se nesmí znovu používat mezi aplikací, databází a systémovými účty, protože právě tato vazba mění lokální únik v plnohodnotný shell.
-- Delegace `snap install` přes `sudo` je v praxi delegace root kódu a má být zakázaná nebo velmi přísně omezená.
+- První obranná lekce míří na nezáplatovaný Drupal, webová aplikace v PHP a Apache. CMS vrstvy jako Drupal musí být inventarizované a záplatované; veřejně dostupný admin nebo formulářová chyba je na internetu prakticky okamžitě zneužitelná.
+- Druhá lekce je o tom, jak rychle se ze zjištění stane SSH s nalezenými přihlašovacími údaji. Hesla a klíče je potřeba oddělovat mezi službami; jakmile stejné přihlašovací údaje fungují i na SSH, z lokálního úniku je plnohodnotný systémový přístup.
+- Třetí lekce připomíná riziko, které v praxi představuje příliš široká `sudo` oprávnění. Široká `sudo` oprávnění je potřeba pravidelně revidovat; wrapper, install helper nebo diagnostický příkaz často udělá z běžného účtu roota.

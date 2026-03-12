@@ -5,10 +5,11 @@ title: "Intelligence"
 date: 2020-12-05
 tags: windows smb kerberos ldap active-directory
 ---
-
 ## Úvod a kontext
 
-Intelligence je stroj z Hack The Box. Článek sleduje cestu od prvotní enumerace k ověřenému přístupu a průběžně vysvětluje, proč měl každý další krok technický smysl.
+Intelligence dobře ukazuje, že průlom často nezačíná jedním exploitem, ale kombinací signálů jako `dc.intelligence.htb`, SMB sdílení a Kerberos.
+
+Praktická část pak stojí na tom, jak se tyto zjištěné vazby promění v přístup přes SMB sdílení a jak je po user části využitelná lokální enumeraci po získání shellu.
 
 ## Počáteční průzkum
 
@@ -147,13 +148,12 @@ __CENSORED__
 
 ## Shrnutí klíčových poznatků
 
-- Rozhodující byla síťová a doménová enumerace, protože právě z dostupných služeb a sdílení vzešly další identity nebo tajné údaje.
-- K uživatelskému přístupu vedla práce s nalezenými přihlašovacími údaji, klíči nebo hashi a jejich ověření proti reálně dostupné službě.
-- Eskalace oprávnění stála na příliš širokém `sudo` pravidle nebo na možnosti ovlivnit vstup či prostředí privilegovaného procesu.
+- Z hlediska rozhodování bylo nejdůležitější správně přečíst vazbu mezi `dc.intelligence.htb`, SMB sdílení a Kerberos.
+- K uživatelskému kontextu vedl konkrétní a ověřitelný krok: přístup přes SMB sdílení.
+- Poslední část ukazuje, že po získání shellu rozhoduje hlavně to, jakou roli hraje lokální enumerace po získání shellu.
 
 ## Co si odnést do praxe
 
-- V prostředí Active Directory je klíčové hlídat oprávnění ke sdílením, servisním účtům a delegacím; i malý únik informací se snadno řetězí do dalších kroků.
-- Pravidla `sudo` mají být co nejmenší a bez zbytečných možností typu `SETENV`, volného zápisu nebo vyhodnocování neověřeného vstupu.
-- Přístupové údaje je potřeba oddělovat mezi službami a minimalizovat jejich opětovné použití, jinak se z jedné slabiny rychle stane plnohodnotný vstup do systému.
-- Stejné techniky mají smysl pouze v laboratorním nebo jinak autorizovaném testovacím prostředí.
+- Pokud se zanedbá oblast `dc.intelligence.htb`, SMB sdílení a Kerberos, vznikne stejný typ vstupu jako tady. SMB sdílení mají mít opravdu minimální ACL a průběžný audit obsahu; i read-only přístup často útočníkovi dá víc než samotná zranitelnost služby.
+- Jakmile útočník ověří přístup přes SMB sdílení, je potřeba počítat s dlouhodobým přístupem. Share s dokumenty a exporty je potřeba posuzovat jako zdroj identit a tajemství; obsah sdílení bývá pro další pivot důležitější než samotná síťová služba.
+- Stejně důležitá je i obrana proti mechanice lokální enumerace po získání shellu. Po získání shellu je rozhodující systematická lokální enumerace; i bez další CVE často rozhodne kombinace špatných oprávnění, reuse tajemství a pomocných skriptů.

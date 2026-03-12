@@ -5,10 +5,11 @@ title: "Networked"
 date: 2020-12-20
 tags: ssh sudo php exploit enumeration privesc
 ---
-
 ## Úvod a kontext
 
-Networked je stroj z Hack The Box. Článek sleduje cestu od prvotní enumerace k ověřenému přístupu a průběžně vysvětluje, proč měl každý další krok technický smysl.
+Networked stojí na řetězení několika konkrétních slabin a artefaktů: webová aplikace v PHP, Apache a SSH.
+
+Důležitější než samotný exploit je tady interpretace mezikroků, protože právě z těchto indicií vzniká reverse shell přes webovou vrstvu a teprve na něj navazuje lokální enumeraci po získání shellu.
 
 ## Počáteční průzkum
 
@@ -121,13 +122,12 @@ __CENSORED__
 
 ## Shrnutí klíčových poznatků
 
-- Úvodní směr určovala webová enumerace: důležité nebylo jen něco najít, ale správně vyhodnotit, který artefakt skutečně otevírá další krok.
-- K uživatelskému přístupu vedla práce s nalezenými přihlašovacími údaji, klíči nebo hashi a jejich ověření proti reálně dostupné službě.
-- Eskalace oprávnění stála na příliš širokém `sudo` pravidle nebo na možnosti ovlivnit vstup či prostředí privilegovaného procesu.
+- Počáteční průzkum se z obecné enumerace změnil v použitelný směr teprve po propojení indicií jako webová aplikace v PHP, Apache a SSH.
+- User část stála na ověřeném kroku typu reverse shell přes webovou vrstvu, ne na odhadu bez technického potvrzení.
+- Závěrečná eskalace pak stála na tom, co představuje lokální enumerace po získání shellu, takže rozhodující byla práce s lokálním kontextem po footholdu.
 
 ## Co si odnést do praxe
 
-- Veřejně dostupné webové aplikace a administrační endpointy je potřeba průběžně inventarizovat a zavírat, protože právě ony často otevírají první krok celého řetězce.
-- SSH klíče, hesla a uložené tokeny je nutné oddělovat mezi účty i službami; znovupoužití přístupů rychle mění lokální únik ve stabilní shell.
-- Pravidla `sudo` mají být co nejmenší a bez možnosti ovlivnit příkaz, argumenty nebo prostředí z neprivilegovaného kontextu.
-- Inventura verzí a včasné záplatování snižují prostor pro přímé zneužití známých chyb i pro slepé spoléhání na zastaralé komponenty.
+- Upload obrázků a podobných souborů musí být důsledně oddělený od jejich server-side vykonání; právě `shell.php.gif` ukazuje, jak málo stačí k webshellu.
+- Jednorázový foothold přes web je potřeba rychle převést na stabilnější přístup, ale zároveň detekovat neobvyklé binárky a reverse shelly v adresářích jako `/tmp`.
+- Lokální úlohy spouštěné pod účtem `guly` nesmějí důvěřovat zapisovatelnému obsahu z dočasných cest, jinak z nich vzniká přímý privesc kanál.

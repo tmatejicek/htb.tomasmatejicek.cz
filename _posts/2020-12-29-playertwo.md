@@ -5,7 +5,6 @@ title: "PlayerTwo"
 date: 2020-12-29
 tags: linux rce ssh php exploit enumeration
 ---
-
 ## Úvod a kontext
 
 PlayerTwo je stroj z Hack The Box, který staví na netypické kombinaci Twirp RPC, protobuf definic a následného pivotu přes aplikační tajemství uložená na serveru. Prakticky je zajímavý hlavně tím, že část attack surface si aplikace sama zdokumentuje veřejně dostupným `.proto` souborem.
@@ -106,14 +105,12 @@ Uživatelský účet `observer` měl k dispozici SUID binárku `Protobs`, která
 
 ## Shrnutí klíčových poznatků
 
-- `generated.proto` zdokumentoval útok lépe než běžný webový recon a dovedl přímo k platným credentialům.
-- User část stála na řetězci `GenCreds` -> TOTP backup code -> chybná validace firmwaru -> MQTT únik SSH klíče.
-- Root fáze už byla čistě lokální a opírala se o SUID binárku `Protobs` s paměťovou chybou.
+- Klíčový posun nepřinesl samotný scan, ale interpretace toho, co znamenaly `player2.htb`, `product.player2.htb` a Twirp RPC a `.proto` artefakty.
+- Uživatelský přístup dává v tomhle řetězci smysl až ve chvíli, kdy vyjde reverse shell přes webovou vrstvu.
+- Root/admin část nepřišla zkratkou; klíčovou roli tu hraje SUID binárka nebo privilegovaný wrapper a navazující lokální enumerace.
 
 ## Co si odnést do praxe
 
-- RPC a protobuf definice zpřístupněné bez omezení výrazně usnadňují reverzní analýzu autentizační a obchodní logiky.
-- Firmware update workflow musí mít skutečně důvěryhodnou kontrolu podpisu, jinak se z něj stává přímý RCE kanál.
-- Přístupové údaje je potřeba oddělovat mezi službami a minimalizovat jejich opětovné použití, jinak se z jedné slabiny rychle stane plnohodnotný vstup do systému.
-- Interní message bus nebo MQTT témata nesmí přenášet dlouhodobá tajemství v čitelné podobě.
-- Stejné techniky mají smysl pouze v laboratorním nebo jinak autorizovaném testovacím prostředí.
+- První obranná lekce míří na `player2.htb`, `product.player2.htb` a Twirp RPC a `.proto` artefakty. Veřejně dostupné `.proto` soubory a RPC definice významně snižují náklady na útok; interní API dokumentace by neměla unikat na veřejný endpoint.
+- Druhá lekce je o tom, jak rychle se ze zjištění stane reverse shell přes webovou vrstvu. Jednorázové RCE je potřeba detekovat i na aplikační vrstvě; upload, template injection nebo command injection často vypadají v logu nenápadně, ale vedou ke stabilnímu shellu.
+- Třetí lekce připomíná riziko, které v praxi představuje SUID binárka nebo privilegovaný wrapper. SUID binárky a privilegované wrappery musí být minimální, auditované a bez možnosti měnit interpretované argumenty; i malá chyba tu obvykle končí root shellem.

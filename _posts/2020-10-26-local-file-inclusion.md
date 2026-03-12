@@ -5,7 +5,6 @@ title: "LFI - Local File Inclusion"
 date: 2020-10-26
 tags: LFI PHP
 ---
-
 ## Úvod a kontext
 
 Local File Inclusion (LFI) je chyba v aplikaci, která dovolí ovlivnit, jaký lokální soubor server načte do zpracování. Sama o sobě neznamená automaticky vzdálené spuštění kódu, ale může vést k úniku citlivých dat, k obejití očekávaného toku aplikace a v některých kombinacích i k dalšímu zneužití.
@@ -44,12 +43,12 @@ Zranitelnosti Null Byte Injection využívá toho, že starší verze PHP umož�
 
 ## Shrnutí klíčových poznatků
 
-- LFI je potřeba odlišovat od vzdáleného include nebo od přímého vzdáleného spuštění kódu; konkrétní dopad závisí na tom, jak aplikace s načítaným souborem dál pracuje.
-- Starší techniky jako `null byte injection` nebo `path truncation` dávají smysl jen u historických verzí PHP; bez této podmínky by šlo o technicky nepřesný závěr.
-- Už samotná možnost číst lokální soubory je závažná, protože často odhalí konfigurace, klíče nebo další tajemství potřebná pro navazující útok.
+- Z hlediska rozhodování bylo nejdůležitější správně přečíst vazbu mezi local file inclusion a webová aplikace v PHP.
+- K uživatelskému kontextu vedl konkrétní a ověřitelný krok: stabilní uživatelský přístup.
+- Poslední část ukazuje, že po získání shellu rozhoduje hlavně to, jakou roli hraje lokální enumerace po získání shellu.
 
 ## Co si odnést do praxe
 
-- Uživatelský vstup nesmí přímo určovat cestu k souboru, který server načítá; bezpečnější je práce s pevně definovaným seznamem povolených hodnot.
-- Ochranu je potřeba stavět i na omezení přístupových práv procesu a na pečlivém oddělení dat od kódu, ne jen na filtrování řetězců v URL.
-- Stejné techniky mají smysl pouze v laboratorním nebo jinak autorizovaném testovacím prostředí.
+- Pokud se zanedbá oblast local file inclusion a webová aplikace v PHP, vznikne stejný typ vstupu jako tady. LFI je potřeba brát jako únik citlivých souborů, ne jen jako čtení textu; konfigurace, klíče a šablony často stačí k plnohodnotnému přístupu.
+- Jakmile útočník ověří stabilní uživatelský přístup, je potřeba počítat s dlouhodobým přístupem. Jakmile se v prostředí objeví použitelný klíč, heslo nebo token, je potřeba předpokládat okamžitý pivot na stabilní shell; obrana proto stojí na segmentaci a oddělení přístupů mezi službami.
+- Stejně důležitá je i obrana proti mechanice lokální enumerace po získání shellu. Root/admin část obvykle nepadá na nové CVE, ale na lokální delegaci práv, reuse tajemství nebo pomocném skriptu; právě tyto mechaniky je potřeba po footholdu auditovat nejdřív.

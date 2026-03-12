@@ -5,10 +5,11 @@ title: "Breadcrumbs"
 date: 2020-11-12
 tags: windows sql-injection smb ssh php
 ---
-
 ## Úvod a kontext
 
-Breadcrumbs je stroj z Hack The Box. Článek sleduje cestu od prvotní enumerace k ověřenému přístupu a průběžně vysvětluje, proč měl každý další krok technický smysl.
+Breadcrumbs dobře ukazuje, že průlom často nezačíná jedním exploitem, ale kombinací signálů jako webová aplikace v PHP a Apache.
+
+Praktická část pak stojí na tom, jak se tyto zjištěné vazby promění v SSH s nalezenými přihlašovacími údaji a jak je po user části využitelná lokální enumeraci po získání shellu.
 
 ## Počáteční průzkum
 
@@ -140,12 +141,12 @@ __CENSORED__
 
 ## Shrnutí klíčových poznatků
 
-- Rozhodující byla síťová a doménová enumerace, protože právě z dostupných služeb a sdílení vzešly další identity nebo tajné údaje.
-- K uživatelskému přístupu vedla práce s nalezenými přihlašovacími údaji, klíči nebo hashi a jejich ověření proti reálně dostupné službě.
-- Finální část ukazuje, že po získání shellu je nutné systematicky hledat slabé delegace oprávnění, uložená tajemství a automatizované procesy.
+- První skutečně užitečný závěr plynul z toho, jak do sebe zapadly webová aplikace v PHP a Apache.
+- User fáze se opírala o SSH s nalezenými přihlašovacími údaji, takže přístup byl reprodukovatelný a ne jen jednorázový.
+- Finální kontrolu nad systémem otevřela až mechanika typu lokální enumerace po získání shellu.
 
 ## Co si odnést do praxe
 
-- Vstupy do databázových dotazů musí být parametrizované a oddělené od další aplikační logiky; SQL injection málokdy končí jen čtením jedné tabulky.
-- SMB sdílení mají být auditovaná podle skutečné potřeby a bez zbytečně čitelných dokumentů, protože i read-only přístup často odhalí další identity nebo tajemství.
-- Stejně důležité jako samotná oprava zranitelnosti je omezit i dosah běžných servisních účtů a pomocných služeb, aby se jeden průnik neřetězil dál.
+- První obranná lekce míří na webová aplikace v PHP a Apache. SMB sdílení mají mít opravdu minimální ACL a průběžný audit obsahu; i read-only přístup často útočníkovi dá víc než samotná zranitelnost služby.
+- Druhá lekce je o tom, jak rychle se ze zjištění stane SSH s nalezenými přihlašovacími údaji. Hesla a klíče je potřeba oddělovat mezi službami; jakmile stejné přihlašovací údaje fungují i na SSH, z lokálního úniku je plnohodnotný systémový přístup.
+- Třetí lekce připomíná riziko, které v praxi představuje lokální enumerace po získání shellu. Po získání shellu je rozhodující systematická lokální enumerace; i bez další CVE často rozhodne kombinace špatných oprávnění, reuse tajemství a pomocných skriptů.

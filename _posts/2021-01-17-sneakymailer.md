@@ -5,10 +5,11 @@ title: "SneakyMailer"
 date: 2021-01-17
 tags: linux ssh sudo php exploit enumeration
 ---
-
 ## Úvod a kontext
 
-SneakyMailer je stroj z Hack The Box. Článek sleduje cestu od prvotní enumerace k ověřenému přístupu a průběžně vysvětluje, proč měl každý další krok technický smysl.
+SneakyMailer stojí na řetězení několika konkrétních slabin a artefaktů: anonymní FTP, nginx a SSH.
+
+Důležitější než samotný exploit je tady interpretace mezikroků, protože právě z těchto indicií vzniká SSH s nalezenými přihlašovacími údaji a teprve na něj navazuje příliš široká `sudo` oprávnění.
 
 ## Počáteční průzkum
 
@@ -147,13 +148,12 @@ __CENSORED__
 
 ## Shrnutí klíčových poznatků
 
-- Úvodní směr určovala webová enumerace: důležité nebylo jen něco najít, ale správně vyhodnotit, který artefakt skutečně otevírá další krok.
-- K uživatelskému přístupu vedla práce s nalezenými přihlašovacími údaji, klíči nebo hashi a jejich ověření proti reálně dostupné službě.
-- Eskalace oprávnění stála na příliš širokém `sudo` pravidle nebo na možnosti ovlivnit vstup či prostředí privilegovaného procesu.
+- Klíčový posun nepřinesl samotný scan, ale interpretace toho, co znamenaly anonymní FTP, nginx a SSH.
+- Uživatelský přístup dává v tomhle řetězci smysl až ve chvíli, kdy vyjde SSH s nalezenými přihlašovacími údaji.
+- Root/admin část nepřišla zkratkou; klíčovou roli tu hraje příliš široká `sudo` oprávnění a navazující lokální enumerace.
 
 ## Co si odnést do praxe
 
-- Upload a import souborů musí validovat typ, obsah i následné zpracování, protože právě tyto workflow často mění běžnou funkci aplikace v RCE.
-- SSH klíče, hesla a uložené tokeny je nutné oddělovat mezi účty i službami; znovupoužití přístupů rychle mění lokální únik ve stabilní shell.
-- Pravidla `sudo` mají být co nejmenší a bez možnosti ovlivnit příkaz, argumenty nebo prostředí z neprivilegovaného kontextu.
-- SMTP, IMAP a další podpůrné služby nesmějí nést zbytečně čitelné tajemství bokem od hlavní aplikace; právě vedlejší infrastruktura často prozradí další přístup.
+- První obranná lekce míří na anonymní FTP, nginx a SSH. Anonymní FTP a podobná odkladiště je potřeba vnímat jako veřejný publikační kanál; často prozradí další hostname, workflow nebo interní soubory.
+- Druhá lekce je o tom, jak rychle se ze zjištění stane SSH s nalezenými přihlašovacími údaji. Hesla a klíče je potřeba oddělovat mezi službami; jakmile stejné přihlašovací údaje fungují i na SSH, z lokálního úniku je plnohodnotný systémový přístup.
+- Třetí lekce připomíná riziko, které v praxi představuje příliš široká `sudo` oprávnění. Široká `sudo` oprávnění je potřeba pravidelně revidovat; wrapper, install helper nebo diagnostický příkaz často udělá z běžného účtu roota.
