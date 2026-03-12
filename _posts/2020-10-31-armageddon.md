@@ -5,11 +5,19 @@ title: "Armageddon"
 date: 2020-10-31
 tags: sql-injection ssh sudo php exploit enumeration
 ---
-[Armageddon](https://www.hackthebox.eu/home/machines/profile/323) je stroj z Hack The Box. Klíčová část útoku je webová enumerace a praktické zneužití nalezené slabiny.
+
+## Úvod a kontext
+
+Armageddon je stroj z Hack The Box. Dochované podklady zachycují jen část postupu, proto níže ponechávám pouze technicky doložitelné kroky a chybějící části výslovně označuji k ověření.
+
+## Počáteční průzkum
 
 ### Vyhledání otevřených portů
-Nejdřív mapuji služby, které jsou dostupné zvenku.
-`ports=$(nmap -p- --min-rate=1000 -T4 $IP | grep ^[0-9] | cut -d "/" -f 1 | tr "\n" "," | sed s/,$//);echo $ports;nmap -p $ports -A -sC -sV -v $IP`
+
+Nejprve mapuji veřejně dostupné služby, protože právě z otevřených portů odvodím, které protokoly a aplikace má smysl zkoumat detailněji.
+```bash
+ports=$(nmap -p- --min-rate=1000 -T4 $IP | grep ^[0-9] | cut -d "/" -f 1 | tr "\n" "," | sed s/,$//);echo $ports;nmap -p $ports -A -sC -sV -v $IP
+```
 ```
 PORT   STATE SERVICE VERSION
 22/tcp open  ssh     OpenSSH 7.4 (protocol 2.0)
@@ -31,9 +39,14 @@ PORT   STATE SERVICE VERSION
 |_http-title: Welcome to  Armageddon |  Armageddon
 ```
 
+## Analýza zjištění
+
 ### Identifikace a hledání exploitu
+
 Zjišťuji technologii a ověřuji známé zranitelnosti.
-`searchsploit Drupal 7.56`
+```bash
+searchsploit Drupal 7.56
+```
 ```
 ---------------------------------------------------------------------------------------------------------------------------- ---------------------------------
  Exploit Title                                                                                                              |  Path
@@ -51,8 +64,11 @@ Shellcodes: No Results
 ```
 
 ### Identifikace a hledání exploitu (2)
+
 Zjišťuji technologii a ověřuji známé zranitelnosti.
-`searchsploit -p 44449`
+```bash
+searchsploit -p 44449
+```
 ```
   Exploit: Drupal < 7.58 / < 8.3.9 / < 8.4.6 / < 8.5.1 - 'Drupalgeddon2' Remote Code Execution
       URL: https://www.exploit-db.com/exploits/44449
@@ -60,9 +76,14 @@ Zjišťuji technologii a ověřuji známé zranitelnosti.
 File Type: Ruby script, ASCII text, with CRLF line terminators
 ```
 
+## Získání přístupu
+
 ### Přihlášení na cíl
-Po získání přihlašovacích údajů přecházím na stabilní shell na cílovém stroji.
-`ssh brucetherealadmin@$IP`
+
+Jakmile mám pověření nebo jednorázový shell, snažím se přejít na stabilní a reprodukovatelný přístup, aby bylo možné bezpečně pokračovat v interní enumeraci.
+```bash
+ssh brucetherealadmin@$IP
+```
 ```
 ## cat user.txt
 __CENSORED__
@@ -71,12 +92,34 @@ __CENSORED__
 =>     (root) NOPASSWD: __CENSORED__ install *
 ```
 
+## Eskalace oprávnění
+
 ### Získání root flagu
-Tímto potvrzuji úplné ovládnutí stroje.
-`cat root.txt`
+
+Tento krok ukazuje, jak se nalezená slabina nebo chyba v delegaci oprávnění mění v privilegovaný přístup.
+```bash
+cat root.txt
+```
 ```
 __CENSORED__
 ```
 
+## Získání přístupu
+
 ### Získání user flagu
-`TODO`
+
+User flag zde slouží hlavně jako potvrzení, že už mám běžný uživatelský kontext a mohu pokračovat v lokální analýze systému.
+
+[POZNÁMKA K OVĚŘENÍ: V dostupném podkladu chybí konkrétní kroky pro získání uživatelského přístupu. Bez dalších artefaktů je nelze doplnit technicky přesně.]
+
+## Shrnutí klíčových poznatků
+
+- Dochované podklady zachycují jen část postupu, proto jsou místa bez opory ve zdrojovém textu označena ověřovací poznámkou místo domněnek.
+- Záměrně nedoplňuji neověřené detaily o exploitu, kredenciálech ani eskalaci; publikovatelná verze musí stát jen na dohledatelných krocích.
+- Chybějící mezikroky mezi enumerací, potvrzením přístupu a finální eskalací zůstávají explicitně otevřené k doplnění z ověřených podkladů.
+
+## Co si odnést do praxe
+
+- Pro publikovatelný HTB write-up je nutné uložit i mezikroky mezi enumerací, hypotézou a potvrzením přístupu; samotné placeholdery nestačí.
+- Pokud chybí výstupy nebo přesná argumentace, je lepší explicitně přiznat nejistotu než doplňovat neověřené technické detaily.
+- Stejné techniky mají smysl pouze v laboratorním nebo jinak autorizovaném testovacím prostředí.

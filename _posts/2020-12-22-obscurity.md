@@ -5,18 +5,29 @@ title: "Obscurity"
 date: 2020-12-22
 tags: linux rce ssh sudo wordpress exploit
 ---
-[Obscurity](https://www.hackthebox.eu/home/machines/profile/219) je stroj z Hack The Box. Cílem je přejít od prvotní enumerace až k plnému ovládnutí systému.
+
+## Úvod a kontext
+
+Obscurity je stroj z Hack The Box. Článek sleduje cestu od prvotní enumerace k ověřenému přístupu a průběžně vysvětluje, proč měl každý další krok technický smysl.
+
+## Počáteční průzkum
 
 ### Vyhledání otevřených portů
-Nejdřív mapuji služby, které jsou dostupné zvenku.
-`nmap -p 1-65535 -T4 -A -sC -v $IP`
+
+Nejprve mapuji veřejně dostupné služby, protože právě z otevřených portů odvodím, které protokoly a aplikace má smysl zkoumat detailněji.
+```bash
+nmap -p 1-65535 -T4 -A -sC -v $IP
+```
 ```
 PORT     STATE  SERVICE    VERSION
 ```
 
-### Přihlášení na cíl
-Po získání přihlašovacích údajů přecházím na stabilní shell na cílovém stroji.
-`22/tcp   open   ssh        OpenSSH 7.6p1 Ubuntu 4ubuntu0.3 (Ubuntu Linux; protocol 2.0)`
+### Detailní analýza služeb
+
+V dalším kroku si zpřesňuji verze služeb a jejich charakteristiky, protože právě z těchto detailů obvykle vzniká rozhodnutí, zda pokračovat přes web, SSH nebo jinou vrstvu.
+```text
+22/tcp   open   ssh        OpenSSH 7.6p1 Ubuntu 4ubuntu0.3 (Ubuntu Linux; protocol 2.0)
+```
 ```
 | ssh-hostkey:
 |   2048 33:d3:9a:0d:97:2c:54:20:e1:b0:17:34:f4:ca:70:1b (RSA)
@@ -56,22 +67,35 @@ SF:sk-spinner\x20sk-spinner-wordpress\">\n");
 Service Info: OS: Linux; CPE: cpe:/o:linux:linux_kernel
 ```
 
+## Získání přístupu
+
 ### Přihlášení na cíl (2)
-Po získání přihlašovacích údajů přecházím na stabilní shell na cílovém stroji.
-`ssh robert@obscurity.htb`
+
+Jakmile mám pověření nebo jednorázový shell, snažím se přejít na stabilní a reprodukovatelný přístup, aby bylo možné bezpečně pokračovat v interní enumeraci.
+```bash
+ssh robert@obscurity.htb
+```
 
 ### Získání user flagu
-Tímto potvrzuji úspěšný uživatelský přístup.
-`cat user.txt`
+
+User flag zde slouží hlavně jako potvrzení, že už mám běžný uživatelský kontext a mohu pokračovat v lokální analýze systému.
+```bash
+cat user.txt
+```
 ```
 __CENSORED__
 
 =>sudo -l => (ALL) NOPASSWD: __CENSORED__ /home/robert/BetterSSH/BetterSSH.py
 ```
 
+## Analýza zjištění
+
 ### Lámání hesel nebo hashů
-Pokud mám hash nebo šifrovaný soubor, slovníkový útok může odemknout další krok útoku.
-`sudo /usr/bin/python3 /home/robert/BetterSSH/BetterSSH.py`
+
+Hash nebo zašifrovaný artefakt má smysl lámat jen tehdy, pokud může otevřít další službu, účet nebo vrstvu prostředí; právě to zde ověřuji.
+```bash
+sudo /usr/bin/python3 /home/robert/BetterSSH/BetterSSH.py
+```
 ```
 root:$6$riekpK4m$__CENSORED__:18226:0:99999:7
 
@@ -81,9 +105,27 @@ root:$6$riekpK4m$__CENSORED__:18226:0:99999:7
 su root
 ```
 
+## Eskalace oprávnění
+
 ### Získání root flagu
-Tímto potvrzuji úplné ovládnutí stroje.
-`cat root.txt`
+
+Tento krok ukazuje, jak se nalezená slabina nebo chyba v delegaci oprávnění mění v privilegovaný přístup.
+```bash
+cat root.txt
+```
 ```
 __CENSORED__
 ```
+
+## Shrnutí klíčových poznatků
+
+- Úvodní sken služeb vymezil reálnou útočnou plochu a pomohl oddělit relevantní stopy od šumu.
+- K uživatelskému přístupu vedla práce s nalezenými přihlašovacími údaji, klíči nebo hashi a jejich ověření proti reálně dostupné službě.
+- Eskalace oprávnění stála na příliš širokém `sudo` pravidle nebo na možnosti ovlivnit vstup či prostředí privilegovaného procesu.
+
+## Co si odnést do praxe
+
+- Pravidla `sudo` mají být co nejmenší a bez zbytečných možností typu `SETENV`, volného zápisu nebo vyhodnocování neověřeného vstupu.
+- Přístupové údaje je potřeba oddělovat mezi službami a minimalizovat jejich opětovné použití, jinak se z jedné slabiny rychle stane plnohodnotný vstup do systému.
+- Inventura verzí a včasné záplatování snižují prostor pro přímé zneužití známých chyb i pro slepé spoléhání na zastaralé komponenty.
+- Stejné techniky mají smysl pouze v laboratorním nebo jinak autorizovaném testovacím prostředí.

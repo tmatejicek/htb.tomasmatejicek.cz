@@ -5,11 +5,19 @@ title: "Intelligence"
 date: 2020-12-05
 tags: windows linux smb kerberos ldap sudo active-directory
 ---
-[Intelligence](https://www.hackthebox.com/home/machines/profile/357) je stroj z Hack The Box. V postupu se opírám hlavně o AD enumeraci, práci s účty a následnou eskalaci.
+
+## Úvod a kontext
+
+Intelligence je stroj z Hack The Box. Článek sleduje cestu od prvotní enumerace k ověřenému přístupu a průběžně vysvětluje, proč měl každý další krok technický smysl.
+
+## Počáteční průzkum
 
 ### Vyhledání otevřených portů
-Nejdřív mapuji služby, které jsou dostupné zvenku.
-`ports=$(nmap -p- --min-rate=1000 -T4 $IP | grep ^[0-9] | cut -d "/" -f 1 | tr "\n" "," | sed s/,$//);echo $ports;nmap -p $ports -A -sC -sV -v $IP`
+
+Nejprve mapuji veřejně dostupné služby, protože právě z otevřených portů odvodím, které protokoly a aplikace má smysl zkoumat detailněji.
+```bash
+ports=$(nmap -p- --min-rate=1000 -T4 $IP | grep ^[0-9] | cut -d "/" -f 1 | tr "\n" "," | sed s/,$//);echo $ports;nmap -p $ports -A -sC -sV -v $IP
+```
 ```
 PORT      STATE SERVICE       VERSION
 53/tcp    open  domain        Simple DNS Plus
@@ -50,8 +58,11 @@ Host script results:
 ```
 
 ### Enumerace SMB
-Kontroluji SMB sdílení a hledám data, která mohou obsahovat citlivé informace.
-`smbmap -H intelligence.htb -u Tiffany.Molina -p NewIntelligenceCorpUser9876 -R --depth 1`
+
+U SMB sdílení ověřuji, jaká data jsou dostupná bez dalších oprávnění a zda z nich lze získat účty, dokumenty nebo konfigurační tajemství.
+```bash
+smbmap -H intelligence.htb -u Tiffany.Molina -p NewIntelligenceCorpUser9876 -R --depth 1
+```
 ```
 [+] IP: intelligence.htb:445    Name: unknown
         Disk                                                    Permissions     Comment
@@ -92,33 +103,57 @@ Kontroluji SMB sdílení a hledám data, která mohou obsahovat citlivé informa
 ```
 
 ### Enumerace SMB (2)
-Kontroluji SMB sdílení a hledám data, která mohou obsahovat citlivé informace.
-`impacket-smbclient Tiffany.Molina:NewIntelligenceCorpUser9876@intelligence.htb`
+
+U SMB sdílení ověřuji, jaká data jsou dostupná bez dalších oprávnění a zda z nich lze získat účty, dokumenty nebo konfigurační tajemství.
+```bash
+impacket-smbclient Tiffany.Molina:NewIntelligenceCorpUser9876@intelligence.htb
+```
+
+## Získání přístupu
 
 ### Získání user flagu
-Tímto potvrzuji úspěšný uživatelský přístup.
-`cat user.txt`
+
+User flag zde slouží hlavně jako potvrzení, že už mám běžný uživatelský kontext a mohu pokračovat v lokální analýze systému.
+```bash
+cat user.txt
+```
 ```
 __CENSORED__
 ```
 
-### Eskalace oprávnění
-Tento krok převádí nalezenou slabinu do privilegovaného přístupu.
-`sudo responder -I tun0 -A`
-```
-=> [HTTP] NTLMv2 Hash     : __CENSORED__
-```
+## Analýza zjištění
 
 ### Lámání hesel nebo hashů
-Pokud mám hash nebo šifrovaný soubor, slovníkový útok může odemknout další krok útoku.
-`john hash.txt --wordlist=/usr/share/wordlists/rockyou.txt`
+
+Hash nebo zašifrovaný artefakt má smysl lámat jen tehdy, pokud může otevřít další službu, účet nebo vrstvu prostředí; právě to zde ověřuji.
+```bash
+john hash.txt --wordlist=/usr/share/wordlists/rockyou.txt
+```
 ```
 => Mr.Teddy         (Ted.Graves)
 ```
 
+## Eskalace oprávnění
+
 ### Získání root flagu
-Tímto potvrzuji úplné ovládnutí stroje.
-`cat root.txt`
+
+Tento krok ukazuje, jak se nalezená slabina nebo chyba v delegaci oprávnění mění v privilegovaný přístup.
+```bash
+cat root.txt
+```
 ```
 __CENSORED__
 ```
+
+## Shrnutí klíčových poznatků
+
+- Rozhodující byla síťová a doménová enumerace, protože právě z dostupných služeb a sdílení vzešly další identity nebo tajné údaje.
+- K uživatelskému přístupu vedla práce s nalezenými přihlašovacími údaji, klíči nebo hashi a jejich ověření proti reálně dostupné službě.
+- Eskalace oprávnění stála na příliš širokém `sudo` pravidle nebo na možnosti ovlivnit vstup či prostředí privilegovaného procesu.
+
+## Co si odnést do praxe
+
+- V prostředí Active Directory je klíčové hlídat oprávnění ke sdílením, servisním účtům a delegacím; i malý únik informací se snadno řetězí do dalších kroků.
+- Pravidla `sudo` mají být co nejmenší a bez zbytečných možností typu `SETENV`, volného zápisu nebo vyhodnocování neověřeného vstupu.
+- Přístupové údaje je potřeba oddělovat mezi službami a minimalizovat jejich opětovné použití, jinak se z jedné slabiny rychle stane plnohodnotný vstup do systému.
+- Stejné techniky mají smysl pouze v laboratorním nebo jinak autorizovaném testovacím prostředí.

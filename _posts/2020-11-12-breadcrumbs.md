@@ -5,11 +5,19 @@ title: "Breadcrumbs"
 date: 2020-11-12
 tags: windows linux sql-injection smb ssh php
 ---
-[Breadcrumbs](https://www.hackthebox.eu/home/machines/profile/316) je stroj z Hack The Box. Klíčová část útoku je webová enumerace a praktické zneužití nalezené slabiny.
+
+## Úvod a kontext
+
+Breadcrumbs je stroj z Hack The Box. Dochované podklady zachycují jen část postupu, proto níže ponechávám pouze technicky doložitelné kroky a chybějící části výslovně označuji k ověření.
+
+## Počáteční průzkum
 
 ### Vyhledání otevřených portů
-Nejdřív mapuji služby, které jsou dostupné zvenku.
-`ports=$(nmap -p- --min-rate=1000 -T4 $IP | grep ^[0-9] | cut -d "/" -f 1 | tr "\n" "," | sed s/,$//);echo $ports;nmap -p $ports -A -sC -sV -v $IP`
+
+Nejprve mapuji veřejně dostupné služby, protože právě z otevřených portů odvodím, které protokoly a aplikace má smysl zkoumat detailněji.
+```bash
+ports=$(nmap -p- --min-rate=1000 -T4 $IP | grep ^[0-9] | cut -d "/" -f 1 | tr "\n" "," | sed s/,$//);echo $ports;nmap -p $ports -A -sC -sV -v $IP
+```
 ```
 PORT      STATE SERVICE       VERSION
 80/tcp    open  http          Apache httpd 2.4.46 ((Win64) OpenSSL/1.1.1h PHP/8.0.1)
@@ -49,9 +57,14 @@ http://10.10.10.228/portal/vendor/composer/installed.json
 http://10.10.10.228/portal/uploads/
 ```
 
+## Analýza zjištění
+
 ### Lámání hesel nebo hashů
-Pokud mám hash nebo šifrovaný soubor, slovníkový útok může odemknout další krok útoku.
-`john	__CENSORED__`
+
+Hash nebo zašifrovaný artefakt má smysl lámat jen tehdy, pokud může otevřít další službu, účet nebo vrstvu prostředí; právě to zde ověřuji.
+```text
+john	__CENSORED__
+```
 ```
 emma	__CENSORED__
 william	__CENSORED__
@@ -62,12 +75,20 @@ support	__CENSORED__
 ```
 
 ### Lámání hesel nebo hashů (2)
-Pokud mám hash nebo šifrovaný soubor, slovníkový útok může odemknout další krok útoku.
-`hashcat -m100 -a 0 hashes /usr/share/wordlists/rockyou.txt`
+
+Hash nebo zašifrovaný artefakt má smysl lámat jen tehdy, pokud může otevřít další službu, účet nebo vrstvu prostředí; právě to zde ověřuji.
+```bash
+hashcat -m100 -a 0 hashes /usr/share/wordlists/rockyou.txt
+```
+
+## Získání přístupu
 
 ### Přihlášení na cíl
-Po získání přihlašovacích údajů přecházím na stabilní shell na cílovém stroji.
-`ssh www-data@$IP`
+
+Jakmile mám pověření nebo jednorázový shell, snažím se přejít na stabilní a reprodukovatelný přístup, aby bylo možné bezpečně pokračovat v interní enumeraci.
+```bash
+ssh www-data@$IP
+```
 ```
 PS C:\Users\www-data\Desktop\xampp\htdocs\portal\pizzaDeliveryUserData> cat .\juliette.json
 {
@@ -84,18 +105,43 @@ PS C:\Users\www-data\Desktop\xampp\htdocs\portal\pizzaDeliveryUserData> cat .\ju
 ```
 
 ### Přihlášení na cíl (2)
-Po získání přihlašovacích údajů přecházím na stabilní shell na cílovém stroji.
-`ssh juliette@$IP`
+
+Jakmile mám pověření nebo jednorázový shell, snažím se přejít na stabilní a reprodukovatelný přístup, aby bylo možné bezpečně pokračovat v interní enumeraci.
+```bash
+ssh juliette@$IP
+```
 ```
 gc C:\Users\juliette\AppData\Local\Packages\Microsoft.MicrosoftStickyNotes_8wekyb3d8bbwe\LocalState\plum.sqlite* .
 ```
 
+## Eskalace oprávnění
+
 ### Získání root flagu
-Tímto potvrzuji úplné ovládnutí stroje.
-`more root.txt`
+
+Tento krok ukazuje, jak se nalezená slabina nebo chyba v delegaci oprávnění mění v privilegovaný přístup.
+```bash
+more root.txt
+```
 ```
 __CENSORED__
 ```
 
+## Získání přístupu
+
 ### Získání user flagu
-`TODO`
+
+User flag zde slouží hlavně jako potvrzení, že už mám běžný uživatelský kontext a mohu pokračovat v lokální analýze systému.
+
+[POZNÁMKA K OVĚŘENÍ: V dostupném podkladu chybí konkrétní kroky pro získání uživatelského přístupu. Bez dalších artefaktů je nelze doplnit technicky přesně.]
+
+## Shrnutí klíčových poznatků
+
+- Dochované podklady zachycují jen část postupu, proto jsou místa bez opory ve zdrojovém textu označena ověřovací poznámkou místo domněnek.
+- Záměrně nedoplňuji neověřené detaily o exploitu, kredenciálech ani eskalaci; publikovatelná verze musí stát jen na dohledatelných krocích.
+- Chybějící mezikroky mezi enumerací, potvrzením přístupu a finální eskalací zůstávají explicitně otevřené k doplnění z ověřených podkladů.
+
+## Co si odnést do praxe
+
+- Pro publikovatelný HTB write-up je nutné uložit i mezikroky mezi enumerací, hypotézou a potvrzením přístupu; samotné placeholdery nestačí.
+- Pokud chybí výstupy nebo přesná argumentace, je lepší explicitně přiznat nejistotu než doplňovat neověřené technické detaily.
+- Stejné techniky mají smysl pouze v laboratorním nebo jinak autorizovaném testovacím prostředí.

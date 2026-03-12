@@ -5,11 +5,19 @@ title: "SneakyMailer"
 date: 2021-01-17
 tags: linux ssh sudo php exploit enumeration
 ---
-[SneakyMailer](https://www.hackthebox.eu/home/machines/profile/262) je stroj z Hack The Box. Klíčová část útoku je webová enumerace a praktické zneužití nalezené slabiny.
+
+## Úvod a kontext
+
+SneakyMailer je stroj z Hack The Box. Článek sleduje cestu od prvotní enumerace k ověřenému přístupu a průběžně vysvětluje, proč měl každý další krok technický smysl.
+
+## Počáteční průzkum
 
 ### Vyhledání otevřených portů
-Nejdřív mapuji služby, které jsou dostupné zvenku.
-`ports=$(nmap -p- --min-rate=1000 -T4 -Pn $IP | grep ^[0-9] | cut -d "/" -f 1 | tr "\n" "," | sed s/,$//);echo $ports;nmap -p $ports -A -sC -sV -v -Pn $IP`
+
+Nejprve mapuji veřejně dostupné služby, protože právě z otevřených portů odvodím, které protokoly a aplikace má smysl zkoumat detailněji.
+```bash
+ports=$(nmap -p- --min-rate=1000 -T4 -Pn $IP | grep ^[0-9] | cut -d "/" -f 1 | tr "\n" "," | sed s/,$//);echo $ports;nmap -p $ports -A -sC -sV -v -Pn $IP
+```
 ```
 PORT     STATE SERVICE  VERSION
 21/tcp   open  ftp      vsftpd 3.0.3
@@ -49,16 +57,26 @@ PORT     STATE SERVICE  VERSION
 Service Info: Host:  debian; OSs: Unix, Linux; CPE: cpe:/o:linux:linux_kernel
 ```
 
+## Analýza zjištění
+
 ### Lámání hesel nebo hashů
-Pokud mám hash nebo šifrovaný soubor, slovníkový útok může odemknout další krok útoku.
-`/usr/sbin/john SneakyMailer-htpasswd.txt --wordlist=/usr/share/wordlists/rockyou.txt`
+
+Hash nebo zašifrovaný artefakt má smysl lámat jen tehdy, pokud může otevřít další službu, účet nebo vrstvu prostředí; právě to zde ověřuji.
+```bash
+/usr/sbin/john SneakyMailer-htpasswd.txt --wordlist=/usr/share/wordlists/rockyou.txt
+```
 ```
 => soufianeelhaoui
 ```
 
+## Získání přístupu
+
 ### Přihlášení na cíl
-Po získání přihlašovacích údajů přecházím na stabilní shell na cílovém stroji.
-`pip Package - setup.py`
+
+Jakmile mám pověření nebo jednorázový shell, snažím se přejít na stabilní a reprodukovatelný přístup, aby bylo možné bezpečně pokračovat v interní enumeraci.
+```text
+pip Package - setup.py
+```
 ```
 import setuptools
 
@@ -89,26 +107,53 @@ setuptools.setup(
 ```
 
 ### Přihlášení na cíl (2)
-Po získání přihlašovacích údajů přecházím na stabilní shell na cílovém stroji.
-`ssh low@10.10.10.197`
+
+Jakmile mám pověření nebo jednorázový shell, snažím se přejít na stabilní a reprodukovatelný přístup, aby bylo možné bezpečně pokračovat v interní enumeraci.
+```bash
+ssh low@10.10.10.197
+```
 
 ### Získání user flagu
-Tímto potvrzuji úspěšný uživatelský přístup.
-`cat user.txt`
+
+User flag zde slouží hlavně jako potvrzení, že už mám běžný uživatelský kontext a mohu pokračovat v lokální analýze systému.
+```bash
+cat user.txt
+```
 ```
 __CENSORED__
 ```
 
+## Eskalace oprávnění
+
 ### Průzkum možností eskalace
+
 Hledám chybné konfigurace a cesty k vyšším oprávněním.
-`sudo -l`
+```bash
+sudo -l
+```
 ```
 => (root) NOPASSWD: __CENSORED__
 ```
 
 ### Získání root flagu
-Tímto potvrzuji úplné ovládnutí stroje.
-`cat root.txt`
+
+Tento krok ukazuje, jak se nalezená slabina nebo chyba v delegaci oprávnění mění v privilegovaný přístup.
+```bash
+cat root.txt
+```
 ```
 __CENSORED__
 ```
+
+## Shrnutí klíčových poznatků
+
+- Úvodní směr určovala webová enumerace: důležité nebylo jen něco najít, ale správně vyhodnotit, který artefakt skutečně otevírá další krok.
+- K uživatelskému přístupu vedla práce s nalezenými přihlašovacími údaji, klíči nebo hashi a jejich ověření proti reálně dostupné službě.
+- Eskalace oprávnění stála na příliš širokém `sudo` pravidle nebo na možnosti ovlivnit vstup či prostředí privilegovaného procesu.
+
+## Co si odnést do praxe
+
+- Ve webové vrstvě je důležité omezit úniky citlivých souborů, testovacích endpointů a vývojových artefaktů, protože často slouží jako odrazový můstek k dalším službám.
+- Pravidla `sudo` mají být co nejmenší a bez zbytečných možností typu `SETENV`, volného zápisu nebo vyhodnocování neověřeného vstupu.
+- Přístupové údaje je potřeba oddělovat mezi službami a minimalizovat jejich opětovné použití, jinak se z jedné slabiny rychle stane plnohodnotný vstup do systému.
+- Inventura verzí a včasné záplatování snižují prostor pro přímé zneužití známých chyb i pro slepé spoléhání na zastaralé komponenty.

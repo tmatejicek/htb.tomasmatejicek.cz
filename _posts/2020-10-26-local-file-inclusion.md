@@ -6,15 +6,14 @@ date: 2020-10-26
 tags: LFI PHP
 ---
 
-Zranitelnost File Inclusion umožňuje utočníkovi začlenit do zpracování skriptu požadovaný soubor a tím ovlivnit běh aplikace. Tato zranitelnost obvykle vzniká neošetřeným uživatelským vstupem.
+## Úvod a kontext
 
-Ovlivnění běhu aplikace může mít tyto podoby:
- - Vypsání obsahu požadovaného souboru
- - Provádění kódu na webovém serveru
- - Spuštění kódu na straně klienta, jako je JavaScript, což může vést k dalším útokům, jako je Cross-site scripting (XSS)
- - Odepření služby (DoS)
- 
-### Scénář č. 1
+Local File Inclusion (LFI) je chyba v aplikaci, která dovolí ovlivnit, jaký lokální soubor server načte do zpracování. Sama o sobě neznamená automaticky vzdálené spuštění kódu, ale může vést k úniku citlivých dat, k obejití očekávaného toku aplikace a v některých kombinacích i k dalšímu zneužití.
+
+Rozhodující je vždy kontext: jiný dopad bude mít prosté čtení souborů, jiný načítání souboru do interpretu a jiný situace, kdy útočník dokáže ovlivnit i obsah načítaného souboru. Níže proto rozlišuji dva základní scénáře.
+
+## Scénář č. 1
+
 Zranitelný kód:
 ```php
 <?php include($_GET['stranka']); ?>
@@ -24,7 +23,8 @@ Vypsání obsahu passwd
 ?stranka=/etc/passwd
 ```
 
-### Scénář č. 2
+## Scénář č. 2
+
 Zranitelný kód:
 ```php
 <?php include($_GET['stranka'].".php"); ?>
@@ -41,3 +41,15 @@ Zranitelnosti Null Byte Injection využívá toho, že starší verze PHP umož�
 ```
 ?stranka=/etc/passwd%00
 ```
+
+## Shrnutí klíčových poznatků
+
+- LFI je potřeba odlišovat od vzdáleného include nebo od přímého vzdáleného spuštění kódu; konkrétní dopad závisí na tom, jak aplikace s načítaným souborem dál pracuje.
+- Starší techniky jako `null byte injection` nebo `path truncation` dávají smysl jen u historických verzí PHP; bez této podmínky by šlo o technicky nepřesný závěr.
+- Už samotná možnost číst lokální soubory je závažná, protože často odhalí konfigurace, klíče nebo další tajemství potřebná pro navazující útok.
+
+## Co si odnést do praxe
+
+- Uživatelský vstup nesmí přímo určovat cestu k souboru, který server načítá; bezpečnější je práce s pevně definovaným seznamem povolených hodnot.
+- Ochranu je potřeba stavět i na omezení přístupových práv procesu a na pečlivém oddělení dat od kódu, ne jen na filtrování řetězců v URL.
+- Stejné techniky mají smysl pouze v laboratorním nebo jinak autorizovaném testovacím prostředí.
