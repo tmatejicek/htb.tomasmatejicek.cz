@@ -7,75 +7,42 @@ tags: linux ssh exploit enumeration privesc hackthebox
 ---
 ## Úvod a kontext
 
-Laboratory je stroj z Hack The Box, který kombinuje zranitelný GitLab a chybně napsaný pomocný skript pro Docker. Dobře na něm vynikne, jak snadno se propojí chyba ve webové aplikaci s opětovným použitím klíčů a s nebezpečným `sudo` wrapperem.
+Laboratory spojuje dvě odlišné chyby do jednoho čistého řetězce. Veřejně dostupný GitLab na `git.laboratory.htb` je zranitelný při zpracování obrázků a dovolí číst citlivé soubory z hostu. Lokální root pak už nesouvisí s GitLabem, ale s privilegovaným wrapperem `docker-security`, který slepě důvěřuje proměnné `PATH`.
+
+Právě v tom je ten stroj poučný. První část není „web shell přes GitLab“, ale únik interních tajemství a klíčů. A druhá část připomíná, že i zdánlivě neškodný pomocný skript nad Dockerem se při špatném volání binárek změní v přímý root vektor.
 
 ## Počáteční průzkum
 
-### Vyhledání otevřených portů
+### Web a vedlejší git subdoména
 
-Nejprve mapuji veřejně dostupné služby, protože právě z otevřených portů odvodím, které protokoly a aplikace má smysl zkoumat detailněji.
+Už první `nmap` ukáže, že web na portu `443` používá certifikát se SAN `git.laboratory.htb`. To je důležitá indicie, protože vedle hlavní stránky tak rovnou vychází i vývojová služba, která bude pro celý řetězec rozhodující.
 ```bash
 ports=$(nmap -p- --min-rate=1000 -T4 $IP | grep ^[0-9] | cut -d "/" -f 1 | tr "\n" "," | sed s/,$//);echo $ports;nmap -p $ports -A -sC -sV -v $IP
 ```
-```
-PORT    STATE SERVICE  VERSION
-```
-
-### Detailní analýza služeb
-
-V dalším kroku si zpřesňuji verze služeb a jejich charakteristiky, protože právě z těchto detailů obvykle vzniká rozhodnutí, zda pokračovat přes web, SSH nebo jinou vrstvu.
 ```text
-22/tcp  open  ssh      OpenSSH 8.2p1 Ubuntu 4ubuntu0.1 (Ubuntu Linux; protocol 2.0)
-```
-```
-| ssh-hostkey:
-|   3072 25:ba:64:8f:79:9d:5d:95:97:2c:1b:b2:5e:9b:55:0d (RSA)
-|   256 28:00:89:05:55:f9:a2:ea:3c:7d:70:ea:4d:ea:60:0f (ECDSA)
-|_  256 77:20:ff:e9:46:c0:68:92:1a:0b:21:29:d1:53:aa:87 (ED25519)
+22/tcp  open  ssh      OpenSSH 8.2p1 Ubuntu 4ubuntu0.1
 80/tcp  open  http     Apache httpd 2.4.41
-| http-methods:
-|_  Supported Methods: GET HEAD POST OPTIONS
-|_http-server-header: Apache/2.4.41 (Ubuntu)
-|_http-title: Did not follow redirect to https://laboratory.htb/
-443/tcp open  ssl/http Apache httpd 2.4.41 ((Ubuntu))
-| http-methods:
-|_  Supported Methods: HEAD GET POST OPTIONS
-|_http-server-header: Apache/2.4.41 (Ubuntu)
-|_http-title: The Laboratory
-| ssl-cert: Subject: commonName=laboratory.htb
+443/tcp open  ssl/http Apache httpd 2.4.41
 | Subject Alternative Name: DNS:git.laboratory.htb
-| Issuer: commonName=laboratory.htb
-| Public Key type: rsa
-| Public Key bits: 4096
-| Signature Algorithm: sha256WithRSAEncryption
-| Not valid before: 2020-07-05T10:39:28
-| Not valid after:  2024-03-03T10:39:28
-| MD5:   2873 91a5 5022 f323 4b95 df98 b61a eb6c
-|_SHA-1: 0875 3a7e eef6 8f50 0349 510d 9fbf abc3 c70a a1ca
-| tls-alpn:
-[... výstup zkrácen ...]
-backup:x:34:34:backup:/var/backups:/usr/sbin/nologin
-list:x:38:38:Mailing List Manager:/var/list:/usr/sbin/nologin
-irc:x:39:39:ircd:/var/run/ircd:/usr/sbin/nologin
-gnats:x:41:41:Gnats Bug-Reporting System (admin):/var/lib/gnats:/usr/sbin/nologin
-nobody:x:65534:65534:nobody:/nonexistent:/usr/sbin/nologin
-systemd-timesync:x:100:102:systemd Time Synchronization,,,:/run/systemd:/bin/false
-systemd-network:x:101:103:systemd Network Management,,,:/run/systemd/netif:/bin/false
-systemd-resolve:x:102:104:systemd Resolver,,,:/run/systemd/resolve:/bin/false
-systemd-bus-proxy:x:103:105:systemd Bus Proxy,,,:/run/systemd:/bin/false
-_apt:x:104:65534::/nonexistent:/bin/false
 ```
+
+## Analýza zjištění
+
+### GitLab a zpracování obrázků
+
+Jakmile je známý `git.laboratory.htb`, další rozumný krok vede do GitLabu. Na Laboratory běží zranitelná verze, která při zpracování obrázků přes ExifTool/DjVu dovolí vyčíst citlivé soubory z hostu. Tohle je důležitý detail: nejde o shell v kontextu GitLabu, ale o arbitrary file read nad systémem a GitLab konfigurací.
+
+Právě touto cestou se podaří vytáhnout interní tajemství, mimo jiné i obsah souborů jako `/opt/gitlab/embedded/service/gitlab-rails/config/secrets.yml`. Z interních dat GitLabu pak vyjde deploy key, který je znovu použitý jako SSH klíč účtu `dexter`.
+
+### Reuse deploy key jako systémový SSH klíč
+
+To je klíčový mezikrok celé user části. Samotný GitLab foothold by bez dalšího byl omezený na vývojové prostředí. Reuse soukromého klíče ale převádí aplikační únik na plnohodnotný systémový přístup přes OpenSSH. Nejde tedy o chybu SSH, ale o špatné oddělení tajemství mezi aplikací a hostem.
 
 ## Získání přístupu
 
-### Získání user flagu
+### SSH jako `dexter`
 
-User flag zde slouží hlavně jako potvrzení, že už mám běžný uživatelský kontext a mohu pokračovat v lokální analýze systému.
-
-Certifikát už v úvodu prozrazuje `git.laboratory.htb`, takže další rozumný krok vede do GitLabu. Zranitelná verze GitLabu šla v této fázi zneužít v řetězci se zpracováním obrázků přes ExifTool/DjVu, a tím se dostat k citlivým souborům a artefaktům uloženým na serveru.
-
-Klíčové zjištění bylo, že mezi těmito artefakty ležel i deploy key používaný v GitLabu. Ten byl znovu použit jako SSH klíč lokálního účtu `dexter`. Nejde tedy o další samostatnou chybu v SSH, ale o reuse tajemství mezi aplikací a systémem.
-
+Jakmile je deploy key k dispozici, nejčistší další krok je přepnout se na stabilní SSH session. Tím odpadají omezení webové aplikace a otevírá se prostor pro lokální enumeraci hostu.
 ```bash
 ssh -i id_rsa dexter@10.10.10.216
 cat user.txt
@@ -83,12 +50,11 @@ cat user.txt
 
 ## Eskalace oprávnění
 
-### Získání root flagu
+### `docker-security` a hijacking přes `PATH`
 
-Tento krok ukazuje, jak se nalezená slabina nebo chyba v delegaci oprávnění mění v privilegovaný přístup.
+Lokální root už nesouvisí s GitLabem. Účet `dexter` může se zvýšenými právy spouštět skript `docker-security`. Problém není v Dockeru samotném, ale ve wrapperu: interně volá `docker` bez absolutní cesty, takže při běhu spoléhá na `PATH` převzatý z neprivilegovaného prostředí.
 
-Lokální eskalace už nebyla o GitLabu, ale o skriptu `docker-security`, který šlo spouštět se zvýšenými právy. Problém nebyl v Dockeru samotném; skript volal `docker` bez absolutní cesty a důvěřoval proměnné `PATH` z neprivilegovaného prostředí. Jakmile si útočník připravil vlastní binárku nebo shell script jménem `docker` a zařadil jej na začátek `PATH`, `sudo` spustilo podvržený program jako root.
-
+To je klasická chyba v delegaci oprávnění. Stačí připravit vlastní program nebo shell script jménem `docker`, dát ho do adresáře na začátek `PATH` a pak spustit wrapper znovu. `sudo` pak jako root zavolá útočníkův podvržený binární soubor.
 ```bash
 cat > /tmp/docker <<'EOF'
 #!/bin/sh
@@ -99,16 +65,14 @@ PATH=/tmp:$PATH sudo /usr/local/bin/docker-security
 cat /root/root.txt
 ```
 
-To je přesný příklad chyby v delegaci oprávnění: privilegovaný wrapper sám o sobě nevypadá nebezpečně, ale pokud nefixuje cestu k binárkám, stává se z něj snadný vektor eskalace.
-
 ## Shrnutí klíčových poznatků
 
-- První skutečně užitečný závěr plynul z toho, jak do sebe zapadly `git.laboratory.htb`, Apache a SSH.
-- User fáze se opírala o SSH se získaným soukromým klíčem, takže přístup byl reprodukovatelný a ne jen jednorázový.
-- Finální kontrolu nad systémem otevřela až mechanika typu práce s Dockerem nebo image vrstvami.
+- Laboratory je dvoukrokový řetězec: GitLab nejdřív vydá citlivá data a teprve z nich vznikne systémový SSH přístup.
+- Rozhodující nebyla „RCE v GitLabu“, ale únik deploy keye z interních dat a jeho reuse pro účet `dexter`.
+- Root část ukazuje starý, ale stále velmi reálný problém: privilegovaný wrapper, který nevolá binárky absolutní cestou, je snadno zneužitelný přes `PATH`.
 
 ## Co si odnést do praxe
 
-- Pokud se zanedbá oblast `git.laboratory.htb`, Apache a SSH, vznikne stejný typ vstupu jako tady. Zdrojové repozitáře a jejich pomocné služby musí být oddělené od produkce; únik issue, CI konfigurace nebo secretu z GitLabu často zkrátí celý průzkum.
-- Jakmile útočník ověří SSH se získaným soukromým klíčem, je potřeba počítat s dlouhodobým přístupem. SSH klíče nesmějí být sdílené mezi rolemi ani uložené v procesech, exportech nebo webrootu; uniklý privátní klíč je stabilnější foothold než jednorázový shell.
-- Stejně důležitá je i obrana proti mechanice práce s Dockerem nebo image vrstvami. Členství v dockerové skupině nebo přístup k image vrstvám je z pohledu hostu privilegium; v obraně se s ním musí zacházet téměř jako s rootem.
+- GitLab a podobné vývojové služby je potřeba chránit stejně přísně jako produkční aplikaci. Jakmile vydají interní tajemství nebo klíče, útočník často přeskočí rovnou na host.
+- SSH klíče nesmějí být sdílené mezi aplikací, CI/CD a lokálními účty. Laboratory dobře ukazuje, že jeden uniklý deploy key může být ve skutečnosti plnohodnotný systémový klíč.
+- Privilegované wrappery musí používat absolutní cesty k binárkám a minimální prostředí. Pokud root skript důvěřuje `PATH`, je to ve výsledku skoro totéž jako spouštět útočníkův shell přímo.

