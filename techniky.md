@@ -5,7 +5,7 @@ permalink: /techniky/
 ---
 ## Techniky a zranitelnosti
 
-Samostatná rubrika pro výukové a souhrnné texty. HTB walkthroughy zůstávají v hlavním seznamu, tady jsou články zaměřené na techniky, třídy chyb, zneužitelné vzory a obranné souvislosti.
+Samostatná rubrika pro výukové a souhrnné texty. HTB rozbory strojů zůstávají v hlavním seznamu, tady jsou články zaměřené na techniky, třídy chyb, zneužitelné vzory a obranné souvislosti.
 
 <ul>
   {% assign articles = site.techniky | sort: "date" | reverse %}
