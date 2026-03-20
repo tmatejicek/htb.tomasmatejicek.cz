@@ -2,7 +2,7 @@
 layout: post
 author: Tomáš Matějíček
 title: "Otevřený .git, zálohy a vývojové artefakty jako první foothold"
-date: 2026-03-20
+date: 2020-10-27
 tags: web git backups sourcecode
 ---
 ## Úvod a kontext

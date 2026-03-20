@@ -2,7 +2,7 @@
 layout: post
 author: Tomáš Matějíček
 title: "SSRF, reverse proxy a localhost trust assumptions"
-date: 2026-03-20
+date: 2020-11-27
 tags: ssrf web proxy localhost
 ---
 ## Úvod a kontext
