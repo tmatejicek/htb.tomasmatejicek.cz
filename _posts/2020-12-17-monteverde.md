@@ -7,9 +7,9 @@ tags: windows kerberos ldap winrm active-directory
 ---
 ## Úvod a kontext
 
-Monteverde je výborný příklad Active Directory stroje, kde se foothold neotevře exploitací služby, ale chybnou prací s hesly a tajemstvími. První krok je jednoduchý password spray proti LDAP. Druhý krok vede přes soubor `azure.xml` uložený v cizím domovském adresáři. Root, respektive doménový admin, pak přichází přes Azure AD Connect a lokálně uložené synchronizační tajemství.
+Monteverde je AD stroj, kde rozhoduje disciplína v práci s hesly, ne exploit služby. Malý password spray proti LDAP otevře první účet, SMB sdílení pak vydají `azure.xml` s heslem `mhope` a teprve WinRM z něj udělá skutečný shell.
 
-Právě poslední část je na Monteverde nejzajímavější. Administrátor neprohrává kvůli kernel exploitu, ale proto, že na serveru běží ADSync s dešifrovatelnými přístupovými údaji k doméně.
+Finální kompromitace je ještě cennější z obranného pohledu. Server s Azure AD Connect v sobě drží dešifrovatelné synchronizační tajemství, takže z běžného administrativního serveru se stává přímá cesta k doménovému administrátorovi.
 
 ## Počáteční průzkum
 

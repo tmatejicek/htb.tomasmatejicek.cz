@@ -7,9 +7,9 @@ tags: windows xss sql-injection command-injection brute-force buffer-overflow
 ---
 ## Úvod a kontext
 
-Bankrobber dobře ukazuje, že průlom často nezačíná jedním exploitem, ale kombinací signálů jako převod dokumentů a server-side render, SQL injection a XSS.
+Bankrobber se láme ve dvou odlišných vrstvách jednoho bankovního workflow. Ve webu jde nejdřív o stored XSS v komentáři k převodu, krádež base64 kódovaných admin cookies a SQL injection v administrativním vyhledávání. Z té se přes `LOAD_FILE` vytáhne `backdoorchecker.php`, tedy localhost-only nástroj s `system()` a omezením jen na příkazy začínající `dir`.
 
-Praktická část pak stojí na tom, jak se tyto zjištěné vazby promění v reverse shell přes webovou vrstvu a jak je po user části využitelná lokální enumeraci po získání shellu.
+První shell ale ještě neznamená root. Teprve lokální enumerace ukáže interní službu `bankv2.exe` na portu `910`, čtyřmístný PIN a nakonec buffer overflow v předávání argumentu do `transfer.exe`.
 
 ## Počáteční průzkum
 
@@ -211,8 +211,6 @@ Skript stáhne nc.exe a otevře reverzní shell
 
 ### Zobrazení obsahu souboru user.txt
 
-User flag zde slouží hlavně jako potvrzení, že už mám běžný uživatelský kontext a mohu pokračovat v lokální analýze systému.
-
 ```
 C:\Users\Cortin\Desktop>more user.txt
 more user.txt
@@ -384,12 +382,13 @@ __CENSORED__
 
 ## Shrnutí klíčových poznatků
 
-- Z hlediska rozhodování bylo nejdůležitější správně přečíst vazbu mezi převod dokumentů a server-side render, SQL injection a XSS.
-- K uživatelskému kontextu vedl konkrétní a ověřitelný krok: reverse shell přes webovou vrstvu.
-- Poslední část ukazuje, že po získání shellu rozhoduje hlavně to, jakou roli hraje lokální enumerace po získání shellu.
+- Stored XSS v komentáři sama o sobě nestačila; rozhodující bylo, že převody schvaloval administrátor v headless prohlížeči a cookies `username` a `password` byly jen base64.
+- SQL injection v `admin/search.php` nesloužila k dumpu databáze, ale k `LOAD_FILE('C:\\xampp\\htdocs\\admin\\backdoorchecker.php')`, tedy ke čtení localhost-only helperu se `system()`.
+- User shell vznikl až spojením obou webových chyb: adminův prohlížeč na localhostu spustil `backdoorchecker.php`, stáhl `nc.exe` přes `certutil` a vrátil shell jako `Cortin`.
+- Root část otevřela interní služba `bankv2.exe` na portu `910`: čtyřmístný PIN `0021` a následný buffer overflow při volání `transfer.exe`.
 
 ## Co si odnést do praxe
 
-- První obranná lekce míří na převod dokumentů a server-side render, SQL injection a XSS. Převod dokumentů a server-side render je potřeba sandboxovat a oddělit od citlivého filesystemu; parser nebo převodník nesmí mít přístup k tajemstvím hostu.
-- Druhá lekce je o tom, jak rychle se ze zjištění stane reverse shell přes webovou vrstvu. Jednorázové RCE je potřeba detekovat i na aplikační vrstvě; upload, template injection nebo command injection často vypadají v logu nenápadně, ale vedou ke stabilnímu shellu.
-- Třetí lekce připomíná riziko, které v praxi představuje lokální enumerace po získání shellu. Po získání shellu je rozhodující systematická lokální enumerace; i bez další CVE často rozhodne kombinace špatných oprávnění, reuse tajemství a pomocných skriptů.
+- Moderování nebo schvalování obsahu v headless prohlížeči nesmí vykonávat uživatelský JavaScript se správcovskou session. Na Bankrobber právě PhantomJS proměnil stored XSS v krádež admin cookies.
+- SQL injection s možností číst lokální soubory často odkryje interní helper skripty, které se měly spouštět jen z localhostu. Kontrola `REMOTE_ADDR == ::1` ani prefixu `dir` není obrana, pokud útočník umí přinutit adminův prohlížeč, aby požadavek poslal z hostu samotného.
+- Interní služby na localhostu nebo nestandardních portech jsou po prvním shellu normální součást útokové plochy. `bankv2.exe` ukazuje, jak rychle se z webového kompromisu stane administrátorský shell, když lokální nástroj spoléhá jen na čtyřmístný PIN a nebezpečné předávání argumentů.
