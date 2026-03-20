@@ -19,6 +19,17 @@ defaults:
       type: "posts"
     values:
       layout: "post"
+  -
+    scope:
+      path: ""
+      type: "techniky"
+    values:
+      layout: "post"
+
+collections:
+  techniky:
+    output: true
+    permalink: /techniky/:title
 
 future: true
 
