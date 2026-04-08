@@ -84,7 +84,7 @@ To je obecně silná heuristika. Pokud SUID binárka zpracovává externí jedno
 
 ### Jarvis: SUID `systemctl` a vlastní systemd jednotka
 
-Na Jarvisu ukázal `linpeas` mezi SUID binárkami `systemctl`. To samo o sobě už je varovný signál, protože systemd je centrální orchestrátor služeb. Praktický dopad byl přímočarý: stačilo vytvořit dočasný `.service` soubor s vlastním `ExecStart`, přilinkovat ho a nechat `systemctl` službu spustit.
+Na Jarvisu ukázal [linpeas](/nastroje/linpeas) mezi SUID binárkami `systemctl`. To samo o sobě už je varovný signál, protože systemd je centrální orchestrátor služeb. Praktický dopad byl přímočarý: stačilo vytvořit dočasný `.service` soubor s vlastním `ExecStart`, přilinkovat ho a nechat `systemctl` službu spustit.
 
 Tady je důležité pochopit, proč je to nebezpečné. `systemctl` není problém jen proto, že "někdo našel trik". Je nebezpečné z definice, protože umí delegovat spouštění procesu do systemd s root kontextem.
 

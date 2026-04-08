@@ -50,11 +50,11 @@ Machine account, synchronizační služba nebo servisní komponenta často nevyp
 
 ## Forest: delegovaná Exchange práva, relay a DCSync
 
-Forest je čistá ukázka toho, že mezi obyčejným servisním účtem a plným převzetím domény může stát jen několik delegovaných kroků. Po AS-REP roastu vznikne foothold v podobě `svc-alfresco`, ale ten sám o sobě ještě není doménový admin. Zásadní je až to, co BloodHound ukáže o jeho vztahu ke skupině `Exchange Windows Permissions`.
+Forest je čistá ukázka toho, že mezi obyčejným servisním účtem a plným převzetím domény může stát jen několik delegovaných kroků. Po AS-REP roastu vznikne foothold v podobě `svc-alfresco`, ale ten sám o sobě ještě není doménový admin. Zásadní je až to, co [BloodHound](/nastroje/bloodhound) ukáže o jeho vztahu ke skupině `Exchange Windows Permissions`.
 
 Právě tady se hodí přestat myslet v kategoriích "admin / neadmin". Účet nemá plnou kontrolu nad doménou, ale má dost silnou pozici na to, aby šlo přes PrivExchange vynutit autentizaci a relaynout ji proti LDAP:
 
-Praktickou stránku těchto utilit jako součásti jednoho toolkitu rozebírám i v článku [Impacket](/nastroje/impacket).
+Praktickou stránku těchto utilit jako součásti jednoho toolkitu rozebírám i v článcích [Impacket](/nastroje/impacket) a [Impacket pro relay, tajemství a delegovaná práva](/nastroje/impacket-pro-relay-tajemstvi-a-delegovana-prava).
 
 ```text
 ntlmrelayx.py -t ldap://10.10.10.161 --escalate-user svc-alfresco

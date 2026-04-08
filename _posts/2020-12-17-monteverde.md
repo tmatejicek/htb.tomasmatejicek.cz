@@ -31,7 +31,7 @@ PORT      STATE SERVICE       VERSION
 
 ### Seznam účtů a password spray
 
-Jakmile je jasné, že jde o AD, je rozumné si nejdřív vytáhnout seznam uživatelů a zkusit velmi úzký password spray. Na Monteverde funguje varianta `username == password` pro účet `SABatchJobs`, což je přesně ten typ provozního zjednodušení, který v doméně otevírá další enumeraci.
+Jakmile je jasné, že jde o AD, je rozumné si nejdřív vytáhnout seznam uživatelů a zkusit velmi úzký password spray. Na Monteverde funguje varianta `username == password` pro účet `SABatchJobs`, což je přesně ten typ provozního zjednodušení, který v doméně otevírá další enumeraci. Praktickou roli `GetADUsers.py` a podobných utilit rozebírám i v článku [Impacket pro AD enumeraci a první identity](/nastroje/impacket-pro-ad-enumeraci-a-prvni-identity).
 ```text
 GetADUsers.py -all MEGABANK.LOCAL/
 => mhope
@@ -47,6 +47,8 @@ hydra -L Monteverde-users.txt -P Monteverde-users.txt $IP ldap2 -I
 S těmito údaji už jde systematicky procházet SMB sdílení a hledat cizí konfigurace nebo exporty. Samotný krok `username = password` proti LDAP rozebírám samostatně i v článku [Hydra](/nastroje/hydra).
 
 Když je potřeba místo široké enumerace ručně ověřit konkrétní LDAP objekty nebo atributy, hodí se v podobné fázi i [ldapsearch](/nastroje/ldapsearch).
+
+Hodně rychlou širokou orientaci pak v podobné fázi dává i [enum4linux](/nastroje/enum4linux).
 
 ```bash
 ./enum4linux.pl -a -d -o -v -u SABatchJobs -p SABatchJobs $IP > Monteverde-enum4linux.txt

@@ -31,7 +31,7 @@ PORT     STATE SERVICE  VERSION
 
 ### Reverzní DNS a skrytý admin panel
 
-Hlavní stránka je schválně chudá, ale reverzní DNS prozradí doménu `www.securewebinc.jet`. Po zrcadlení webu přes `httrack` a prohledání JavaScriptu vyplave cesta `/dirb_safe_dir_rf9EmcEIx/admin/stats.php`. To je typická situace, kdy statický frontend schovává skutečně zajímavou část aplikace.
+Hlavní stránka je schválně chudá, ale reverzní DNS prozradí doménu `www.securewebinc.jet`. Po zrcadlení webu přes [Httrack](/nastroje/httrack) a prohledání JavaScriptu vyplave cesta `/dirb_safe_dir_rf9EmcEIx/admin/stats.php`. To je typická situace, kdy statický frontend schovává skutečně zajímavou část aplikace.
 ```text
 dig -x $IP @$IP
 => www.securewebinc.jet

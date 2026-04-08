@@ -54,7 +54,7 @@ Právě to dává message brokerům tak vysokou hodnotu.
 
 ### PlayerTwo: MQTT topic s privátním klíčem
 
-PlayerTwo je nejčistší ukázka toho, že interní broker umí nést rovnou tajemství. Po prvním footholdu jako `www-data` bylo možné připojit se na lokální Mosquitto broker:
+PlayerTwo je nejčistší ukázka toho, že interní broker umí nést rovnou tajemství. Po prvním footholdu jako `www-data` bylo možné připojit se na lokální Mosquitto broker pomocí [mosquitto_sub](/nastroje/mosquitto-sub):
 
 ```bash
 mosquitto_sub -h localhost -t '$SYS/#'

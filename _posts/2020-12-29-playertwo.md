@@ -94,7 +94,7 @@ Po footholdu už nebyl další důležitý směr web, ale lokální MQTT broker 
 /usr/sbin/mosquitto -c /etc/mosquitto/mosquitto.conf
 ```
 
-Po přihlášení jako `www-data` šlo sledovat interní zprávy:
+Po přihlášení jako `www-data` šlo sledovat interní zprávy pomocí [mosquitto_sub](/nastroje/mosquitto-sub):
 
 ```bash
 mosquitto_sub -h localhost -t '$SYS/#'

