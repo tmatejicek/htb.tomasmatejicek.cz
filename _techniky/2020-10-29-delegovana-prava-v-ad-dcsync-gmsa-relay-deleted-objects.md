@@ -52,6 +52,8 @@ Forest je čistá ukázka toho, že mezi obyčejným servisním účtem a plným
 
 Právě tady se hodí přestat myslet v kategoriích "admin / neadmin". Účet nemá plnou kontrolu nad doménou, ale má dost silnou pozici na to, aby šlo přes PrivExchange vynutit autentizaci a relaynout ji proti LDAP:
 
+Praktickou stránku těchto utilit jako součásti jednoho toolkitu rozebírám i v článku [Impacket](/nastroje/impacket).
+
 ```text
 ntlmrelayx.py -t ldap://10.10.10.161 --escalate-user svc-alfresco
 http://localhost/privexchange

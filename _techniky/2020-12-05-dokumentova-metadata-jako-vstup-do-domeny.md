@@ -91,6 +91,8 @@ Tady je důležité správně chápat roli dokumentu:
 
 Výsledek:
 
+Prakticky k tomu, kdy je `CrackMapExec` nejlepší jen jako rychlé potvrzení dopadu, viz i [CrackMapExec](/nastroje/crackmapexec).
+
 ```text
 crackmapexec smb intelligence.htb -u users.txt -p NewIntelligenceCorpUser9876
 => intelligence.htb\Tiffany.Molina:NewIntelligenceCorpUser9876

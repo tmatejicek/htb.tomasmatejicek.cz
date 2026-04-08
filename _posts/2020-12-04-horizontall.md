@@ -81,6 +81,8 @@ ssh strapi@horizontall.htb -L 8000:127.0.0.1:8000
 ### Laravel Ignition na lokálním portu
 
 Jakmile je interní port přesměrovaný, má smysl hledat veřejný exploit pro daný framework. `searchsploit` ukáže `49424.py`, tedy známou RCE cestu přes Laravel Ignition. Protože je aplikace dostupná jen lokálně, bez port-forwardu by tato část vůbec nepřicházela v úvahu.
+
+Pro praktickou práci s podobnými kandidátními exploity viz i [Searchsploit](/nastroje/searchsploit).
 ```text
 searchsploit laravel
 searchsploit -p 49424

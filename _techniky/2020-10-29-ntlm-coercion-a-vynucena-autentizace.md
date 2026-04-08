@@ -88,6 +88,8 @@ PrivExchange a podobné techniky jsou pokročilejší varianta stejného princip
 
 Driver je nejčistší ukázka coercion přes souborový formát. Po přihlášení do firmware portálu šlo nahrát `.scf` soubor s UNC cestou:
 
+Prakticky k tomu, co přesně v tomhle místě dělá `Responder` a co už ne, viz i [Responder](/nastroje/responder).
+
 ```text
 [Shell]
 Command=2

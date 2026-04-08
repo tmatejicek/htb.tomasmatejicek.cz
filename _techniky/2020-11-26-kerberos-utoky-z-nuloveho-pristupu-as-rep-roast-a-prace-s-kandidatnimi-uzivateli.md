@@ -47,6 +47,8 @@ V praxi se vyplatí přísně oddělit tři činnosti, protože každá z nich z
 
 Tady ještě nejde o heslo. Cílem je zjistit, které identity v doméně vůbec existují. Typicky pomůže `kerbrute userenum` nebo jiná technika, která rozliší platné a neplatné jméno.
 
+Praktickou stránku tohoto úzkého kroku rozebírám samostatně i v článku [Kerbrute](/nastroje/kerbrute).
+
 ```bash
 ./kerbrute_linux_amd64 userenum --dc intelligence.htb -d intelligence.htb users.txt
 ```

@@ -41,6 +41,8 @@ OpenNetAdmin :: 0wn Your Network
 ### ONA RCE a reuse databázového hesla
 
 `searchsploit` ukáže přímo odpovídající command injection pro OpenNetAdmin 18.1.1. Přes něj lze získat první příkazový kontext a číst lokální soubory aplikace.
+
+Prakticky k tomu, kdy je `searchsploit` jen filtr kandidátů a ne důkaz zranitelnosti, viz i [Searchsploit](/nastroje/searchsploit).
 ```bash
 searchsploit -w opennetadmin
 ```

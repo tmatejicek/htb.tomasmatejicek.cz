@@ -57,6 +57,8 @@ Po získání hesla k ZIPu a rozbalení se ukáže přesně ta kombinace, která
 
 To už dovolí spustit offline extrakci tajemství:
 
+Praktický rámec pro podobnou práci s jednotlivými utilitami je i v článku [Impacket](/nastroje/impacket).
+
 ```bash
 impacket-secretsdump -ntds "Active Directory/ntds.dit" -system registry/SYSTEM -hashes lmhash:nthash LOCAL -outputfile ntlm-extract
 ```
