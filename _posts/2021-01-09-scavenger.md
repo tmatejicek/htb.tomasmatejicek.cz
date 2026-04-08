@@ -63,6 +63,8 @@ dig AXFR RENTAHACKER.HTB @SUPERSECHOSTING.HTB
 sec03.rentahacker.htb
 ```
 
+Praktickou roli `host` a `dig` při podobných DNS krocích rozebírám i v článku [host a dig](/nastroje/host-a-dig).
+
 ## Analýza zjištění
 
 ### `shell.php` a skrytý parametr `hidden`

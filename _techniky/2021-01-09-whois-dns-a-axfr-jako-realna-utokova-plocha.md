@@ -52,6 +52,8 @@ Následný zone transfer na `RENTAHACKER.HTB` vydal konkrétní virtuální host
 dig AXFR RENTAHACKER.HTB @SUPERSECHOSTING.HTB
 ```
 
+Praktickou roli nízkoúrovňových DNS klientů pro podobné ověřování rozebírám i v článku [host a dig](/nastroje/host-a-dig).
+
 ```text
 sec03.rentahacker.htb
 ```

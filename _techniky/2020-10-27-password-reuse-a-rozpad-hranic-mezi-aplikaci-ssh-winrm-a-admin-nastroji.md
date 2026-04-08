@@ -33,6 +33,7 @@ Stejné heslo se mezi vrstvami obvykle neobjeví náhodou. Důvody bývají velm
 - bootstrap nebo instalační heslo zůstane v provozu příliš dlouho,
 - passphrase ke klíči se znovu použije jako heslo uživatele,
 - pomocný nástroj typu TeamViewer nebo Webmin sdílí stejné heslo jako systémový účet,
+- totéž heslo se začne používat i pro RDP přístup přes [xfreerdp](/nastroje/xfreerdp),
 - uniklá databázová nebo aplikační credential se z pohodlnosti znovu použije i jinde.
 
 Všechny tyto situace vypadají na první pohled jako drobné provozní rozhodnutí. V útoku ale znamenají přesně to, že jedna nalezená hodnota může otevřít několik různých služeb.

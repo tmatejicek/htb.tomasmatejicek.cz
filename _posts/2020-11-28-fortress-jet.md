@@ -40,6 +40,7 @@ httrack http://www.securewebinc.jet/
 /js/secure.js
 => /dirb_safe_dir_rf9EmcEIx/admin/stats.php
 ```
+Praktickou roli podobných DNS utilit rozebírám i v článku [host a dig](/nastroje/host-a-dig).
 
 ## Analýza zjištění
 

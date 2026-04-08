@@ -45,6 +45,9 @@ hydra -L Monteverde-users.txt -P Monteverde-users.txt $IP ldap2 -I
 ```
 
 S těmito údaji už jde systematicky procházet SMB sdílení a hledat cizí konfigurace nebo exporty. Samotný krok `username = password` proti LDAP rozebírám samostatně i v článku [Hydra](/nastroje/hydra).
+
+Když je potřeba místo široké enumerace ručně ověřit konkrétní LDAP objekty nebo atributy, hodí se v podobné fázi i [ldapsearch](/nastroje/ldapsearch).
+
 ```bash
 ./enum4linux.pl -a -d -o -v -u SABatchJobs -p SABatchJobs $IP > Monteverde-enum4linux.txt
 ```

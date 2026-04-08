@@ -132,6 +132,7 @@ Nejcennější jsou ty artefakty, které nevedou jen k „dalšímu souboru“, 
 
 - SSH,
 - WinRM,
+- RDP přes [xfreerdp](/nastroje/xfreerdp),
 - vzdálený support,
 - jiný lokální účet,
 - admin rozhraní,

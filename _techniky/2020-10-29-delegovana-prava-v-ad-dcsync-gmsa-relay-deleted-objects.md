@@ -26,6 +26,8 @@ Delegované právo je prakticky každá schopnost, která není vidět jako př�
 - přístup k citlivému historickému objektu,
 - nebo administrativní roli v pomocné synchronizační komponentě.
 
+Když je potřeba takové atributy nebo objekty ručně ověřovat nad konkrétním bindem, dává vedle specializovaných enumerátorů smysl i nízkoúrovňový [ldapsearch](/nastroje/ldapsearch).
+
 To je důležité i metodicky. Když při review sleduješ jen skupiny typu `Domain Admins`, `Enterprise Admins` nebo `Administrators`, velká část reálných cest k převzetí domény zůstane úplně mimo záběr.
 
 ## Čtyři různé typy moci, které vypadají nenápadně
