@@ -3,7 +3,7 @@ layout: post
 author: Tomáš Matějíček
 title: "LFI - Local File Inclusion"
 date: 2020-10-26
-tags: LFI PHP
+tags: lfi php
 ---
 ## Úvod a kontext
 

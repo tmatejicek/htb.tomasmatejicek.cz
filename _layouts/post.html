@@ -8,5 +8,240 @@ layout: default
 {{content}}
 
 {% if page.tags %}
+  {% assign ignored_tags = "|linux|windows|web|ssh|php|exploit|enumeration|privesc|hackthebox|nastroje|download|discovery|recon|post-exploitation|" %}
+
+  {% assign related_posts_count = 0 %}
+  {% assign related_techniky_count = 0 %}
+  {% assign related_nastroje_count = 0 %}
+
+  {% assign sorted_posts = site.posts | sort: "date" | reverse %}
+  {% assign sorted_techniky = site.techniky | sort: "date" | reverse %}
+  {% assign sorted_nastroje = site.nastroje | sort: "date" | reverse %}
+
+  {% for item in sorted_posts %}
+    {% if item.url != page.url %}
+      {% assign shared = 0 %}
+      {% for tag in page.tags %}
+        {% capture needle %}|{{ tag }}|{% endcapture %}
+        {% unless ignored_tags contains needle %}
+          {% if item.tags contains tag %}
+            {% assign shared = shared | plus: 1 %}
+          {% endif %}
+        {% endunless %}
+      {% endfor %}
+      {% if shared > 0 and related_posts_count < 3 %}
+        {% assign related_posts_count = related_posts_count | plus: 1 %}
+      {% endif %}
+    {% endif %}
+  {% endfor %}
+
+  {% if related_posts_count == 0 %}
+    {% for item in sorted_posts %}
+      {% if item.url != page.url %}
+        {% assign shared = 0 %}
+        {% for tag in page.tags %}
+          {% if item.tags contains tag %}
+            {% assign shared = shared | plus: 1 %}
+          {% endif %}
+        {% endfor %}
+        {% if shared > 0 and related_posts_count < 3 %}
+          {% assign related_posts_count = related_posts_count | plus: 1 %}
+        {% endif %}
+      {% endif %}
+    {% endfor %}
+  {% endif %}
+
+  {% for item in sorted_techniky %}
+    {% if item.url != page.url %}
+      {% assign shared = 0 %}
+      {% for tag in page.tags %}
+        {% capture needle %}|{{ tag }}|{% endcapture %}
+        {% unless ignored_tags contains needle %}
+          {% if item.tags contains tag %}
+            {% assign shared = shared | plus: 1 %}
+          {% endif %}
+        {% endunless %}
+      {% endfor %}
+      {% if shared > 0 and related_techniky_count < 3 %}
+        {% assign related_techniky_count = related_techniky_count | plus: 1 %}
+      {% endif %}
+    {% endif %}
+  {% endfor %}
+
+  {% if related_techniky_count == 0 %}
+    {% for item in sorted_techniky %}
+      {% if item.url != page.url %}
+        {% assign shared = 0 %}
+        {% for tag in page.tags %}
+          {% if item.tags contains tag %}
+            {% assign shared = shared | plus: 1 %}
+          {% endif %}
+        {% endfor %}
+        {% if shared > 0 and related_techniky_count < 3 %}
+          {% assign related_techniky_count = related_techniky_count | plus: 1 %}
+        {% endif %}
+      {% endif %}
+    {% endfor %}
+  {% endif %}
+
+  {% for item in sorted_nastroje %}
+    {% if item.url != page.url %}
+      {% assign shared = 0 %}
+      {% for tag in page.tags %}
+        {% capture needle %}|{{ tag }}|{% endcapture %}
+        {% unless ignored_tags contains needle %}
+          {% if item.tags contains tag %}
+            {% assign shared = shared | plus: 1 %}
+          {% endif %}
+        {% endunless %}
+      {% endfor %}
+      {% if shared > 0 and related_nastroje_count < 3 %}
+        {% assign related_nastroje_count = related_nastroje_count | plus: 1 %}
+      {% endif %}
+    {% endif %}
+  {% endfor %}
+
+  {% if related_nastroje_count == 0 %}
+    {% for item in sorted_nastroje %}
+      {% if item.url != page.url %}
+        {% assign shared = 0 %}
+        {% for tag in page.tags %}
+          {% if item.tags contains tag %}
+            {% assign shared = shared | plus: 1 %}
+          {% endif %}
+        {% endfor %}
+        {% if shared > 0 and related_nastroje_count < 3 %}
+          {% assign related_nastroje_count = related_nastroje_count | plus: 1 %}
+        {% endif %}
+      {% endif %}
+    {% endfor %}
+  {% endif %}
+
+  {% if related_posts_count > 0 or related_techniky_count > 0 or related_nastroje_count > 0 %}
+    <h2>Další Související Články V Projektu</h2>
+
+    {% if related_posts_count > 0 %}
+      <h3>HTB Stroje</h3>
+      <ul>
+        {% assign shown_posts = 0 %}
+        {% for item in sorted_posts %}
+          {% if item.url != page.url %}
+            {% assign shared = 0 %}
+            {% for tag in page.tags %}
+              {% capture needle %}|{{ tag }}|{% endcapture %}
+              {% unless ignored_tags contains needle %}
+                {% if item.tags contains tag %}
+                  {% assign shared = shared | plus: 1 %}
+                {% endif %}
+              {% endunless %}
+            {% endfor %}
+            {% if shared > 0 and shown_posts < 3 %}
+              <li><a href="{{ item.url }}">{{ item.title }}</a></li>
+              {% assign shown_posts = shown_posts | plus: 1 %}
+            {% endif %}
+          {% endif %}
+        {% endfor %}
+        {% if shown_posts == 0 %}
+          {% for item in sorted_posts %}
+            {% if item.url != page.url %}
+              {% assign shared = 0 %}
+              {% for tag in page.tags %}
+                {% if item.tags contains tag %}
+                  {% assign shared = shared | plus: 1 %}
+                {% endif %}
+              {% endfor %}
+              {% if shared > 0 and shown_posts < 3 %}
+                <li><a href="{{ item.url }}">{{ item.title }}</a></li>
+                {% assign shown_posts = shown_posts | plus: 1 %}
+              {% endif %}
+            {% endif %}
+          {% endfor %}
+        {% endif %}
+      </ul>
+    {% endif %}
+
+    {% if related_techniky_count > 0 %}
+      <h3>Techniky</h3>
+      <ul>
+        {% assign shown_techniky = 0 %}
+        {% for item in sorted_techniky %}
+          {% if item.url != page.url %}
+            {% assign shared = 0 %}
+            {% for tag in page.tags %}
+              {% capture needle %}|{{ tag }}|{% endcapture %}
+              {% unless ignored_tags contains needle %}
+                {% if item.tags contains tag %}
+                  {% assign shared = shared | plus: 1 %}
+                {% endif %}
+              {% endunless %}
+            {% endfor %}
+            {% if shared > 0 and shown_techniky < 3 %}
+              <li><a href="{{ item.url }}">{{ item.title }}</a></li>
+              {% assign shown_techniky = shown_techniky | plus: 1 %}
+            {% endif %}
+          {% endif %}
+        {% endfor %}
+        {% if shown_techniky == 0 %}
+          {% for item in sorted_techniky %}
+            {% if item.url != page.url %}
+              {% assign shared = 0 %}
+              {% for tag in page.tags %}
+                {% if item.tags contains tag %}
+                  {% assign shared = shared | plus: 1 %}
+                {% endif %}
+              {% endfor %}
+              {% if shared > 0 and shown_techniky < 3 %}
+                <li><a href="{{ item.url }}">{{ item.title }}</a></li>
+                {% assign shown_techniky = shown_techniky | plus: 1 %}
+              {% endif %}
+            {% endif %}
+          {% endfor %}
+        {% endif %}
+      </ul>
+    {% endif %}
+
+    {% if related_nastroje_count > 0 %}
+      <h3>Nástroje</h3>
+      <ul>
+        {% assign shown_nastroje = 0 %}
+        {% for item in sorted_nastroje %}
+          {% if item.url != page.url %}
+            {% assign shared = 0 %}
+            {% for tag in page.tags %}
+              {% capture needle %}|{{ tag }}|{% endcapture %}
+              {% unless ignored_tags contains needle %}
+                {% if item.tags contains tag %}
+                  {% assign shared = shared | plus: 1 %}
+                {% endif %}
+              {% endunless %}
+            {% endfor %}
+            {% if shared > 0 and shown_nastroje < 3 %}
+              <li><a href="{{ item.url }}">{{ item.title }}</a></li>
+              {% assign shown_nastroje = shown_nastroje | plus: 1 %}
+            {% endif %}
+          {% endif %}
+        {% endfor %}
+        {% if shown_nastroje == 0 %}
+          {% for item in sorted_nastroje %}
+            {% if item.url != page.url %}
+              {% assign shared = 0 %}
+              {% for tag in page.tags %}
+                {% if item.tags contains tag %}
+                  {% assign shared = shared | plus: 1 %}
+                {% endif %}
+              {% endfor %}
+              {% if shared > 0 and shown_nastroje < 3 %}
+                <li><a href="{{ item.url }}">{{ item.title }}</a></li>
+                {% assign shown_nastroje = shown_nastroje | plus: 1 %}
+              {% endif %}
+            {% endif %}
+          {% endfor %}
+        {% endif %}
+      </ul>
+    {% endif %}
+  {% endif %}
+{% endif %}
+
+{% if page.tags %}
   <small>tags: <em>{{ page.tags | join: "</em> - <em>" }}</em></small>
 {% endif %}
