@@ -81,7 +81,7 @@ Set-ADObject "CN=Web,CN=Certificate Templates,CN=Public Key Services,CN=Services
 
 Tím se stalo něco velmi podstatného: šablona začala vydávat certifikát, který už není jen "na web". Je použitelný pro klientskou autentizaci v doméně.
 
-Další krok je žádost o certifikát pro privilegovanou identitu. Zde je kritické právě mapování identity. V žádosti se objeví UPN nebo jiný subject odpovídající `administrator@windcorp.htb`:
+Další krok je žádost o certifikát pro privilegovanou identitu. Zde je kritické právě mapování identity. V žádosti se objeví UPN nebo jiný subject odpovídající `administrator@windcorp.htb`. Praktickou práci s tímto typem materiálu rozebírám i v článku [OpenSSL](/nastroje/openssl):
 
 ```text
 openssl req -config admin.cnf -subj "/DC=htb/DC=windcorp/CN=Users/CN=Administrator" -new -nodes -sha256 -out admin.req -keyout admin.key

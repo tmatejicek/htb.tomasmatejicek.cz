@@ -75,7 +75,7 @@ Použitý postup byl přímočarý:
 
 ## Heist: od dumpu ke konkrétnímu heslu
 
-Na Heist se pro dump použil `procdump64.exe` a následně se nad výstupem hledaly řetězce související s loginem:
+Na Heist se pro dump použil [ProcDump](/nastroje/procdump) a následně se nad výstupem hledaly řetězce související s loginem:
 
 ```text
 Administrator / 4dD!5}x/re8]FBuZ

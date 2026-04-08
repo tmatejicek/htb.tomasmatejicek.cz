@@ -116,7 +116,7 @@ JET{0v3rfL0w_f0r_73h_lulz}
 
 ### Slabá kryptografie u účtu `tony`
 
-Druhá instruktivní větev leží v `/home/tony`. Veřejný certifikát `public.crt` používá slabé RSA parametry, takže z něj jde dopočítat privátní klíč. Ten pak rozšifruje `key.bin.enc`, čímž vznikne AES heslo pro `secret.enc`. Tahle část je méně o exploitu a více o tom, že špatně zvolená kryptografie umí být stejně zničující jako přímé RCE.
+Druhá instruktivní větev leží v `/home/tony`. Veřejný certifikát `public.crt` používá slabé RSA parametry, takže z něj jde dopočítat privátní klíč. Ten pak rozšifruje `key.bin.enc`, čímž vznikne AES heslo pro `secret.enc`. Tahle část je méně o exploitu a více o tom, že špatně zvolená kryptografie umí být stejně zničující jako přímé RCE. Praktickou roli tohoto typu práce rozebírám i v článku [OpenSSL](/nastroje/openssl).
 ```text
 python3 RsaCtfTool.py --publickey /home/tony/keys/public.crt --uncipherfile /home/tony/key.bin.enc
 => Fk+HCXBabN72H+GnoNutYBcMFNB9c+jG4R/RBFyHoFI=
