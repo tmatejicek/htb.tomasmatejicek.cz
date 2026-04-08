@@ -63,7 +63,7 @@ AS-REP roast už stojí na validních jménech, ale pořád ještě nezkouší h
 GetNPUsers.py -format hashcat -usersfile users.txt -outputfile hashes.asreproast domain.local/
 ```
 
-Tahle fáze je pro útočníka levná a pro obránce nepříjemná. Jakmile hash opustí řadič domény, síťová kontrola už končí a zbytek se láme offline.
+Tahle fáze je pro útočníka levná a pro obránce nepříjemná. Jakmile hash opustí řadič domény, síťová kontrola už končí a zbytek se láme offline. Praktickou logiku této vrstvy rozebírám i v článku [Hashcat](/nastroje/hashcat).
 
 ### Testování hesel a reuse
 

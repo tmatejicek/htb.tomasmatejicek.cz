@@ -67,7 +67,7 @@ crackmapexec smb intelligence.htb -u Machines/Intelligence/users.txt -p NewIntel
 
 ### Co prozradí SMB a `downdetector.ps1`
 
-SMB přístup tady není jen kvůli `user.txt`. Ve share `IT` leží skript `downdetector.ps1`, který je z bezpečnostního pohledu mnohem cennější. Prochází DNS záznamy začínající na `web*` a na každý z nich posílá `Invoke-WebRequest -UseDefaultCredentials`.
+SMB přístup tady není jen kvůli `user.txt`. Ve share `IT` leží skript `downdetector.ps1`, který je z bezpečnostního pohledu mnohem cennější. Prochází DNS záznamy začínající na `web*` a na každý z nich posílá `Invoke-WebRequest -UseDefaultCredentials`. Praktickou roli rychlé enumerace share a jejich obsahu rozebírám i v článku [Smbmap](/nastroje/smbmap).
 ```text
 smbmap -H intelligence.htb -u Tiffany.Molina -p NewIntelligenceCorpUser9876 -R --depth 1
 => IT READ ONLY

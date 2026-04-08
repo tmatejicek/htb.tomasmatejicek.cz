@@ -7,7 +7,7 @@ tags: deserialization java dotnet serialization
 ---
 ## Úvod a kontext
 
-Deserializace se často vysvětluje přes jednotlivé technologie: Java serializace, .NET `BinaryFormatter`, Json.NET, YAML parser nebo nějaký konkrétní gadget chain. To je užitečné pro exploit development, ale méně užitečné pro architekturu a code review. Ve skutečnosti totiž nejde o problém jednoho frameworku. Jde o opakující se chybu důvěry: aplikace převezme od klienta nebo jiné nedůvěryhodné vrstvy objekt, typ nebo celý objektový graf a uvěří, že jeho znovuvytvoření je bezpečné.
+Deserializace se často vysvětluje přes jednotlivé technologie: Java serializace, .NET `BinaryFormatter`, Json.NET, YAML parser nebo nějaký konkrétní gadget chain. To je užitečné pro exploit development, ale méně užitečné pro architekturu a code review. Ve skutečnosti totiž nejde o problém jednoho frameworku. Jde o opakující se chybu důvěry: aplikace převezme od klienta nebo jiné nedůvěryhodné vrstvy objekt, typ nebo celý objektový graf a uvěří, že jeho znovuvytvoření je bezpečné. Praktickou roli payload generatoru nad už potvrzenou chybou rozebírám i v článku [ysoserial](/nastroje/ysoserial).
 
 Právě proto dává smysl dívat se na insecure deserialization napříč stacky. Na povrchu vypadá jinak v .NET webu, jinak v Java klientovi a jinak v interním remoting endpointu. Ale bezpečnostní jádro je stejné: útočník neovládá jen data, nýbrž i to, jaký objekt aplikace vytvoří a jaké vedlejší efekty při tom vzniknou.
 

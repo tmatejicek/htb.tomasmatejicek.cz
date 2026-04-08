@@ -67,7 +67,7 @@ To je přesně typ stopy, který se nevyplatí ignorovat. Sám o sobě ještě n
 - někde existuje steganografický nosič,
 - a heslo k němu už leží lokálně.
 
-Na webu byl obrázek `irked.jpg`, takže další krok byl racionální:
+Na webu byl obrázek `irked.jpg`, takže další krok byl racionální. Praktickou stránku samotné extrakce rozebírám i v článku [Steghide](/nastroje/steghide):
 
 ```text
 steghide extract -p UPupDOWNdownLRlrBAbaSSss -sf irked.jpg

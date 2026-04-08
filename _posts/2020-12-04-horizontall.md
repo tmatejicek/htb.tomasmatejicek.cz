@@ -31,7 +31,7 @@ wfuzz -H "Host: FUZZ.horizontall.htb" -w SecLists/Discovery/DNS/subdomains-top1m
 
 ### Identifikace Strapi
 
-Jakmile je známý API vhost a `/admin`, první otázka zní, na čem běží. `whatweb` ukáže Strapi, což je důležité, protože pro starší verze existuje veřejně známá a dobře reprodukovatelná cesta k RCE.
+Jakmile je známý API vhost a `/admin`, první otázka zní, na čem běží. `whatweb` ukáže Strapi, což je důležité, protože pro starší verze existuje veřejně známá a dobře reprodukovatelná cesta k RCE. Praktickou roli tohoto nástroje rozebírám i v článku [WhatWeb](/nastroje/whatweb).
 ```text
 whatweb -v http://api-prod.horizontall.htb
 => Strapi <strapi.io> (from x-powered-by string)

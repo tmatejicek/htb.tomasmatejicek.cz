@@ -50,7 +50,7 @@ To je důležité číst přesně. Chyba není v samotném Android APK, ale v to
 
 ### První shell jako `kid`
 
-Praktický exploit šel spustit přímo z Metasploitu:
+Praktický exploit šel spustit přímo z Metasploitu. Jak `msfconsole`, tak `msfvenom` v podobných situacích rozebírám i samostatně v článku [Metasploit: msfconsole a msfvenom](/nastroje/metasploit-msfconsole-a-msfvenom):
 
 ```text
 use exploit/unix/fileformat/metasploit_msfvenom_apk_template_cmd_injection
