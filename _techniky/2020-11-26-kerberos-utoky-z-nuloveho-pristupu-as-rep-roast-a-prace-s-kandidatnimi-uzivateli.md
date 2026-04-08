@@ -104,6 +104,8 @@ Heslo z roastu ještě neříká, jestli účet dovolí:
 
 Na Forestu dával hned smysl WinRM, protože port `5985` byl otevřený a účet `svc-alfresco` byl provozně použitelný. Na jiném hostu může být první bezpečný krok jen čtení share nebo LDAP enumerace.
 
+Praktickou stránku práce s WinRM shellem rozebírám samostatně v článku [Evil-WinRM](/nastroje/evil-winrm).
+
 ### 2. Odhadnout, jaký typ účtu jste získali
 
 Servisní účet bez pre-auth bývá cennější než běžný uživatel, ale ne nutně interaktivní. Naopak lidský účet může rychle otevřít WinRM nebo přístup do interních share. Rozdíl mezi `svc-alfresco`, `FSmith` a `Tiffany.Molina` dobře ukazuje, že hodnota účtu neleží jen v hesle, ale i v jeho roli v doméně.

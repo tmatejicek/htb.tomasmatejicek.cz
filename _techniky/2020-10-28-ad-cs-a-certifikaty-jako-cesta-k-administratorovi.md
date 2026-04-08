@@ -102,6 +102,8 @@ Pokud doména certifikátu věří a namapuje ho na `Administrator`, výsledek j
 
 Na Anubis pak už logicky následuje WinRM:
 
+Prakticky k tomu, co od takového shellu čekat a kdy je WinRM nejlepší další krok, viz také [Evil-WinRM](/nastroje/evil-winrm).
+
 ```text
 evil-winrm -i earth.windcorp.htb -u administrator -r WINDCORP.HTB
 ```

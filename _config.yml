@@ -25,11 +25,20 @@ defaults:
       type: "techniky"
     values:
       layout: "post"
+  -
+    scope:
+      path: ""
+      type: "nastroje"
+    values:
+      layout: "post"
 
 collections:
   techniky:
     output: true
     permalink: /techniky/:title
+  nastroje:
+    output: true
+    permalink: /nastroje/:title
 
 future: true
 
