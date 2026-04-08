@@ -15,7 +15,7 @@ To je na tom stroji nejzajímavější: první exploit sice otevře SSH foothold
 
 ### Veřejný web a vedlejší API vhost
 
-Na první pohled jsou otevřené jen SSH a nginx. Přesně v takové situaci má smysl hledat další hostname. `wfuzz` rychle odhalí `api-prod.horizontall.htb`, který je podstatně zajímavější než hlavní marketingová stránka.
+Na první pohled jsou otevřené jen SSH a nginx. Přesně v takové situaci má smysl hledat další hostname. `wfuzz` rychle odhalí `api-prod.horizontall.htb`, který je podstatně zajímavější než hlavní marketingová stránka. Praktickou roli tohoto typu vhost enumerace rozebírám i v článku [Wfuzz](/nastroje/wfuzz).
 ```bash
 ports=$(nmap -p- --min-rate=1000 -T4 $IP | grep ^[0-9] | cut -d "/" -f 1 | tr "\n" "," | sed s/,$//);echo $ports;nmap -p $ports -A -sC -sV -v $IP
 wfuzz -H "Host: FUZZ.horizontall.htb" -w SecLists/Discovery/DNS/subdomains-top1million-110000.txt --sc 200 http://10.10.11.105

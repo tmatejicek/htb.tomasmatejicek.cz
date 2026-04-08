@@ -64,6 +64,7 @@ Devel je nejčistší ukázka. Anonymous FTP samo o sobě není shell. Rozhoduj�
 ftp-anon: Anonymous FTP login allowed
 iisstart.htm
 ```
+Praktickou roli samotného protokolu rozebírám i v článku [FTP](/nastroje/ftp).
 
 Jakmile lze do stejného prostoru zapsat ASPX soubor, další krok už není kreativní. Webserver soubor vykoná. Tady se write oprávnění okamžitě mění v execute.
 

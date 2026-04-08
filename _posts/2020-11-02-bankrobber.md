@@ -186,6 +186,8 @@ impacket-samrdump -csv $IP
 ./windapsearch/windapsearch.py --dc-ip $IP -u user -p pass --full --functionality -G -U -PU -C --da --admin-objects --user-spns --unconstrained-users --unconstrained-computers --gpos  > windapsearch.txt
 ```
 
+`windapsearch` se tady hodí jako rychlá LDAP inventura po získání doménového kontextu. Praktickou roli tohoto nástroje rozebírám i v článku [windapsearch](/nastroje/windapsearch).
+
 ## Eskalace oprávnění
 
 ### Získání root flagu

@@ -96,7 +96,7 @@ Tím se jasně ukazuje rozdíl mezi "mám servisní účet" a "mám nevýznamný
 
 ## Cascade: deleted objects a historická hesla nejsou nevinný archiv
 
-Cascade ukazuje třetí rodinu problémů. Řetězec nezačíná BloodHoundem ani relayem, ale čtením atributu `cascadeLegacyPwd`, z něhož se získá heslo `r.thompson`. Následně přibývají další stopy ve sdílených souborech a auditních nástrojích, až se účet `ArkSvc` dostane k deleted objects.
+Cascade ukazuje třetí rodinu problémů. Řetězec nezačíná BloodHoundem ani relayem, ale čtením atributu `cascadeLegacyPwd`, z něhož se získá heslo `r.thompson`. Právě takové nenápadné LDAP atributy jde rychle vytáhnout třeba přes [windapsearch](/nastroje/windapsearch). Následně přibývají další stopy ve sdílených souborech a auditních nástrojích, až se účet `ArkSvc` dostane k deleted objects.
 
 Právě tam se objeví historický `TempAdmin`:
 

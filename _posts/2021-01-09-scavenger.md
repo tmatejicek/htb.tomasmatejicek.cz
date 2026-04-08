@@ -111,6 +111,8 @@ Name: ib01c01
 Password: GetYouAH4t!
 ```
 
+Praktickou roli `FTP` jako starého, ale pořád užitečného přenosového kanálu rozebírám i v článku [FTP](/nastroje/ftp).
+
 Tím vznikl ověřený uživatelský přístup a bylo možné přečíst `user.txt`.
 
 ## Získání přístupu

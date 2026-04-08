@@ -384,7 +384,7 @@ __CENSORED__
 
 - Stored XSS v komentáři sama o sobě nestačila; rozhodující bylo, že převody schvaloval administrátor v headless prohlížeči a cookies `username` a `password` byly jen base64.
 - SQL injection v `admin/search.php` nesloužila k dumpu databáze, ale k `LOAD_FILE('C:\\xampp\\htdocs\\admin\\backdoorchecker.php')`, tedy ke čtení localhost-only helperu se `system()`.
-- User shell vznikl až spojením obou webových chyb: adminův prohlížeč na localhostu spustil `backdoorchecker.php`, stáhl `nc.exe` přes `certutil` a vrátil shell jako `Cortin`.
+- User shell vznikl až spojením obou webových chyb: adminův prohlížeč na localhostu spustil `backdoorchecker.php`, stáhl `nc.exe` přes `certutil` a vrátil shell jako `Cortin`. Praktickou roli tohoto typu transportního payloadu rozebírám i v článku [Netcat a nc](/nastroje/netcat-a-nc).
 - Root část otevřela interní služba `bankv2.exe` na portu `910`: čtyřmístný PIN `0021` a následný buffer overflow při volání `transfer.exe`.
 
 ## Co si odnést do praxe
