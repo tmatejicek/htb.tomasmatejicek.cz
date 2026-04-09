@@ -9,7 +9,7 @@ tags: nosql mongodb web auth login injection
 
 NoSQL injection se často podává jako exotická varianta SQLi. V praxi je ale užitečnější dívat se na ni přes to, co přesně backend udělá s uživatelským vstupem. Pokud aplikace převede parametry login formuláře přímo na operátory databázového dotazu, útočník pak neovládá jen hodnotu typu "uživatelské jméno". Ovládá logiku dotazu.
 
-Na Mango je to vidět velmi čistě. Login formulář nad MongoDB backendem nejdřív dovolí jednoduchý bypass přes `$ne`, ale skutečně cenné je něco jiného: stejný endpoint jde použít k postupné extrakci reálných přihlašovacích údajů přes `$regex`. To je důležitý rozdíl. Nejde jen o jednorázové "jsem přihlášený". Jde o systematické získání dvojic `uživatel:heslo`, které pak fungují i mimo web.
+Na [Mangu](/mango) je to vidět velmi čistě. Login formulář nad MongoDB backendem nejdřív dovolí jednoduchý bypass přes `$ne`, ale skutečně cenné je něco jiného: stejný endpoint jde použít k postupné extrakci reálných přihlašovacích údajů přes `$regex`. To je důležitý rozdíl. Nejde jen o jednorázové "jsem přihlášený". Jde o systematické získání dvojic `uživatel:heslo`, které pak fungují i mimo web.
 
 ## Co se u NoSQL injection skutečně kazí
 
@@ -60,7 +60,7 @@ Tím se z login formuláře stává extrakční kanál, ne jen bypass.
 
 ## Mango: když `vendor/composer` napoví správný směr
 
-Na Mango není nejcennější první payload. Je cenné už to, že veřejný `vendor/composer/installed.json` zúží okruh technologií na MongoDB:
+Na [Mangu](/mango) není nejcennější první payload. Je cenné už to, že veřejný `vendor/composer/installed.json` zúží okruh technologií na MongoDB:
 
 ```text
 alcaeus/mongo-php-adapter

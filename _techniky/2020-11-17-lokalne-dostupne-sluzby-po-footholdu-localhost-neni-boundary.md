@@ -62,7 +62,13 @@ Na [Sharpu](/sharp) byl po prvním shellu klíčový až GraphQL endpoint na por
 
 Na [Devzatu](/devzat) se po vstupu pod účtem `patrick` ukázala interní InfluxDB na `127.0.0.1:8086`, z níž šlo vytáhnout hesla dalších uživatelů. Až další lokální služba na `8443` otevřela přístup k chatu a jeho funkci `/file`, která vydala rootův klíč. Tady je velmi dobře vidět, že lokální služby po footholdu tvořily celý druhý útokový řetězec.
 
+Na [Luanne](/luanne) zase webové RCE samo o sobě nestačilo. Rozhodující byla až localhost-only služba na `127.0.0.1:3001`, která po cracknutí `.htpasswd` vydala soukromý klíč `r.michaels` a otevřela stabilní SSH foothold.
+
+Na [OpenAdminu](/openadmin) se stejný pattern projevil na `internal.openadmin.htb` svázaném s `127.0.0.1:52846`. Veřejná RCE v ONA otevřela jen první shell; skutečný posun přinesl až interní vhost, který po port forwardu vydal klíč `joanna`.
+
 Na [Horizontallu](/horizontall) zase první shell vedl jen do Strapi účtu `strapi`, ale teprve `127.0.0.1:8000` odkryl interní Laravel s vlastním RCE. Bez lokální enumerace a SSH port-forwardu by root část vůbec nepřišla na řadu.
+
+Na [Oouchu](/oouch) se localhost a interní síť proměnily v druhou polovinu celého řetězce. Po SSH jako `qtc` už nebyl hlavním tématem veřejný consumer, ale interní kontejnery, `uwsgi` socket a D-Bus workflow dosažitelné až po prvním shellu.
 
 Na [Rope](/rope) stál další případ na tom, že uživatelský shell dovolil přes SSH port-forward osahat lokální službu na `13907`. Nebyla veřejná a sama působila jako interní pomocník. Teprve ruční práce s protokolem a následné zhroucení privilegovaného wrapperu do debuggeru z ní udělaly cestu k rootu.
 

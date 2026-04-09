@@ -9,7 +9,7 @@ tags: active-directory windows dcsync gmsa relay acl
 
 V Active Directory se často hledá jednoduchá hranice: buď je někdo `Domain Admin`, nebo není. V praxi je to výrazně složitější. Doménová kompromitace často nevzniká z přímého členství v privilegované skupině, ale z méně nápadných práv, která se v prostředí nahromadila kvůli provozu: delegované ACL, možnost relaynout autentizaci do LDAP, právo číst heslo gMSA, přístup k deleted objects nebo synchronizační účet, který drží dešifrovatelné tajemství.
 
-[Forest](/forest), [Intelligence](/intelligence), [Cascade](/cascade), [APT](/apt) a [Monteverde](/monteverde) ukazují různé varianty stejného problému. Útočník nemusí dostat "admin účet" klasickou cestou. Stačí mu identita nebo servisní kontext, který umí:
+[Forest](/forest), [Intelligence](/intelligence), [Cascade](/cascade), [APT](/apt), [Monteverde](/monteverde) a [Multimaster](/multimaster) ukazují různé varianty stejného problému. Útočník nemusí dostat "admin účet" klasickou cestou. Stačí mu identita nebo servisní kontext, který umí:
 
 - změnit oprávnění v adresáři,
 - číst tajemství jiného účtu,
@@ -137,6 +137,17 @@ Tenhle případ je důležitý hlavně jako varování před příliš úzkou de
 - a tím se sama stává cílem stejné váhy jako doménový kontroler.
 
 Monteverde proto funguje jako rozšíření hlavního modelu: privilegovaný přístup v identitním ekosystému nemusí být vidět jako skupina nebo právo v BloodHoundu. Může být ukrytý v pomocné službě, která synchronizuje identity jinam.
+
+## Multimaster: `GenericWrite` nad konkrétním účtem
+
+[Multimaster](/multimaster) ukazuje jinou velmi praktickou variantu delegace. Účet `sbauer` nebyl doménový admin, ale měl `GenericWrite` nad účtem `jorden`. To stačilo ke změně atributů cílového uživatele, k získání AS-REP odpovědi a po cracknutí hesla k dalšímu posunu v prostředí. Teprve z něj vznikl přístup, který se dal spojit s lokálním oprávněním `Server Operators` a dotáhnout až k `SYSTEM`.
+
+Právě tenhle případ je užitečný, protože dobře rozlišuje dvě vrstvy moci:
+
+- delegované právo v adresáři,
+- a lokální servisní oprávnění na konkrétním hostu.
+
+Každá z nich sama o sobě vypadá omezeněji než `Domain Admin`, ale v řetězci dávají plnohodnotný dopad.
 
 ## Jak podobné cesty hledat systematicky
 

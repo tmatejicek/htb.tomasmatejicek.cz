@@ -9,7 +9,7 @@ tags: windows exploit privesc enumeration hackthebox
 
 Multimaster je doménový stroj, kde se foothold neudělá jedním trikem, ale čistým řetězením více slabin. Začíná SQL injection ve veřejné webové aplikaci, pokračuje přes zneužití debug funkce ve VS Code, potom přes reuse hesla mezi účty a nakonec končí delegovanými právy v Active Directory.
 
-To je na tomhle boxu nejcennější. Každý krok sám o sobě vypadá omezeně, ale dohromady vytvoří plnohodnotný laterální pohyb: `web -> cyork -> sbauer -> jorden -> SYSTEM`.
+To je na tomhle boxu nejcennější. Každý krok sám o sobě vypadá omezeně, ale dohromady vytvoří plnohodnotný laterální pohyb: `web -> cyork -> sbauer -> jorden -> SYSTEM`. Prakticky tak propojuje články [Password reuse a rozpad hranic mezi aplikací, SSH, WinRM a admin nástroji](/techniky/password-reuse-a-rozpad-hranic-mezi-aplikaci-ssh-winrm-a-admin-nastroji) a [Delegovaná práva v AD: DCSync, gMSA, relay, deleted objects](/techniky/delegovana-prava-v-ad-dcsync-gmsa-relay-deleted-objects).
 
 ## Počáteční průzkum
 
@@ -29,7 +29,7 @@ Lokální enumerace potom ukázala, že na hostu běží VS Code a že jsou akti
 
 ### Heslo v DLL a přechod na `sbauer`
 
-Jakmile je k dispozici shell jako `cyork`, další fáze už není o nové zranitelnosti, ale o hledání tajemství v souborech a binárkách. Na Multimaster se rozhodující stopa objevila v DLL, která obsahovala heslo znovu použité pro účet `sbauer`.
+Jakmile je k dispozici shell jako `cyork`, další fáze už není o nové zranitelnosti, ale o hledání tajemství v souborech a binárkách. Na Multimaster se rozhodující stopa objevila v DLL, která obsahovala heslo znovu použité pro účet `sbauer`. Je to přesně ten typ mezikroku, který shrnuji i v článku [Reverzní inženýrství klienta nebo vlastní binárky jako součást běžného průniku](/techniky/reverzni-inzenyrstvi-klienta-nebo-vlastni-binarky-jako-soucast-bezneho-pruniku).
 
 Právě tento moment je na stroji velmi realistický. Mnoho prostředí je dnes odolnější vůči přímému exploitu, ale stále padá na uložená tajemství v klientských binárkách, konfiguracích a pomocných knihovnách.
 
@@ -45,7 +45,7 @@ Tím se celý řetězec přesune z lokální Windows enumerace do AD logiky. Dal
 
 ### `GenericWrite` nad `jorden` a cesta k `SYSTEM`
 
-Rozhodující zjištění bylo, že `sbauer` má právo `GenericWrite` nad účtem `jorden`. To je v AD velmi silné oprávnění, protože dovoluje měnit vybrané atributy cílového účtu. V praxi to znamená, že lze vypnout Kerberos pre-auth, získat AS-REP odpověď a hash potom lámat offline.
+Rozhodující zjištění bylo, že `sbauer` má právo `GenericWrite` nad účtem `jorden`. To je v AD velmi silné oprávnění, protože dovoluje měnit vybrané atributy cílového účtu. V praxi to znamená, že lze vypnout Kerberos pre-auth, získat AS-REP odpověď a hash potom lámat offline. Praktickou roli takových cest dobře ukáže [BloodHound](/nastroje/bloodhound) a širší význam podobných delegací rozebírám i v článku [Delegovaná práva v AD: DCSync, gMSA, relay, deleted objects](/techniky/delegovana-prava-v-ad-dcsync-gmsa-relay-deleted-objects).
 
 Po získání přístupu jako `jorden` už se situace znovu mění. `jorden` je členem `Server Operators`, takže není potřeba další exploit. Stačí zneužít oprávnění k úpravě nebo spuštění služby tak, aby běžela pod `SYSTEM` a provedla požadovaný příkaz.
 

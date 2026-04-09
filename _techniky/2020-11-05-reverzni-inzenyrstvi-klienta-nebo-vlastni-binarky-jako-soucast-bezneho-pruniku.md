@@ -17,7 +17,7 @@ Reverzní inženýrství klienta se často bere jako disciplína pro pwn nebo ma
 
 nejde už jen o „nějaký program“. Jde o dokumentaci, kterou si cíl napsal sám pro sebe.
 
-Fatty, Sharp a BigHead ukazují přesně tento vzorec. Nikde z nich nevzniká okamžitě shell jen tím, že otevřeš binárku v dekompilátoru. Hodnota je jinde:
+[Fatty](/fatty), [Sharp](/sharp), [BigHead](/bighead) a [Nest](/nest) ukazují přesně tento vzorec. Nikde z nich nevzniká okamžitě shell jen tím, že otevřeš binárku v dekompilátoru. Hodnota je jinde:
 
 - pochopíš protokol,
 - vytáhneš endpointy,
@@ -152,7 +152,7 @@ To je přesně typ situace, kdy reverzní inženýrství není luxus navíc. Je 
 
 ## BigHead: vlastní binárka jako offline laboratoř pro exploit
 
-BigHead je odlišný tím, že nejde o distribuovaného klienta v úzkém smyslu, ale o veřejně dostupnou binárku vlastní služby v archivech `BHWS_Backup.zip`.
+[BigHead](/bighead) je odlišný tím, že nejde o distribuovaného klienta v úzkém smyslu, ale o veřejně dostupnou binárku vlastní služby v archivech `BHWS_Backup.zip`.
 
 To je dobré připomenutí: pro stejný princip není důležitá role programu. Důležité je, že útočník získá kopii implementace.
 
@@ -175,6 +175,16 @@ To je velmi praktická lekce. Když máš binárku, nemusíš cílový server po
 ### 2. Reversing tu není jen o RCE
 
 Po prvním shellu vedla cesta dál přes lokální registry, heslo služby `nginx` a interní SSH na `:2020`. BigHead tedy dobře ukazuje, že offline analýza jedné binárky často otevře vícekrokový řetězec, ne jen jednorázový exploit.
+
+## Nest: interní utility jako dokumentace šifrování i protokolu
+
+[Nest](/nest) ukazuje praktičtější a méně "exploitový" případ. Získané zdrojáky `RU Scanner` a binárka `HqkLdap.exe` nesloužily k nalezení paměťové chyby, ale k pochopení:
+
+- jak aplikace ukládá a dešifruje hesla,
+- jaké kryptografické parametry používá,
+- a jak vypadá interní workflow kolem HQK služby.
+
+Právě to je důležitá připomínka, že reverzní inženýrství klienta často nevede k RCE přímo. Vede k tomu, že z binárky vytáhneš klíč, formát, endpoint nebo šifrovací rutinu, bez nichž by další krok nebyl možný.
 
 ## Co mají tyto případy společné
 

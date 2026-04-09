@@ -84,11 +84,11 @@ Jakmile se tyto dvě věci potkají špatně, stává se z admin uploadu nejkrat
 
 ## Jak tenhle vzorec vypadal v různých případech
 
-Na jednom hostu upload přijímal obrázek dostatečně povrchně na to, aby prošel soubor s vloženým PHP payloadem a dvojitou příponou. Rozhodující nebyla "kreativita payloadu", ale fakt, že server nahraný soubor obsloužil z vykonatelného webového prostoru.
+Na [Magicu](/magic) upload přijímal obrázek dostatečně povrchně na to, aby prošel soubor s vloženým PHP payloadem a dvojitou příponou. Rozhodující nebyla "kreativita payloadu", ale fakt, že server nahraný soubor obsloužil z vykonatelného webového prostoru.
 
-Jinde byl celý řetězec ještě přímočařejší: veřejně dostupný Tomcat Manager chránilo slabé heslo a samotná administrace umožnila nahrát `WAR`. Tam už nešlo o obcházení filtru. Šlo o to, že deployment rozhraní bylo fakticky otevřeným RCE kanálem.
+Na [Jerrym](/jerry) byl celý řetězec ještě přímočařejší: veřejně dostupný Tomcat Manager chránilo slabé heslo a samotná administrace umožnila nahrát `WAR`. Tam už nešlo o obcházení filtru. Šlo o to, že deployment rozhraní bylo fakticky otevřeným RCE kanálem.
 
-U další dvojice případů byl problém v tom, že blogovací nebo CMS administrace sama dovolovala nahrát soubor, plugin nebo obrázek způsobem, který vedl ke spuštění kódu. Jakmile se podařilo získat přístup do adminu, upload už nebyl omezením. Byl právě tou oficiální funkcí, přes kterou se na host dostal payload.
+Na [Nibbles](/nibbles) a [Blunderu](/blunder) byl problém v tom, že blogovací nebo CMS administrace sama dovolovala nahrát soubor, plugin nebo obrázek způsobem, který vedl ke spuštění kódu. Jakmile se podařilo získat přístup do adminu, upload už nebyl omezením. Byl právě tou oficiální funkcí, přes kterou se na host dostal payload.
 
 ## Proč je chyba často jinde než v validaci
 

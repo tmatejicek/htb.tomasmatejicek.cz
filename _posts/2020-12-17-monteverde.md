@@ -9,13 +9,13 @@ tags: windows kerberos ldap winrm active-directory
 
 Monteverde je AD stroj, kde rozhoduje disciplína v práci s hesly, ne exploit služby. Malý password spray proti LDAP otevře první účet, SMB sdílení pak vydají `azure.xml` s heslem `mhope` a teprve WinRM z něj udělá skutečný shell.
 
-Finální kompromitace je ještě cennější z obranného pohledu. Server s Azure AD Connect v sobě drží dešifrovatelné synchronizační tajemství, takže z běžného administrativního serveru se stává přímá cesta k doménovému administrátorovi.
+Finální kompromitace je ještě cennější z obranného pohledu. Server s Azure AD Connect v sobě drží dešifrovatelné synchronizační tajemství, takže z běžného administrativního serveru se stává přímá cesta k doménovému administrátorovi. Širší identitní souvislosti k tomu rozebírám i v článku [Delegovaná práva v AD: DCSync, gMSA, relay, deleted objects](/techniky/delegovana-prava-v-ad-dcsync-gmsa-relay-deleted-objects).
 
 ## Počáteční průzkum
 
 ### Typický Domain Controller
 
-`nmap` dává okamžitě jasný obrázek: Kerberos, LDAP, SMB, WinRM a další služby typické pro Domain Controller. V takové situaci dává smysl soustředit se na účty a sdílení, ne na webový exploit, protože web tu vůbec není.
+[Nmap](/nastroje/nmap) dává okamžitě jasný obrázek: Kerberos, LDAP, SMB, WinRM a další služby typické pro Domain Controller. V takové situaci dává smysl soustředit se na účty a sdílení, ne na webový exploit, protože web tu vůbec není.
 ```bash
 ports=$(nmap -Pn -p- --min-rate=1000 -T4 $IP | grep ^[0-9] | cut -d "/" -f 1 | tr "\n" "," | sed s/,$//);nmap -Pn -p $ports -A -sC -sV -v $IP
 ```
@@ -48,7 +48,7 @@ S těmito údaji už jde systematicky procházet SMB sdílení a hledat cizí ko
 
 Když je potřeba místo široké enumerace ručně ověřit konkrétní LDAP objekty nebo atributy, hodí se v podobné fázi i [ldapsearch](/nastroje/ldapsearch).
 
-Hodně rychlou širokou orientaci pak v podobné fázi dává i [enum4linux](/nastroje/enum4linux).
+Hodně rychlou širokou orientaci pak v podobné fázi dává i [enum4linux](/nastroje/enum4linux). Jakmile je potřeba zkontrolovat konkrétní share a soubory detailněji, hodí se i [smbclient](/nastroje/smbclient) a [smbmap](/nastroje/smbmap).
 
 ```bash
 ./enum4linux.pl -a -d -o -v -u SABatchJobs -p SABatchJobs $IP > Monteverde-enum4linux.txt
@@ -61,7 +61,7 @@ Hodně rychlou širokou orientaci pak v podobné fázi dává i [enum4linux](/na
 
 ### WinRM jako `mhope`
 
-Soubor `azure.xml` obsahuje heslo účtu `mhope` a právě ten se hodí pro WinRM. Tím se z read-only přístupu do SMB stává skutečný shell na serveru.
+Soubor `azure.xml` obsahuje heslo účtu `mhope` a právě ten se hodí pro WinRM. Tím se z read-only přístupu do SMB stává skutečný shell na serveru. Praktickou roli tohoto přechodu shrnuji i v článku [Evil-WinRM](/nastroje/evil-winrm).
 ```bash
 ./evil-winrm/evil-winrm.rb -i $IP -u mhope -p "4n0therD4y@n0th3r$"
 ```
@@ -78,7 +78,7 @@ __CENSORED__
 
 ### Azure AD Connect a dešifrování ADSync hesla
 
-Na účtu `mhope` je klíčové nevěnovat se jen běžným službám, ale zkontrolovat nainstalovaný software. Monteverde má Azure AD Connect a lokální SQL Server, což je velmi silná stopa. ADSync si musí někam ukládat synchronizační tajemství a na hostu jsou k tomu všechny potřebné komponenty včetně `mcrypt.dll`.
+Na účtu `mhope` je klíčové nevěnovat se jen běžným službám, ale zkontrolovat nainstalovaný software. Monteverde má Azure AD Connect a lokální SQL Server, což je velmi silná stopa. ADSync si musí někam ukládat synchronizační tajemství a na hostu jsou k tomu všechny potřebné komponenty včetně `mcrypt.dll`. Obranný význam takového hostu rozebírám i v článku [Delegovaná práva v AD: DCSync, gMSA, relay, deleted objects](/techniky/delegovana-prava-v-ad-dcsync-gmsa-relay-deleted-objects).
 
 Postup je pak přímočarý: z databáze `ADSync` se vytáhne `entropy`, `instance_id`, `keyset_id` a zašifrovaná konfigurace, pomocí `mcrypt.dll` se obsah dešifruje a z XML vypadnou doménové přihlašovací údaje.
 ```powershell
