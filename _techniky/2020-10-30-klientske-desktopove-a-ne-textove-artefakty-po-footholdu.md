@@ -72,6 +72,8 @@ Jakmile na stejném hostu leží i produkční služba, vzdálená správa přes
 
 [BigHead](/bighead) je výborná připomínka, že tajemství nemusí ležet v jednom souboru. `root.txt:Zone.Identifier` vedl ke KeePass databázi, `KeePass.config.xml` prozradil vazbu na key file a teprve spojení databáze, klíče a hesla otevřelo finální tajemství.
 
+[Safe](/safe) ukazuje stejný problém v čistší podobě po binárním footholdu. KeePass databáze i materiál potřebný k jejímu otevření ležely na tom samém kompromitovaném hostu, takže vault nepůsobil jako druhý faktor, ale jen jako odložený root secret.
+
 Důležité je nepřehlédnout okolní soubory:
 
 - konfigurační XML,

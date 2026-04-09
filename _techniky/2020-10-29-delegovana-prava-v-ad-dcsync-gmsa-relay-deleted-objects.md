@@ -69,6 +69,12 @@ secretsdump.py htb.local/svc-alfresco:s3rvice@forest.htb.local
 
 Forest je proto důležitý hlavně jako model: delegované provozní oprávnění k Exchange nemusí vypadat dramaticky, ale v kombinaci s relay cestou se z něj stane přímá replikační schopnost.
 
+## Sauna: servisní účet, který umí příliš mnoho
+
+[Sauna](/sauna) ukazuje jednodušší, ale o to praktičtější variantu. První foothold sice vznikne přes `FSmith`, ale rozhodující je až druhý účet `svc_loanmgr`, jehož heslo unikne z `WinLogon`. Tenhle servisní účet nepotřebuje relay ani další ACL eskalaci. Už sám o sobě má dost silná práva na to, aby `secretsdump.py` získal doménové hashe včetně `Administrator`.
+
+To je důležitá připomínka, že delegované právo nemusí být vždy elegantní graf v BloodHoundu. Někdy jde prostě o účet, který kvůli provozní roli drží replikační schopnost nebo ekvivalentně silný přístup, aniž by vypadal jako klasický admin.
+
 ## Intelligence: gMSA jako most k cizí identitě
 
 [Intelligence](/intelligence) stojí na jiném typu delegace. Účet `Tiffany.Molina` sám o sobě nepřináší interaktivní shell ani privilegovanou roli, ale dovolí přečíst `downdetector.ps1`, tedy automatizační skript, který používá `Invoke-WebRequest -UseDefaultCredentials`. Přes DNS záznam a odchyt autentizace vznikne další účet: `Ted.Graves`.

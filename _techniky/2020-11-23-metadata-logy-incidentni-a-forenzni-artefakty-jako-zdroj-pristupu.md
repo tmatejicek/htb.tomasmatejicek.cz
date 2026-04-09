@@ -38,6 +38,8 @@ To je typ situace, kdy log neprozradí „jen provoz“, ale rovnou vysoce pravd
 
 Podobně na Doctoru zůstal v Apache logu request, ve kterém se hodnota `Guitar123` propsala do URL. Bezpečnostní problém tady není v Apache jako takovém. Je v tom, že provozní log převzal citlivou hodnotu a uchoval ji v podobě čitelné dalšímu účtu.
 
+Na [Resolute](/resolute) se stejný vzorec objeví v PowerShell transcriptu. Soubor `PowerShell_transcript...txt` zachytí příkaz `net use` i s heslem `Serv3r4Admin4cc123!`, takže z běžného auditního artefaktu vznikne přímý pivot na účet `ryan`.
+
 ### 2. Incidentní a forenzní balíčky
 
 Na Scavengeru vedla cesta přes poštovní schránky k FTP přístupu a následně k souboru `ib01c01_incident.pcap`. Ten pak vydal administrační URL i přihlašovací údaje pro další službu.

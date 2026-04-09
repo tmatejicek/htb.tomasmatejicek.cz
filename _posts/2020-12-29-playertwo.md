@@ -80,6 +80,8 @@ Po přihlášení byla dostupná dokumentace Protobs, firmware balíček a testo
 
 Analýza `Protobs.bin` ukázala, že binárka obsahuje několik volání `system()` a že v ní jde změnit jeden krátký příkaz bez zásadního rozbití struktury souboru. Praktický exploit stál na tom, že:
 
+Je to pěkný příklad toho, že i veřejně dostupná binárka nebo firmware patří do stejné analytické rodiny jako článek [Reverzní inženýrství klienta nebo vlastní binárky jako součást běžného průniku](/techniky/reverzni-inzenyrstvi-klienta-nebo-vlastni-binarky-jako-soucast-bezneho-pruniku).
+
 - firmware šel binárně upravit,
 - původní podpis zůstal přiložený,
 - a server přesto balíček přijal jako validní.
@@ -101,6 +103,8 @@ mosquitto_sub -h localhost -t '$SYS/#'
 ```
 
 Na tématu `$SYS/internal/firmware/signing` se periodicky objevoval privátní klíč používaný k podepisování firmwaru. Ten byl zároveň SSH klíčem uživatele `observer`.
+
+Právě tenhle vzorec rozebírám i v článku [Message brokery a interní fronty jako zdroj tajemství](/techniky/message-brokers-a-interni-fronty-jako-zdroj-tajemstvi): broker není jen transport, ale často i nosič tajemství a provozních instrukcí.
 
 ## Získání přístupu
 
@@ -129,6 +133,8 @@ __CENSORED__
 V `/opt/Configuration_Utility/` ležela SUID binárka `Protobs` spolu s vlastní `libc.so.6` a `ld-2.29.so`. To je silná indicie, že privesc nepovede přes `sudo`, ale přes binární chybu přímo v utilitě.
 
 Reverzní analýza ukázala dvě důležité vlastnosti:
+
+Tahle druhá polovina už patří spíš do článku [Memory corruption a binary exploitation v praxi](/techniky/memory-corruption-a-binary-exploitation-v-praxi), protože jde o klasickou heap chybu v SUID utilitě a ne o další aplikační slabinu.
 
 - při mazání a znovuvytváření konfigurací šlo vyvolat double free nad popisem konfigurace,
 - práce s délkou popisu dovolovala NULL-byte overflow do velikosti sousedního heap chunku.

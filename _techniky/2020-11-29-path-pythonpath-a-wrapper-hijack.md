@@ -9,7 +9,7 @@ tags: linux path pythonpath wrappers privesc sudo
 
 Mnoho lokálních eskalací nevzniká z kernel exploitu ani z exotické SUID binárky. Vzniká z obyčejného provozního zvyku: někdo napíše wrapper nebo helper skript, pustí ho s vyššími právy a předpokládá, že prostředí kolem něj je důvěryhodné. Jenže právě tam leží chyba. Jakmile privilegovaný proces spoléhá na `PATH`, `PYTHONPATH` nebo jiné zděděné prostředí, předává část rozhodování útočníkovi.
 
-Magic, ForwardSlash, Laboratory a Writeup ukazují čtyři varianty stejného vzorce. Jednou jde o binárku, která volá `lshw` bez absolutní cesty, podruhé o Python skript načítající modul z útočníkem určeného `PYTHONPATH`, potřetí o wrapper nad Dockerem a počtvrté o login hook, který zavolá `run-parts` z nesprávného místa. Na povrchu vypadají odlišně. Bezpečnostní jádro je ale stejné: root proces používá jméno nebo import, které už neřeší on sám, ale útočníkovo prostředí.
+Magic, ForwardSlash, Laboratory, [Previse](/previse) a Writeup ukazují několik variant stejného vzorce. Jednou jde o binárku, která volá `lshw` bez absolutní cesty, podruhé o Python skript načítající modul z útočníkem určeného `PYTHONPATH`, potřetí o wrapper nad Dockerem, počtvrté o backup skript používající `gzip` bez pevné cesty a popáté o login hook, který zavolá `run-parts` z nesprávného místa. Na povrchu vypadají odlišně. Bezpečnostní jádro je ale stejné: root proces používá jméno nebo import, které už neřeší on sám, ale útočníkovo prostředí.
 
 ## Co se při těchto chybách skutečně pokazí
 
@@ -80,6 +80,19 @@ Tohle je důležitý příklad hlavně proto, že na první pohled nevypadá jak
 Writeup ukazuje méně nápadnou variantu. Root při přihlášení volal `run-parts` bez plně kvalifikované cesty. `pspy` odhalilo, že rozhoduje `PATH`, a ten obsahoval zapisovatelné cesty dřív než systémové binárky. Jakmile se do `/usr/local/bin` podstrčil vlastní `run-parts`, spustil se při dalším loginu místo originálu.
 
 Tady je důležité něco jiného než u Magica. Nešlo o ruční `sudo` volání z interaktivního shellu, ale o privilegovaný login workflow. To dobře připomíná, že wrapper hijack není jen post-exploitation trik nad `sudo -l`. Může sedět i v `cron`, PAM, login hooku nebo jiné automatizaci.
+
+### Previse: backup skript, který důvěřuje `PATH`
+
+[Previse](/previse) přidává velmi přímočarou shellovou variantu téhož problému. `sudo -l` dovolilo spouštět `/opt/scripts/access_backup.sh`, který vypadal neškodně:
+
+```bash
+gzip -c /var/log/apache2/access.log > /var/backups/...
+gzip -c /var/www/file_access.log > /var/backups/...
+```
+
+Rozhodující chyba ale neležela v tom, co skript zálohoval. Ležela v tom, že `gzip` ani `date` nevolal absolutní cestou. Jakmile se do `/tmp` podstrčil vlastní `gzip` a tato cesta se dostala na začátek `PATH`, root si spustil cizí binárku místo systémové utility.
+
+Previse je užitečný hlavně proto, že odstraňuje pocit, že PATH hijack vyžaduje exotický wrapper nebo SUID binárku. Někdy stačí obyčejný provozní shell skript v `sudoers`.
 
 ### ForwardSlash: `PYTHONPATH` a import modulu `shutil`
 

@@ -100,6 +100,8 @@ Praktický postup často vypadá takto:
 
 To je přesně důvod, proč je chyba hodnotit tyto artefakty jen jako informační leak. Informace totiž často nejsou konečný dopad, ale mezikrok k plnému kompromisu.
 
+Na [Playeru](/player) se to ukazuje velmi čistě. Nejdůležitější indicie nepřišla z hlavního webu, ale ze záložního souboru `dee8dc8a47256c64630d803a4c40786c.php~`, který vydal JWT signing secret i logiku launcheru. Jeden jediný backup artefakt tak otevřel další aplikační větev a zkrátil cestu k plnohodnotnému footholdu.
+
 ## Proč staré a "už nepoužívané" soubory pořád bolí
 
 Obrana často spoléhá na dvě mylné domněnky:

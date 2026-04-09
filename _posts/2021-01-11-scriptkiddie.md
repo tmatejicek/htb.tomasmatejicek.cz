@@ -7,7 +7,7 @@ tags: linux command-injection ssh sudo exploit enumeration
 ---
 ## Úvod a kontext
 
-ScriptKiddie je stroj o špatně zabalené automatizaci bezpečnostních nástrojů. Webová služba na portu `5000` nabízela obsluhu kolem `msfvenom` a právě ta otevřela první shell. Druhá fáze pak ukázala jiný, ale stejně typický problém: pomocný skript zpracovávající logy pod jiným uživatelem.
+ScriptKiddie je stroj o špatně zabalené automatizaci bezpečnostních nástrojů. Webová služba na portu `5000` nabízela obsluhu kolem `msfvenom` a právě ta otevřela první shell. Druhá fáze pak ukázala jiný, ale stejně typický problém: pomocný skript zpracovávající logy pod jiným uživatelem. Právě tento druh trust boundary rozebírám i v článku [Logy jako útoková plocha](/techniky/logy-jako-utokova-plocha).
 
 Nejde tedy o jeden exploit, ale o dva různé druhy command injection. Nejprve v aplikaci, která pracuje s APK šablonou pro `msfvenom`, a potom v interním workflow nad souborem `hackers`.
 

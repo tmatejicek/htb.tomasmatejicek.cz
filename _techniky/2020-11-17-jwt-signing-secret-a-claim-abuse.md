@@ -100,6 +100,10 @@ Když se signing secret někdy dostal ven, dopad se dramaticky zvyšuje u token�
 
 Na [Cerealu](/cereal) je tenhle dopad dobře vidět v celé šíři. Starý commit vydal signing secret, podvržený token otevřel admin kontext a teprve ten umožnil další zneužití přes stored XSS a server-side deserializaci. Samotný secret tedy ještě nebyl koncem řetězce, ale stal se prvním důvěryhodným krokem k němu.
 
+Na [Playeru](/player) byl vzorec podobný, jen secret neležel v historii repozitáře, ale v záložním PHP souboru `php~`. Jakmile byla známá podpisová hodnota `_S0_R@nd0m_P@ss_`, šlo přepodepsat cookie `access`, změnit claim `access_code` a otevřít skrytý launcher bez další autentizace.
+
+[Secret](/secret) ukazuje ještě přímější variantu. Signing secret zůstal v Git historii Express aplikace a backend pak důvěřoval claimu `name` natolik, že token s hodnotou `theadmin` otevřel přístup k endpointu `/api/logs`. Tady je dobře vidět, že tajemství samo o sobě shell negeneruje; rozhodující je až to, jak silně aplikace věří konkrétním claimům.
+
 ## Co z úniku secretu naopak neplyne automaticky
 
 Je užitečné nepřeceňovat dopad mechanicky. Uniklý secret neznamená vždy totéž jako plný účet administrátora.

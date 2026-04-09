@@ -58,7 +58,7 @@ Právě tyto méně nápadné služby bývají po footholdu nejzajímavější, 
 
 ## Jak tenhle vzorec vypadal v konkrétních případech
 
-Na [Sharpu](/sharp) byl po prvním shellu klíčový až GraphQL endpoint na portu `8080`, který zvenku vůbec nebyl vidět. Teprve lokální enumerace ukázala, že služba běží, a spojení s `SeImpersonatePrivilege` z něj udělalo přechod až k `SYSTEM`. Veřejný web byl důležitý jen pro foothold; skutečná eskalace ležela na localhostu.
+Na [ServMonu](/servmon) byl po prvním SSH přístupu klíčový až NSClient++ na `127.0.0.1:8443`. Zvenku sice působil jako interní admin rozhraní, ale po port forwardu a přečtení hesla z `nsclient.ini` se změnil v normálně dosažitelnou službu, která uměla nahrát a spustit vlastní skript. Veřejný web a FTP tedy otevřely jen foothold; skutečný privesc ležel až na localhostu.
 
 Na [Devzatu](/devzat) se po vstupu pod účtem `patrick` ukázala interní InfluxDB na `127.0.0.1:8086`, z níž šlo vytáhnout hesla dalších uživatelů. Až další lokální služba na `8443` otevřela přístup k chatu a jeho funkci `/file`, která vydala rootův klíč. Tady je velmi dobře vidět, že lokální služby po footholdu tvořily celý druhý útokový řetězec.
 
