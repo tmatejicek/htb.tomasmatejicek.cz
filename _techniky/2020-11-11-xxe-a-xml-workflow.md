@@ -9,7 +9,7 @@ tags: xxe xml web parser
 
 XXE se často vysvětluje jako chyba XML parseru, který dovolí načítat externí entity. To je technicky správně, ale pro praxi trochu málo. V běžném provozu totiž XML málokdy vstupuje do systému jako "libovolný XML dokument". Obvykle je schované ve formuláři, trackeru, importu, dokumentovém workflow nebo převodníku, který vývojář nepovažuje za exponovanou attack surface.
 
-Právě proto dává smysl mluvit o XML workflow, ne jen o parseru. Útočník totiž obvykle neútočí na XML jako takové. Útočí na podnikový nebo aplikační proces, který XML přijímá, rozbaluje, převádí nebo jinak zpracovává s větší důvěrou, než si zaslouží.
+Právě proto dává smysl mluvit o XML workflow, ne jen o parseru. Útočník totiž obvykle neútočí na XML jako takové. Útočí na podnikový nebo aplikační proces, který XML přijímá, rozbaluje, převádí nebo jinak zpracovává s větší důvěrou, než si zaslouží. U širších dokumentových řetězců na to navazuje i článek [Document workflow jako RCE nebo file-read primitivum](/techniky/document-workflow-jako-rce-nebo-file-read-primitivum).
 
 ## Proč je XML pořád relevantní
 

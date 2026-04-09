@@ -118,7 +118,7 @@ Jakmile je jasné, co na localhostu běží, dává smysl zkoumat:
 - jestli vydává tajemství nebo spouští další akce,
 - a zda se přes ni nedá aktivovat jiný privilegovaný workflow.
 
-Pořád nejde o bezhlavé fuzzování. Jde o čtení architektury hostu po kompromitaci.
+Pořád nejde o bezhlavé fuzzování. Jde o čtení architektury hostu po kompromitaci. Prakticky se v téhle fázi nejčastěji střídá [wget a curl](/nastroje/curl) pro ruční HTTP ověřování, [Chisel](/nastroje/chisel) nebo [Socat](/nastroje/socat) pro vyvedení portu ven a [Proxychains](/nastroje/proxychains), když je potřeba přes vzniklý most obsluhovat další klientské nástroje.
 
 ## Co se na localhostu hledá nejčastěji
 

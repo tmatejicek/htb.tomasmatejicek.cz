@@ -132,6 +132,6 @@ e4de96de9930d2f4e8b5bd533856e90d
 
 ## Co si odnést do praxe
 
-- Veřejně publikované dokumenty musí projít stejnou redakční kontrolou jako zdrojový kód. Metadata autorů a interní instrukce typu výchozího hesla mohou být první a nejlevnější vstup do domény.
+- Veřejně publikované dokumenty je potřeba kontrolovat stejně přísně jako zdrojový kód. Metadata autorů a interní instrukce typu výchozího hesla mohou být první a nejlevnější vstup do domény.
 - Automatizační skripty používající `Invoke-WebRequest -UseDefaultCredentials` nad dynamickými DNS záznamy jsou nebezpečné. Jakmile útočník může ovlivnit DNS, script se mění v NTLM hash relay/coercion primitivum.
 - gMSA účty je potřeba auditovat nejen z pohledu toho, kde běží, ale hlavně kdo smí číst jejich heslo. Na Intelligence právě tohle právo rozhodlo o celé root části.

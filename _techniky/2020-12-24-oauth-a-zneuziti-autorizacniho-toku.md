@@ -56,7 +56,7 @@ Bezpečnostní otázka ale není jen "přišel platný code". Správná otázka 
 
 ### 2. Redirect nebo callback v privilegovaném browser kontextu
 
-OAuth často počítá s tím, že uživatel projde autorizací ve vlastním browseru. Pokud ale tok navštíví admin browser, review robot nebo server-side komponenta volaná přes SSRF, privilegovaný kontext se může nechtěně přelít do toku, který ovládá útočník.
+OAuth často počítá s tím, že uživatel projde autorizací ve vlastním browseru. Pokud ale tok navštíví admin browser, review robot nebo server-side komponenta volaná přes SSRF, privilegovaný kontext se může nechtěně přelít do toku, který ovládá útočník. Přesně tenhle typ privilegovaného browser kontextu rozebírám i v článku [Stored XSS a admin browser a headless review jako útoková plocha](/techniky/stored-xss-a-admin-browser-a-headless-review-jako-utokova-plocha).
 
 To je přesně ten moment, kdy se z běžného callbacku stává útoková plocha. Ne proto, že by byl špatně podepsaný token, ale proto, že autorizační server vydal výsledek ve špatném kontextu.
 
@@ -83,7 +83,7 @@ První kritický moment vznikne ve chvíli, kdy kontaktní mechanizmus dovolí s
 
 Další chyba neleží v samotném kódu. Leží v tom, co s ním systém dovolí dělat dál. Přístupové údaje `develop:supermegasecureklarabubu123!` otevřou registraci vlastní OAuth aplikace, následně lze přes stejný trust chain získat administrátorskou `sessionid` na authorization serveru a vytvořit klienta s grantem `client_credentials`.
 
-To je rozhodující zlom. `client_credentials` se zde nechovají jako úzce omezený servisní token. Chovají se jako klíč k internímu API:
+To je rozhodující zlom. `client_credentials` se zde nechovají jako úzce omezený servisní token. Chovají se jako klíč k internímu API. Praktickou práci s takovým přesným HTTP requestem rozebírám i v článku [wget a curl](/nastroje/curl):
 
 ```bash
 curl -X POST 'http://authorization.oouch.htb:8000/oauth/token/' \

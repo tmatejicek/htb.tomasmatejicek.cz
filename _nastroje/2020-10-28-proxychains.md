@@ -9,13 +9,13 @@ tags: nastroje proxy socks tunneling pivot localhost
 
 `proxychains` je v praxi užitečný tehdy, když útok neskončí na tom, že "něco běží interně", ale potřebuje běžný klientský nástroj donutit komunikovat přes mezilehlý proxy nebo SOCKS most. Neřeší zranitelnost. Řeší dosažitelnost cíle.
 
-Na [Tentacle](/tentacle) otevře cestu přes veřejný Squid k internímu WPAD a pak k OpenSMTPD v neveřejném segmentu. Na [Anubisu](/anubis) zase využije reverzní SOCKS přes kompromitovaný host a dovolí pracovat s interním SMB, `curl`, `kinit` i `evil-winrm`, jako by šlo o běžně dosažitelné služby. Širší dopravní logiku rozebírám i v článku [Port forwarding, proxy a protokolové mosty jako exploitační primitivum](/techniky/port-forwarding-proxy-a-protokolove-mosty-jako-exploitacni-primitivum).
+Na [Tentacle](/tentacle) otevře cestu přes veřejný Squid k internímu WPAD a pak k OpenSMTPD v neveřejném segmentu. Na [Anubisu](/anubis) zase využije reverzní SOCKS přes kompromitovaný host a dovolí pracovat s interním SMB, [wget a curl](/nastroje/curl), `kinit` i [Evil-WinRM](/nastroje/evil-winrm), jako by šlo o běžně dosažitelné služby. Reverzní SOCKS vrstvu v tomhle řetězci staví [Chisel](/nastroje/chisel), zatímco širší dopravní logiku rozebírám i v článku [Port forwarding, proxy a protokolové mosty jako exploitační primitivum](/techniky/port-forwarding-proxy-a-protokolove-mosty-jako-exploitacni-primitivum).
 
 ## Co `proxychains` v praxi řeší
 
 `proxychains` není skener ani tunelovací server. Je to tenká vrstva, která vezme běžný TCP klientský nástroj a pošle jeho spojení přes definovaný proxy řetězec. Prakticky tedy odpovídá na otázku:
 
-- jak použít obyčejný `curl`, `smbclient`, `kinit` nebo exploit skript proti cíli, který není z lokálního stroje přímo dosažitelný?
+- jak použít obyčejný [wget a curl](/nastroje/curl), [smbclient](/nastroje/smbclient), `kinit` nebo exploit skript proti cíli, který není z lokálního stroje přímo dosažitelný?
 
 Právě to je jeho největší hodnota. V mnoha řetězcích už služba známá je. Problém není "co napadnout", ale "jak se k tomu dostat bez psaní vlastního transportního kódu".
 
@@ -38,7 +38,7 @@ Tady je důležité, že `proxychains` nepřináší "lepší recon". Překláp�
 
 ### Využití reverzního SOCKS po footholdu
 
-Na [Anubisu](/anubis) se nejprve získal foothold a přes `chisel` vznikl reverzní SOCKS most. Teprve na něj navázal `proxychains`, který dovolil obsluhovat interní služby běžnými klienty:
+Na [Anubisu](/anubis) se nejprve získal foothold a přes [Chisel](/nastroje/chisel) vznikl reverzní SOCKS most. Teprve na něj navázal `proxychains`, který dovolil obsluhovat interní služby běžnými klienty:
 
 ```bash
 proxychains -f proxychains4.conf curl "http://softwareportal.windcorp.htb/install.asp?client=10.10.14.7&software=7z1900-x64.exe"
@@ -59,7 +59,7 @@ V projektu je na `proxychains` cenné i to, že nemění samotný pracovní post
 
 To je důležité hlavně ve chvíli, kdy se útok přelévá mezi různými vrstvami:
 
-- z webu na SMB,
+- z webu na [SMB share a artefakty přes smbclient](/nastroje/smbclient),
 - ze SMB na Kerberos,
 - z Kerberosu na WinRM,
 - nebo z proxy-only přístupu na exploit interní služby.
@@ -72,7 +72,7 @@ Největší smysl dává tehdy, když:
 - cíl je interní nebo jinak přímo nedosažitelný,
 - a další nástroj očekává obyčejné TCP spojení.
 
-V takové chvíli je praktičtější než složit vlastní tunelovací logiku pro každý jednotlivý nástroj.
+V takové chvíli je praktičtější než složit vlastní tunelovací logiku pro každý jednotlivý nástroj. Pokud ale potřebujete zpřístupnit jen jediný přesný port nebo přemostit IPv4 a IPv6, bývá užší a přesnější volbou spíš [Socat](/nastroje/socat).
 
 ## Co `proxychains` neumí vyřešit za vás
 

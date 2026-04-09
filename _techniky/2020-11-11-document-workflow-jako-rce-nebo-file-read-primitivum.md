@@ -9,7 +9,7 @@ tags: documents file-read rce xxe pdf office
 
 Dokument v aplikaci často nevystupuje jako obyčejný soubor ke stažení. Mnohem častěji spouští celé workflow: import, rozbalení, validaci, konverzi, rendrování do PDF, náhled nebo další publikaci. Právě v této chvíli se z "pasivního" vstupu stává aktivní útoková plocha. Útočník už nepracuje jen s obsahem dokumentu. Pracuje s tím, co všechno s ním backend udělá.
 
-To je užitečné odlišit od užšího článku o XXE. XML entity jsou jen jedna podmnožina problému. Stejně nebezpečné může být:
+To je užitečné odlišit od užšího článku [XXE a XML workflow](/techniky/xxe-a-xml-workflow). XML entity jsou jen jedna podmnožina problému. Stejně nebezpečné může být:
 
 - že se `docx` rozbalí jako ZIP a parser věří jeho vnitřní struktuře,
 - že HTML nebo rich text končí v server-side PDF rendereru,
@@ -141,7 +141,7 @@ Bucket připomíná, že dokumentové workflow neznamená jen Word a XML. Stejn�
 - zkontroluje pomocí Yara,
 - a pokud projde, otevře ho v LibreOffice.
 
-Tím se krásně ukazuje hranice mezi dokumentovým workflow a širší bezpečnostní pipeline. Z pohledu tohoto článku je důležitý hlavně moment, kdy se kancelářský dokument opravdu otevře v LibreOffice. V tu chvíli už nejde o "parsování obsahu". Jde o to, že nedůvěryhodný dokument vstupuje do plnohodnotné aplikace, která umí makra, externí zdroje a další vedlejší efekty.
+Tím se krásně ukazuje hranice mezi dokumentovým workflow a širší bezpečnostní pipeline. Z pohledu tohoto článku je důležitý hlavně moment, kdy se kancelářský dokument opravdu otevře v LibreOffice. V tu chvíli už nejde o "parsování obsahu". Jde o to, že nedůvěryhodný dokument vstupuje do plnohodnotné aplikace, která umí makra, externí zdroje a další vedlejší efekty. Širší orchestraci kolem podobných řetězců rozebírám i v článku [Automatizované zpracování souborů a bezpečnostní pipeline](/techniky/automatizovane-zpracovani-souboru-a-bezpecnostni-pipeline).
 
 Právě proto mohl `.ods` s makrem po nahrání do `malware_dropbox` otevřít shell jako `luke`. Dokument zde neprošel jedním parserem. Prošel celým workflow, které mu nakonec dalo interaktivní execution context.
 

@@ -31,7 +31,7 @@ Nejčastěji nejde o "administraci" v úzkém slova smyslu. Rizikový kontext se
 - exportní nebo renderovací služby, které otevírají uživatelský obsah,
 - backoffice aplikace, ve kterých operátor pracuje s daty od zákazníků.
 
-Společný jmenovatel je pořád stejný: nedůvěryhodný obsah se vykoná v prostředí, které má větší pravomoci než jeho autor.
+Společný jmenovatel je pořád stejný: nedůvěryhodný obsah se vykoná v prostředí, které má větší pravomoci než jeho autor. Když se tento privilegovaný browser navíc účastní federovaného přihlášení nebo callback workflow, přelévá se stejný problém i do témat popsaných v článku [OAuth a zneužití autorizačního toku](/techniky/oauth-a-zneuziti-autorizacniho-toku).
 
 ## Tři praktické vzory dopadu
 

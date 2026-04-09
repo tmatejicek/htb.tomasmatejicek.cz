@@ -158,7 +158,7 @@ Právě tohle je kritický okamžik, kdy se pipeline stává zranitelnou.
 
 Téma se částečně překrývá s dokumentovým workflow, ale důraz je jiný.
 
-- Článek o document workflow řeší, co dělá nebezpečným samotný dokumentový vstup: XML, ZIP, HTML renderer, Office dokument.
+- Článek [Document workflow jako RCE nebo file-read primitivum](/techniky/document-workflow-jako-rce-nebo-file-read-primitivum) řeší, co dělá nebezpečným samotný dokumentový vstup: XML, ZIP, HTML renderer, Office dokument.
 - Tento článek řeší hlavně to, co se děje kolem: přesuny, přejmenování, validace, pomocné logy, lokální konzole a řetězení několika komponent.
 
 Jinými slovy: tam je středem dokument. Tady je středem automatizace.

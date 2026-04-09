@@ -9,7 +9,7 @@ tags: linux sql-injection ssh php exploit enumeration
 
 Fortress-Jet není klasický lineární HTB stroj s jedním `user.txt` a jedním `root.txt`. Jde spíš o víceúrovňové prostředí s několika službami a několika nezávislými flagy. Přesto se v něm dá sledovat hlavní technická linka: skrytý admin panel, SQL injection, následné RCE v PHP a potom samostatné lokální úkoly nad binárkami a špatně navrženou kryptografií.
 
-Právě proto má smysl článek číst jako rozbor rozhodovacích bodů, ne jako jeden přímočarý walkthrough. První část vede k webovému shellu jako `www-data`; další fáze už pracují s artefakty nalezenými po shellu, například s binárkou `leak` nebo s klíči uživatele `tony`.
+Právě proto má smysl Fortress-Jet vnímat jako rozbor rozhodovacích bodů, ne jako jeden přímočarý řetězec. První část vede k webovému shellu jako `www-data`; další fáze už pracují s artefakty nalezenými po shellu, například s binárkou `leak` nebo s klíči uživatele `tony`.
 
 ## Počáteční průzkum
 

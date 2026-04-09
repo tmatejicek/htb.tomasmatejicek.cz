@@ -9,7 +9,7 @@ tags: web git backups sourcecode
 
 Spousta útoků nezačíná exploitem, ale čtením. Veřejně dostupný `.git`, archiv zdrojáků, starý backup webu nebo testovací soubor ponechaný ve webrootu často prozradí víc než samotná aplikace. Ne proto, že by šlo o "zranitelnost vyšší úrovně", ale proto, že v těchto artefaktech bývají přesně ty vztahy mezi službami, účty a tajemstvími, které veřejné rozhraní skrývá.
 
-To je důležité i redakčně a výukově. Čtenář si často pod prvním footholdem představí RCE. V praxi ale bývá častější jiný vzorec: nejdřív unikne kontext, potom přístupové údaje nebo interní logika a teprve z toho vznikne skutečný shell. Právě na tenhle pattern se článek zaměřuje.
+Je užitečné tenhle vzorec pojmenovat explicitně. První foothold si mnoho lidí automaticky spojuje s RCE, ale v praxi často přijde jinak: nejdřív unikne kontext, potom přístupové údaje nebo interní logika a teprve z toho vznikne skutečný shell. Právě na tenhle pattern se článek zaměřuje.
 
 ## Proč jsou tyto artefakty tak cenné
 

@@ -68,7 +68,7 @@ Scavenger je tedy dobrá připomínka, že:
 
 ## Příklad z praxe: Tentacle
 
-Tentacle stojí víc na DNS a infrastrukturní konfiguraci než na klasickém WHOIS, ale princip je podobný. Veřejně viditelná vrstva sama o sobě nestačila. Teprve DNS data a následně `wpad.dat` vydaly další část vnitřní topologie.
+Tentacle stojí víc na DNS a infrastrukturní konfiguraci než na klasickém WHOIS, ale princip je podobný. Veřejně viditelná vrstva sama o sobě nestačila. Teprve DNS data a následně `wpad.dat` vydaly další část vnitřní topologie. Síťovou návaznost WPADu, proxy a druhého rozsahu rozebírám detailněji i v článku [Síťová topologie jako leak: WPAD, Squid, FXP a interní mapování](/techniky/sitova-topologie-jako-leak-wpad-squid-fxp-a-interni-mapovani).
 
 ### DNS jako mapa interních jmen
 

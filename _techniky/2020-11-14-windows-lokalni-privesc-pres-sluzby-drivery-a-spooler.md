@@ -83,7 +83,7 @@ Ale bezpečnostní význam je jiný než na Control:
 - na Control rozhodla chyba v ACL,
 - na Driver rozhodl systémový patch gap a zneužitelný spooler tok.
 
-To je přesně rozdíl, který je potřeba držet i v redakčním textu i při reálném incident response.
+To je přesně rozdíl, který je potřeba držet jak při technické analýze, tak při reálném incident response.
 
 ## Buff: lokální foothold má hodnotu i proto, že otevře localhost-only software
 
@@ -119,7 +119,7 @@ EOPLOADDRIVER.exe System\CurrentControlSet\MyService C:\temp\capcom.sys
 ExploitCapcom_modded.exe
 ```
 
-Z redakčního pohledu je tady důležité dobře pojmenovat příčinu:
+Tady je důležité dobře pojmenovat příčinu:
 
 - root nepřišel jen proto, že "na hostu byl starý driver",
 - přišel proto, že kompromitovaný účet uměl zneužít driver loading workflow.

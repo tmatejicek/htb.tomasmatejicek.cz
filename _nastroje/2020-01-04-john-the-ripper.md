@@ -7,7 +7,7 @@ tags: nastroje cracking passwords archives keys hashes
 ---
 ## Úvod a kontext
 
-`John the Ripper` se v tomto projektu používá hlavně jako praktický nástroj na zpracování různorodých artefaktů, které nejsou rovnou v podobě hashů připravených pro `Hashcat`. Jeho největší hodnota není jen v samotném crackingu, ale i v převodnících typu `zip2john`, `ssh2john`, `keepass2john` nebo `gpg2john`, které z archivů, klíčů a dalších formátů udělají crackovatelný vstup.
+`John the Ripper` se v tomto projektu používá hlavně jako praktický nástroj na zpracování různorodých artefaktů, které nejsou rovnou v podobě hashů připravených pro [Hashcat](/nastroje/hashcat). Jeho největší hodnota není jen v samotném crackingu, ale i v převodnících typu `zip2john`, `ssh2john`, `keepass2john` nebo `gpg2john`, které z archivů, klíčů a dalších formátů udělají crackovatelný vstup.
 
 Na [APT](/apt) zpracuje heslo k `backup.zip`, na [OpenAdminu](/openadmin) passphrase k privátnímu SSH klíči a na [Controlu](/control) či [Traverxec](/traverxec) pomůže s dalšími typy credential artefaktů. To je jeho praktická role v projektu: když narazíte na archiv, klíč nebo jiný uzavřený soubor, `John` často představuje nejkratší cestu od artefaktu k dalšímu použitelnému tajemství.
 
@@ -122,7 +122,7 @@ Právě to určuje, jestli jde o kosmetický výsledek, nebo o zásadní posun v
 
 ### Záměna `Johna` za univerzální náhradu všech cracking workflow
 
-V některých případech je praktičtější jiný nástroj. `John` má v tomto projektu největší hodnotu tam, kde nejdřív potřebujete převést artefakt do crackovatelné podoby.
+V některých případech je praktičtější jiný nástroj. Pokud už držíte čistý hash nebo roast materiál, bývá přímější sáhnout po [Hashcatu](/nastroje/hashcat). `John` má v tomto projektu největší hodnotu tam, kde nejdřív potřebujete převést artefakt do crackovatelné podoby.
 
 ## Nejčastější praktické scénáře
 
