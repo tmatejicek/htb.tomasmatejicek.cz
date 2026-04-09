@@ -58,7 +58,7 @@ ale:
 
 ## Varianta 1: write -> execute přes webroot
 
-Devel je nejčistší ukázka. Anonymous FTP samo o sobě není shell. Rozhodující je až to, že FTP míří do prostoru, který servíruje IIS:
+[Devel](/devel) je nejčistší ukázka. Anonymous FTP samo o sobě není shell. Rozhodující je až to, že FTP míří do prostoru, který servíruje IIS:
 
 ```text
 ftp-anon: Anonymous FTP login allowed
@@ -72,7 +72,7 @@ To je důležitá lekce: write do webrootu není „souborový přístup“. Je 
 
 ## Varianta 2: write -> execute přes oficiální deploy kanál
 
-Jerry stojí na trochu jiné verzi téhož principu. Tomcat Manager sice funguje jako legitimní administrativní rozhraní, ale z bezpečnostního pohledu je to pořád write do prostoru, který se pak vykoná.
+[Jerry](/jerry) stojí na trochu jiné verzi téhož principu. Tomcat Manager sice funguje jako legitimní administrativní rozhraní, ale z bezpečnostního pohledu je to pořád write do prostoru, který se pak vykoná.
 
 Nahraný `WAR` není statický soubor. Je to artefakt, který aplikační server:
 
@@ -84,7 +84,7 @@ To je přesně ten důvod, proč veřejně přístupný Manager se slabým hesle
 
 ## Varianta 3: write -> authenticate přes `authorized_keys`
 
-Zetta ukazuje jinou, velmi praktickou variantu. Rsync export domácího adresáře `roy` dovolil nejen čtení, ale i zápis. Tím bylo možné podstrčit:
+[Zetta](/zetta) ukazuje jinou, velmi praktickou variantu. Rsync export domácího adresáře `roy` dovolil nejen čtení, ale i zápis. Tím bylo možné podstrčit:
 
 ```text
 /home/roy/.ssh/authorized_keys
@@ -102,7 +102,7 @@ Stejný princip se opakuje i jinde:
 
 ## Varianta 4: write -> execute přes aplikaci nebo repo
 
-Bitlab dobře ukazuje, že write nemusí směřovat jen do webrootu nebo deployment rozhraní. Jakmile kompromitovaný uživatel může změnit soubor:
+Na [Bitlabu](/bitlab) je dobře vidět, že write nemusí směřovat jen do webrootu nebo deployment rozhraní. Jakmile kompromitovaný uživatel může změnit soubor:
 
 ```php
 profile/index.php
@@ -114,7 +114,7 @@ To už je blízké deployment trustu, ale důležitý je stejný sjednocující 
 
 ## Varianta 5: write -> privileged execute přes pomocný skript
 
-Nibbles přidává ještě jednu vrstvu. Uživatel `nibbler` mohl přes `sudo` spustit:
+[Nibbles](/nibbles) přidává ještě jednu vrstvu. Uživatel `nibbler` mohl přes `sudo` spustit:
 
 ```text
 /home/nibbler/personal/stuff/monitor.sh

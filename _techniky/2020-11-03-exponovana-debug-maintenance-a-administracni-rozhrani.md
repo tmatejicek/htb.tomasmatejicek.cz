@@ -67,13 +67,13 @@ Tato rozhraní bývají často mimo hlavní bezpečnostní review, protože "to 
 
 ## Jak se tenhle vzorec projevil v různých případech
 
-Na jednom hostu ležel přímo veřejný `/dev/` shell. Nebylo nutné hledat zranitelnost v aplikaci. Stačilo si všimnout, že server publikuje nástroj určený pro interní práci s příkazy. To je čistý příklad toho, že některé problémy nejsou bug v kódu, ale chyba provozního vystavení.
+Na [Bashed](/bashed) ležel přímo veřejný `/dev/` shell. Nebylo nutné hledat zranitelnost v aplikaci. Stačilo si všimnout, že server publikuje nástroj určený pro interní práci s příkazy. To je čistý příklad toho, že některé problémy nejsou bug v kódu, ale chyba provozního vystavení.
 
-Jinde se první foothold otevřel přes slabé heslo do Centreon administrace. Samotný dashboard ale nebyl hlavním problémem. Kritické bylo až to, že po přihlášení šlo definovat nebo upravit check tak, aby na serveru vykonal příkaz. Slabé heslo tak neotevřelo "monitoring", ale rovnou vzdálené spuštění kódu.
+Na [Wallu](/wall) se první foothold otevřel přes slabé heslo do Centreon administrace. Samotný dashboard ale nebyl hlavním problémem. Kritické bylo až to, že po přihlášení šlo definovat nebo upravit check tak, aby na serveru vykonal příkaz. Slabé heslo tak neotevřelo "monitoring", ale rovnou vzdálené spuštění kódu.
 
-Na windowsovém hostu se po získání běžného SSH přístupu ukázalo, že na localhostu běží NSClient++ s API pro nahrání a spuštění vlastního skriptu. Tady je dobře vidět, že interní admin rozhraní není bezpečné jen proto, že neběží veřejně. Jakmile existuje první shell a port forwarding, stává se z něj stejně dosažitelná služba jako jakákoli jiná.
+Na [ServMonu](/servmon) se po získání běžného SSH přístupu ukázalo, že na localhostu běží NSClient++ s API pro nahrání a spuštění vlastního skriptu. Tady je dobře vidět, že interní admin rozhraní není bezpečné jen proto, že neběží veřejně. Jakmile existuje první shell a port forwarding, stává se z něj stejně dosažitelná služba jako jakákoli jiná.
 
-U IoT zařízení byl centrem útoku Windows Device Portal. Nešlo o klasickou webovou aplikaci, ale o plnohodnotné rozhraní pro správu zařízení. Jakmile se našlo maintenance workflow resetující heslo administrátora, nebyla už potřeba další privilege escalation. Samotný portál byl tou nejvyšší řídicí vrstvou systému.
+Na [Omni](/omni) byl centrem útoku Windows Device Portal. Nešlo o klasickou webovou aplikaci, ale o plnohodnotné rozhraní pro správu zařízení. Jakmile se našlo maintenance workflow resetující heslo administrátora, nebyla už potřeba další privilege escalation. Samotný portál byl tou nejvyšší řídicí vrstvou systému.
 
 ## Co mají tato rozhraní společné
 

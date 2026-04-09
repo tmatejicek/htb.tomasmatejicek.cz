@@ -27,30 +27,30 @@ Klíčová otázka tedy nezní jen `unikl repozitář?`, ale hlavně `co všechn
 
 ### 1. Repozitář přímo ovládá běžící aplikaci
 
-Na Bitlabu nestačilo, že GitLab odhalil zdrojáky. Důležité bylo až to, že kompromitovaný uživatel mohl změnit soubor `profile/index.php` a aplikace tuto změnu prakticky sama převzala. Ve chvíli, kdy je repo současně zdroj pravdy i zdroj běžícího kódu, není potřeba hledat samostatné RCE v aplikaci. Stačí změnit to, co se má spustit.
+Na [Bitlabu](/bitlab) nestačilo, že GitLab odhalil zdrojáky. Důležité bylo až to, že kompromitovaný uživatel mohl změnit soubor `profile/index.php` a aplikace tuto změnu prakticky sama převzala. Ve chvíli, kdy je repo současně zdroj pravdy i zdroj běžícího kódu, není potřeba hledat samostatné RCE v aplikaci. Stačí změnit to, co se má spustit.
 
 To je jeden z nejnebezpečnějších provozních antipatternů: vývojový přístup se tím přímo mění v produkční code execution.
 
 ### 2. Historie pořád obsahuje živé tajemství
 
-Seal ukazuje jiný problém. Uniklý `tomcat-users.xml` nebyl v aktuálním stavu aplikace, ale v historii projektu. Bezpečnostně je to ale téměř totéž, jako kdyby tam ležel dnes. Jakmile stejné heslo stále funguje v Tomcat Manageru, historie repozitáře není „starý odpad“, ale aktivní credential store.
+[Seal](/seal) ukazuje jiný problém. Uniklý `tomcat-users.xml` nebyl v aktuálním stavu aplikace, ale v historii projektu. Bezpečnostně je to ale téměř totéž, jako kdyby tam ležel dnes. Jakmile stejné heslo stále funguje v Tomcat Manageru, historie repozitáře není „starý odpad“, ale aktivní credential store.
 
 Stejný princip se opakoval i jinde:
 
-- v Secret zůstalo v Git historii produkčně použitelné JWT tajemství,
-- v Zettě ležela pod `/etc/rsyslog.d/.git` stará databázová konfigurace s heslem `postgres`,
+- v [Secretu](/secret) zůstalo v Git historii produkčně použitelné JWT tajemství,
+- v [Zettě](/zetta) ležela pod `/etc/rsyslog.d/.git` stará databázová konfigurace s heslem `postgres`,
 - v řadě prostředí se v commitech objevují `.env`, helper skripty nebo servisní konfigurace, které už z hlavní větve zmizely, ale z hlediska útočníka pořád fungují.
 
 To je důležitý rozdíl proti běžnému úniku zdrojáku. Historie neukazuje jen to, jak vývoj probíhal. Často uchovává přesně ta tajemství, která už administrátor považuje za dávno odstraněná.
 
 ### 3. Privilegovaná automatika důvěřuje writable repozitáři
 
-Na Bitlabu byl root ve skutečnosti až důsledkem toho, že administrativní `sudo git pull` běžel nad repozitářem, do kterého mohl zapisovat kompromitovaný uživatel. Jakmile je writable i `.git/hooks`, nejde o nevinný update, ale o spuštění cizí logiky s vyššími právy.
+Na [Bitlabu](/bitlab) byl root ve skutečnosti až důsledkem toho, že administrativní `sudo git pull` běžel nad repozitářem, do kterého mohl zapisovat kompromitovaný uživatel. Jakmile je writable i `.git/hooks`, nejde o nevinný update, ale o spuštění cizí logiky s vyššími právy.
 
 Podobný princip se objevuje i mimo čistý Git:
 
-- Seal měl zálohovací playbook a později příliš široké `sudo` nad `ansible-playbook`,
-- Zetta těžila z toho, že historická konfigurační vrstva v `/etc` pořád nesla důvěryhodná data pro další privilegovaný subsystém,
+- [Seal](/seal) měl zálohovací playbook a později příliš široké `sudo` nad `ansible-playbook`,
+- [Zetta](/zetta) těžila z toho, že historická konfigurační vrstva v `/etc` pořád nesla důvěryhodná data pro další privilegovaný subsystém,
 - jakmile deployment nebo maintenance úloha přebírá vstup ze souborů, které může ovlivnit méně privilegovaný účet, vzniká z ní velmi přímočarý privesc vektor.
 
 Nejde tedy jen o hooky. Jde o celý vzorec `mohu měnit to, čemu později věří privilegovaná automatika`.

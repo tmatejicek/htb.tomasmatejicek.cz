@@ -34,7 +34,7 @@ Z pohledu útočníka je důležité jedno: nejsou to nevinné uživatelské sou
 
 ### 1. Mail archivy a přílohy
 
-Arkham ukazuje, že poštovní archiv není jen historický záznam komunikace. `alfred@arkham.local.ost` obsahoval přílohu, která po dekódování vydala další přihlašovací údaj a otevřela přechod do účtu `batman`.
+[Arkham](/arkham) ukazuje, že poštovní archiv není jen historický záznam komunikace. `alfred@arkham.local.ost` obsahoval přílohu, která po dekódování vydala další přihlašovací údaj a otevřela přechod do účtu `batman`.
 
 Tady je důležité vnímat, proč to fungovalo. Mailbox není jen sbírka zpráv, ale i sklad:
 
@@ -48,7 +48,7 @@ Jakmile je na hostu lokální kopie pošty, je potřeba ji brát jako plnohodnot
 
 ### 2. Desktopové nástroje s reverzibilním uložením tajemství
 
-Sharp je čistý příklad toho, jak nebezpečné jsou lokální databáze desktopových nástrojů. `PortableKanban.pk3` neobsahoval jen obsah boardu, ale reverzibilně uložená hesla. Ta pak otevřela další share a nakonec i cestu k debug endpointu.
+Na [Sharpu](/sharp) je čistý příklad toho, jak nebezpečné jsou lokální databáze desktopových nástrojů. `PortableKanban.pk3` neobsahoval jen obsah boardu, ale reverzibilně uložená hesla. Ta pak otevřela další share a nakonec i cestu k debug endpointu.
 
 Podobný princip se opakuje i u různých pomocných utility, klientů helpdesku nebo synchronizačních nástrojů:
 
@@ -58,7 +58,7 @@ Podobný princip se opakuje i u různých pomocných utility, klientů helpdesku
 
 ### 3. Nástroje vzdálené podpory a unattended access
 
-Remote ukazuje, jak silný je tento vzorec u TeamVieweru. Lokálně uložené `SecurityPasswordAES` po dešifrování vydalo heslo, které fungovalo pro `Administrator`.
+[Remote](/remote) ukazuje, jak silný je tento vzorec u TeamVieweru. Lokálně uložené `SecurityPasswordAES` po dešifrování vydalo heslo, které fungovalo pro `Administrator`.
 
 To je typický případ, kdy support nástroj zvyšuje blast radius kompromitace:
 
@@ -70,7 +70,7 @@ Jakmile na stejném hostu leží i produkční služba, vzdálená správa přes
 
 ### 4. Správci hesel, key file a vedlejší formáty
 
-BigHead je výborná připomínka, že tajemství nemusí ležet v jednom souboru. `root.txt:Zone.Identifier` vedl ke KeePass databázi, `KeePass.config.xml` prozradil vazbu na key file a teprve spojení databáze, klíče a hesla otevřelo finální tajemství.
+[BigHead](/bighead) je výborná připomínka, že tajemství nemusí ležet v jednom souboru. `root.txt:Zone.Identifier` vedl ke KeePass databázi, `KeePass.config.xml` prozradil vazbu na key file a teprve spojení databáze, klíče a hesla otevřelo finální tajemství.
 
 Důležité je nepřehlédnout okolní soubory:
 
@@ -83,7 +83,7 @@ Samotná KDBX databáze ještě nemusí stačit. Ale když na stejném hostu le�
 
 ### 5. Serializované credential objekty a specializované formáty
 
-Omni ukazuje jiný, ale stejně praktický vzor. Flagy ani přístupy neležely jako obyčejný text, ale jako PowerShell `CliXml` serializované credential objekty. Bez znalosti formátu by takový soubor vypadal jako nečitelný nebo nepoužitelný artefakt.
+[Omni](/omni) ukazuje jiný, ale stejně praktický vzor. Flagy ani přístupy neležely jako obyčejný text, ale jako PowerShell `CliXml` serializované credential objekty. Bez znalosti formátu by takový soubor vypadal jako nečitelný nebo nepoužitelný artefakt.
 
 To je důležitá lekce obecně. Po footholdu je potřeba myslet i na formáty, které:
 
@@ -93,7 +93,7 @@ To je důležitá lekce obecně. Po footholdu je potřeba myslet i na formáty, 
 
 ### 6. Bytecode, binárky a obfuskované lokální skripty
 
-Wall připomíná, že heslo nemusí být v konfiguraci ani ve vaultu. Může být schované v bytecode souboru, který někdo považuje za „jen interní skript“. Dekompilovaný `backup` vydal heslo pro `shelby`, i když na disku neležel čitelný plaintext.
+[Wall](/wall) připomíná, že heslo nemusí být v konfiguraci ani ve vaultu. Může být schované v bytecode souboru, který někdo považuje za „jen interní skript“. Dekompilovaný `backup` vydal heslo pro `shelby`, i když na disku neležel čitelný plaintext.
 
 Obfuskované heslo není bezpečnostní kontrola. Je to jen jiná reprezentace stejného tajemství.
 
