@@ -58,15 +58,17 @@ Právě tyto méně nápadné služby bývají po footholdu nejzajímavější, 
 
 ## Jak tenhle vzorec vypadal v konkrétních případech
 
-Na jednom hostu byl po prvním shellu klíčový až GraphQL endpoint na portu `8080`, který zvenku vůbec nebyl vidět. Teprve lokální enumerace ukázala, že služba běží, a spojení s `SeImpersonatePrivilege` z něj udělalo přechod až k `SYSTEM`. Veřejný web byl důležitý jen pro foothold; skutečná eskalace ležela na localhostu.
+Na [Sharpu](/sharp) byl po prvním shellu klíčový až GraphQL endpoint na portu `8080`, který zvenku vůbec nebyl vidět. Teprve lokální enumerace ukázala, že služba běží, a spojení s `SeImpersonatePrivilege` z něj udělalo přechod až k `SYSTEM`. Veřejný web byl důležitý jen pro foothold; skutečná eskalace ležela na localhostu.
 
-Jinde se po vstupu pod účtem `patrick` ukázala interní InfluxDB na `127.0.0.1:8086`, z níž šlo vytáhnout hesla dalších uživatelů. Až další lokální služba na `8443` otevřela přístup k chatu a jeho funkci `/file`, která vydala rootův klíč. Tady je velmi dobře vidět, že lokální služby po footholdu tvořily celý druhý útokový řetězec.
+Na [Devzatu](/devzat) se po vstupu pod účtem `patrick` ukázala interní InfluxDB na `127.0.0.1:8086`, z níž šlo vytáhnout hesla dalších uživatelů. Až další lokální služba na `8443` otevřela přístup k chatu a jeho funkci `/file`, která vydala rootův klíč. Tady je velmi dobře vidět, že lokální služby po footholdu tvořily celý druhý útokový řetězec.
 
-Další případ stál na tom, že uživatelský shell dovolil přes SSH port-forward osahat lokální službu na `13907`. Nebyla veřejná a sama působila jako interní pomocník. Teprve ruční práce s protokolem a následné zhroucení privilegovaného wrapperu do debuggeru z ní udělaly cestu k rootu.
+Na [Horizontallu](/horizontall) zase první shell vedl jen do Strapi účtu `strapi`, ale teprve `127.0.0.1:8000` odkryl interní Laravel s vlastním RCE. Bez lokální enumerace a SSH port-forwardu by root část vůbec nepřišla na řadu.
 
-Na jiném systému zase běžela Kibana konzole jen na `127.0.0.1:5601`. Zvenku se k ní nešlo dostat, ale po shellu se ukázalo, že umí načíst lokální soubor a že vedle ní běží log processing workflow s vysokými právy. Opět tedy nešlo o "jednu lokální službu", ale o celý lokální ekosystém, který po footholdu najednou ztratil ochranu.
+Na [Rope](/rope) stál další případ na tom, že uživatelský shell dovolil přes SSH port-forward osahat lokální službu na `13907`. Nebyla veřejná a sama působila jako interní pomocník. Teprve ruční práce s protokolem a následné zhroucení privilegovaného wrapperu do debuggeru z ní udělaly cestu k rootu.
 
-I kompromitovaný kontejner ukazuje stejný vzorec. Jakmile útočník získal shell uvnitř GitLab kontejneru, lokální Redis už nebyl interní služba chráněná bindem na loopback. Stal se přirozenou součástí útočné plochy daného runtime prostředí.
+Na [Haystacku](/haystack) zase běžela Kibana konzole jen na `127.0.0.1:5601`. Zvenku se k ní nešlo dostat, ale po shellu se ukázalo, že umí načíst lokální soubor a že vedle ní běží log processing workflow s vysokými právy. Opět tedy nešlo o "jednu lokální službu", ale o celý lokální ekosystém, který po footholdu najednou ztratil ochranu.
+
+I [Ready](/ready) ukazuje stejný vzorec v kompromitovaném kontejneru. Jakmile útočník získal shell uvnitř GitLab kontejneru, lokální Redis už nebyl interní služba chráněná bindem na loopback. Stal se přirozenou součástí útočné plochy daného runtime prostředí.
 
 ## Jak k localhostu po footholdu přistupovat
 

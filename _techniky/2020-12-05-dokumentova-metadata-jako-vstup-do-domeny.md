@@ -16,7 +16,7 @@ Metadata dokumentů se často berou jako drobný OSINT detail. Typický závěr 
 
 nejde už o kosmetický leak. Jde o první krok k validním uživatelům, password sprayingu, AS-REP roastu nebo dalším identitním útokům.
 
-Intelligence je velmi čistý příklad právě proto, že celý řetězec začíná nevinně: web server publikuje PDF soubory. Teprve při systematickém čtení metadat se ukáže, že dokumenty vydávají jmenný prostor domény i reálně použitelné credential clue.
+[Intelligence](/intelligence) je velmi čistý příklad právě proto, že celý řetězec začíná nevinně: web server publikuje PDF soubory. Teprve při systematickém čtení metadat se ukáže, že dokumenty vydávají jmenný prostor domény i reálně použitelné credential clue.
 
 ## Co všechno metadata typicky prozradí
 
@@ -34,7 +34,7 @@ Samotná metadata málokdy dají shell. Jejich hodnota spočívá v tom, že zp�
 
 ## Intelligence: od `/documents/` k validním uživatelům
 
-Na Intelligence hraje hlavní roli kombinace tří detailů:
+Na [Intelligence](/intelligence) hraje hlavní roli kombinace tří detailů:
 
 1. veřejně dostupný adresář `/documents/`,
 2. předvídatelné názvy souborů podle data,

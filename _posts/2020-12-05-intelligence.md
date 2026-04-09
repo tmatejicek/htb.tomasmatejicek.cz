@@ -7,15 +7,15 @@ tags: windows smb kerberos ldap active-directory
 ---
 ## Úvod a kontext
 
-Intelligence je pěkný Active Directory stroj postavený na kombinaci veřejně dostupných dokumentů, Kerberos enumerace a zneužití interní automatizace. První polovina nevypadá dramaticky: web server publikuje PDF dokumenty a jejich metadata. Právě z nich se ale poskládá seznam uživatelů a nakonec i výchozí heslo pro jeden účet.
+Intelligence je pěkný Active Directory stroj postavený na kombinaci veřejně dostupných dokumentů, Kerberos enumerace a zneužití interní automatizace. První polovina nevypadá dramaticky: web server publikuje PDF dokumenty a jejich metadata. Právě z nich se ale poskládá seznam uživatelů a nakonec i výchozí heslo pro jeden účet. Tenhle typ vstupu do domény rozebírám podrobněji i v článku [Dokumentová metadata jako vstup do domény](/techniky/dokumentova-metadata-jako-vstup-do-domeny).
 
-Root část je ještě zajímavější. Přístup `Tiffany.Molina` nestačí k shellu, ale stačí k přečtení skriptu `downdetector.ps1`, který běží plánovaně a navštěvuje DNS jména začínající na `web`. Přes vlastní DNS záznam se tak podaří vynutit autentizaci `Ted.Graves`, cracknout jeho heslo, získat heslo gMSA účtu `svc_int$` a s ním si vyžádat Kerberos ticket pro `Administrator`.
+Root část je ještě zajímavější. Přístup `Tiffany.Molina` nestačí k shellu, ale stačí k přečtení skriptu `downdetector.ps1`, který běží plánovaně a navštěvuje DNS jména začínající na `web`. Přes vlastní DNS záznam se tak podaří vynutit autentizaci `Ted.Graves`, cracknout jeho heslo, získat heslo gMSA účtu `svc_int$` a s ním si vyžádat Kerberos ticket pro `Administrator`. Širší souvislosti k těmto dvěma krokům shrnuji i v článcích [NTLM coercion a vynucená autentizace](/techniky/ntlm-coercion-a-vynucena-autentizace) a [Delegovaná práva v AD: DCSync, gMSA, relay, deleted objects](/techniky/delegovana-prava-v-ad-dcsync-gmsa-relay-deleted-objects).
 
 ## Počáteční průzkum
 
 ### Doménový kontroler a veřejné dokumenty
 
-Už první `nmap` ukazuje doménový kontroler `dc.intelligence.htb`. Vedle klasických AD služeb je ale zajímavý i IIS na portu `80`, protože právě tam leží první použitelné stopy.
+Už první [nmap](/nastroje/nmap) ukazuje doménový kontroler `dc.intelligence.htb`. Vedle klasických AD služeb je ale zajímavý i IIS na portu `80`, protože právě tam leží první použitelné stopy.
 ```bash
 ports=$(nmap -p- --min-rate=1000 -T4 $IP | grep ^[0-9] | cut -d "/" -f 1 | tr "\n" "," | sed s/,$//);echo $ports;nmap -p $ports -A -sC -sV -v $IP
 ```
@@ -38,7 +38,7 @@ twebdiscover -u http://$IP -t 40 -Po -wdc
 
 ### Metadata PDF a seznam uživatelů
 
-Stažené PDF soubory mají v metadatech jména autorů. `exiftool` tak rychle odhalí první validní uživatele jako `William.Lee` a `Jose.Williams`. Jakmile se ukáže, že tento způsob funguje, dává smysl stáhnout systematicky všechny datumové varianty, vyextrahovat další `Creator` hodnoty a ověřit je přes `kerbrute`.
+Stažené PDF soubory mají v metadatech jména autorů. `exiftool` tak rychle odhalí první validní uživatele jako `William.Lee` a `Jose.Williams`. Jakmile se ukáže, že tento způsob funguje, dává smysl stáhnout systematicky všechny datumové varianty, vyextrahovat další `Creator` hodnoty a ověřit je přes `kerbrute`. Prakticky stejný řetězec od veřejných PDF k doménovým identitám rozebírám i v článku [Dokumentová metadata jako vstup do domény](/techniky/dokumentova-metadata-jako-vstup-do-domeny).
 
 Prakticky k tomu, kdy je `Kerbrute` nejlepší jako validátor jmenného prostoru před dalšími kerberovými kroky, viz i [Kerbrute](/nastroje/kerbrute).
 ```text
@@ -74,7 +74,7 @@ smbmap -H intelligence.htb -u Tiffany.Molina -p NewIntelligenceCorpUser9876 -R -
 => downdetector.ps1
 ```
 
-To je přesně ten typ automatizace, který se dá zneužít ke coerced authentication. Pokud lze do DNS přidat vlastní `web*` záznam, skript každých pět minut naváže HTTP spojení s útočníkovým serverem a pošle přitom NTLM autentizaci uživatele `Ted.Graves`.
+To je přesně ten typ automatizace, který se dá zneužít ke coerced authentication. Pokud lze do DNS přidat vlastní `web*` záznam, skript každých pět minut naváže HTTP spojení s útočníkovým serverem a pošle přitom NTLM autentizaci uživatele `Ted.Graves`. Prakticky stejný vzorec rozebírám i v článku [NTLM coercion a vynucená autentizace](/techniky/ntlm-coercion-a-vynucena-autentizace).
 
 ## Získání přístupu
 

@@ -93,6 +93,10 @@ Na [Remote](/remote) vedla záloha webu a provozní logy k heslu administrátora
 
 Na [Postmanu](/postman) stál další případ na tom, že passphrase k nalezenému `id_rsa.bak` nebyla důležitá jen pro klíč samotný. Stejná hodnota otevřela i lokální účet a následně správu ve Webminu. Tím se z jednoho na první pohled vedlejšího artefaktu stal průchod hned přes několik vrstev.
 
+Na [Cache](/cache) nešlo o reuse jedné databázové hodnoty mezi dvěma formuláři, ale o propojení několika vrstev. Heslo z `functionality.js` pomohlo přepnout se z OpenEMR webshellu na lokální účet `ash`, zatímco další tajemství z Memcached otevřelo `luffy` a nakonec i root přes `docker` skupinu.
+
+Na [Delivery](/delivery) zase reuse nevypadal jako první zjevná slabina. Lokální konfigurace OsTicketu a Mattermostu daly dohromady seed `PleaseSubscribe!`, hint `Crack_The_MM_Admin_PW` a hash účtu `root`. Až jejich spojení ukázalo, že tematicky odvozené heslo funguje i na lokálním root účtu.
+
 ## Jak reuse disciplinovaně ověřovat
 
 Password reuse se neověřuje chaotickým "zkusím to všude". Užitek přináší hlavně tehdy, když se testuje podle kontextu.

@@ -85,13 +85,15 @@ Jenže veřejně dostupný klient lze stáhnout, dekompilovat a znovu implemento
 
 ## Jak se to projevilo v různých případech
 
-V jednom .NET webu se nebezpečná deserializace schovala do cookie `OAuth2`. Frontend ji chápal jako bearer token, backend ji ale zpracovával jako objekt a dovolil přes `$type` vytvořit `ObjectDataProvider`, který spustil proces na serveru. Tady je dobře vidět, že problém neleží v cookie sama o sobě. Leží v tom, že server přijal klientský JSON jako autoritativní popis objektu.
+Na [Jsonu](/json) se nebezpečná deserializace schovala do cookie `OAuth2`. Frontend ji chápal jako bearer token, backend ji ale zpracovával jako objekt a dovolil přes `$type` vytvořit `ObjectDataProvider`, který spustil proces na serveru. Tady je dobře vidět, že problém neleží v cookie sama o sobě. Leží v tom, že server přijal klientský JSON jako autoritativní popis objektu.
 
-Jinde šlo o interní .NET remoting endpoint. Ten už ze své podstaty nepřenášel jen data, ale serializované objekty. Dekompilace klienta odhalila endpoint, debug credentials i to, že služba slepě přijímá deserializovaný vstup. Výsledek nebyl "jen bug v remotingu". Výsledek byl celý produkční debug kanál postavený na důvěře k objektům od klienta.
+Na [Sharpu](/sharp) šlo o interní .NET remoting endpoint. Ten už ze své podstaty nepřenášel jen data, ale serializované objekty. Dekompilace klienta odhalila endpoint, debug credentials i to, že služba slepě přijímá deserializovaný vstup. Výsledek nebyl "jen bug v remotingu". Výsledek byl celý produkční debug kanál postavený na důvěře k objektům od klienta.
 
-V Java/Tomcat prostředí zase parser YAML nepůsobil jako klasická serializace. Praktický efekt byl ale stejný: uživatelský vstup vedl k materializaci nečekaného typu, který pak stáhl a aktivoval další kód. Formát je jiný, ale bezpečnostní chyba zůstává totožná: data určují typ a tím i chování.
+Na [Ophiuchi](/ophiuchi) v Java/Tomcat prostředí zase parser YAML nepůsobil jako klasická serializace. Praktický efekt byl ale stejný: uživatelský vstup vedl k materializaci nečekaného typu, který pak stáhl a aktivoval další kód. Formát je jiný, ale bezpečnostní chyba zůstává totožná: data určují typ a tím i chování.
 
-Další případ stál na tom, že vlastní Java klient komunikoval se serverem přes serializované objekty. Nejdřív bylo potřeba klient rozchodit, dekompilovat a pochopit protokol. Teprve potom vyšlo najevo, že server-side funkce pro změnu hesla slepě zpracovává serializovaný objekt `ClientCredential`. To je velmi čistý příklad toho, že insecure deserialization není jen webový problém. Je to problém celého návrhu klient/server důvěry.
+Na [Fatty](/fatty) stál další případ na tom, že vlastní Java klient komunikoval se serverem přes serializované objekty. Nejdřív bylo potřeba klient rozchodit, dekompilovat a pochopit protokol. Teprve potom vyšlo najevo, že server-side funkce pro změnu hesla slepě zpracovává serializovaný objekt `ClientCredential`. To je velmi čistý příklad toho, že insecure deserialization není jen webový problém. Je to problém celého návrhu klient/server důvěry.
+
+[Cereal](/cereal) přidává ještě jinou variantu téhož vzorce. Server po admin akci stáhl JSON s typem `Cereal.DownloadHelper`, deserializoval ho a vytvořil z něj server-side download workflow. Znovu tedy nešlo o to, že by klient "poslal data". Klient poslal instrukci, jaký objekt má server vytvořit a co s ním udělat.
 
 ## Jak takový problém poznat při review
 

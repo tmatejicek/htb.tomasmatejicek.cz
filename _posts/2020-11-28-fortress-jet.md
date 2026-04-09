@@ -15,7 +15,7 @@ Právě proto má smysl článek číst jako rozbor rozhodovacích bodů, ne jak
 
 ### Síťová stopa fortress prostředí
 
-První `nmap` ukazuje, že vedle webu a SSH běží i několik netypických služeb na `5555`, `7777` a `9201`. To je důležitý signál, že půjde o fortress s více podsystémy, ne o běžný jednoúčelový host.
+První `nmap` ukazuje, že vedle webu a SSH běží i několik netypických služeb na `5555`, `7777` a `9201`. To je důležitý signál, že půjde o fortress s více podsystémy, ne o běžný jednoúčelový host. Praktický základ takového úvodního čtení skenu rozebírám i v článku [Nmap](/nastroje/nmap).
 ```bash
 nmap -p 1-65535 -T4 -A -sC -v $IP
 ```
@@ -46,7 +46,7 @@ Praktickou roli podobných DNS utilit rozebírám i v článku [host a dig](/nas
 
 ### SQL injection v admin loginu
 
-Jakmile je admin panel známý, dává smysl otestovat přihlášení. `sqlmap` potvrdí injection v `login.php`, vypíše tabulku `jetadmin.users` a z ní i hash účtu `admin`. Po cracknutí vyjde heslo `Hackthesystem200`, takže je možné přejít do autentizované části bez nutnosti hledat další bypass.
+Jakmile je admin panel známý, dává smysl otestovat přihlášení. `sqlmap` potvrdí injection v `login.php`, vypíše tabulku `jetadmin.users` a z ní i hash účtu `admin`. Po cracknutí vyjde heslo `Hackthesystem200`, takže je možné přejít do autentizované části bez nutnosti hledat další bypass. Praktickou stránku takového potvrzení a dumpu rozebírám i v článku [sqlmap](/nastroje/sqlmap).
 ```text
 sqlmap -u http://www.securewebinc.jet/dirb_safe_dir_rf9EmcEIx/admin/login.php --forms -D jetadmin -T users -dump
 
@@ -101,7 +101,7 @@ key.bin.enc  keys  secret.enc
 
 ### Binárka `leak` a flag uživatele `alex`
 
-Jedna z nejzajímavějších lokálních úloh je binárka `leak`. Sama prozradí adresu stacku a tím výrazně zjednoduší exploataci buffer overflow. Stačí dopočítat offset pomocí cyclic patternu, připravit shellcode, vyplnit buffer na 72 bajtů a návratovou adresu přepsat uniklou hodnotou. Výsledkem je shell v kontextu úlohy a přístup k `alex/flag.txt`.
+Jedna z nejzajímavějších lokálních úloh je binárka `leak`. Sama prozradí adresu stacku a tím výrazně zjednoduší exploataci buffer overflow. Stačí dopočítat offset pomocí cyclic patternu, připravit shellcode, vyplnit buffer na 72 bajtů a návratovou adresu přepsat uniklou hodnotou. Výsledkem je shell v kontextu úlohy a přístup k `alex/flag.txt`. Bezpečnostní logiku podobných binárních chyb shrnuji i v článku [Memory corruption a binary exploitation v praxi](/techniky/memory-corruption-a-binary-exploitation-v-praxi).
 ```text
 ./leak
 Oops, I'm leaking! 0x7fffffffe...

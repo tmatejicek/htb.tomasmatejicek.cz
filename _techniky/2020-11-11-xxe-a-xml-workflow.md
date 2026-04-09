@@ -88,9 +88,9 @@ To je cenné hlavně u složitějších workflow, kde je XXE první důkaz, že 
 
 ## Jak tenhle vzorec vypadal v konkrétních případech
 
-V jednom případě šlo o tracker endpoint, který přijímal base64-encoded XML a přes `DOMDocument` ho načítal s povolenými entitami. Praktický dopad nebyl v tom, že by parser "vrátil `/etc/passwd`". Rozhodující bylo až čtení lokálního `db.php`, z něhož vypadlo heslo použitelné pro SSH účet `development`. XXE tedy nevedla přímo k RCE, ale otevřela nejkratší cestu k tajemství, které už shell zajistilo.
+Na [BountyHunteru](/bountyhunter) šlo o tracker endpoint, který přijímal base64-encoded XML a přes `DOMDocument` ho načítal s povolenými entitami. Praktický dopad nebyl v tom, že by parser "vrátil `/etc/passwd`". Rozhodující bylo až čtení lokálního `db.php`, z něhož vypadlo heslo použitelné pro SSH účet `development`. XXE tedy nevedla přímo k RCE, ale otevřela nejkratší cestu k tajemství, které už shell zajistilo.
 
-Jiný případ stál na dokumentovém převodníku a veřejně dostupných artefaktech, z nichž šlo odvodit, že backend pracuje s kancelářským dokumentem jako se ZIP strukturou obsahující XML. Škodlivý `docx` s externí entitou tam posloužil jako potvrzení, že převodník opravdu expanduje entity a že dokumentové workflow stojí na nebezpečném parseru. Samotný shell pak přišel jinou cestou nad stejným převodníkem, ale XXE byla klíčová pro správné čtení architektury celé funkce.
+Na [Patents](/patents) stál jiný případ na dokumentovém převodníku a veřejně dostupných artefaktech, z nichž šlo odvodit, že backend pracuje s kancelářským dokumentem jako se ZIP strukturou obsahující XML. Škodlivý `docx` s externí entitou tam posloužil jako potvrzení, že převodník opravdu expanduje entity a že dokumentové workflow stojí na nebezpečném parseru. Samotný shell pak přišel jinou cestou nad stejným převodníkem, ale XXE byla klíčová pro správné čtení architektury celé funkce.
 
 ## Co při analýze hledat
 

@@ -64,15 +64,15 @@ Tady se storage mění z pasivního úložiště v most k plnohodnotnému admini
 
 ## Jak tenhle vzorec vypadal v různých případech
 
-Na jednom hostu běželo S3-like a DynamoDB rozhraní bez autentizace. To samo o sobě stačilo k vyčtení uživatelských hesel z tabulky a zároveň k zápisu souboru do bucketu `adserver`, odkud ho hlavní aplikace sama publikovala. Je to učebnicový příklad spojení read a write primitiva v jedné "pomocné" službě.
+Na [Bucketu](/bucket) běželo S3-like a DynamoDB rozhraní bez autentizace. To samo o sobě stačilo k vyčtení uživatelských hesel z tabulky a zároveň k zápisu souboru do bucketu `adserver`, odkud ho hlavní aplikace sama publikovala. Je to učebnicový příklad spojení read a write primitiva v jedné "pomocné" službě.
 
-Jiný případ stál na veřejném NFS exportu `/site_backups`. Nebylo třeba obcházet aplikaci ani získávat první login. Záloha sama vydala databázi Umbraco a provozní logy, z nichž šlo složit aktuální admin heslo. NFS tedy neposkytlo shell přímo, ale poskytlo přesně ta data, která shell umožnila.
+Na [Remote](/remote) stál jiný případ na veřejném NFS exportu `/site_backups`. Nebylo třeba obcházet aplikaci ani získávat první login. Záloha sama vydala databázi Umbraco a provozní logy, z nichž šlo složit aktuální admin heslo. NFS tedy neposkytlo shell přímo, ale poskytlo přesně ta data, která shell umožnila.
 
-U dalšího systému nebyla hlavní slabina na webu, ale v Docker registry odhalené TLS certifikátem. Stažení image vrstev odhalilo shell history a passphrase k soukromému klíči. Tady je dobře vidět, že registry není jen přepravní sklad pro image. Je to archiv provozních artefaktů, které mohou být bezpečnostně cennější než běžící kontejner.
+Na [Registry](/registry) nebyla hlavní slabina na webu, ale v Docker registry odhalené TLS certifikátem. Stažení image vrstev odhalilo shell history a passphrase k soukromému klíči. Tady je dobře vidět, že registry není jen přepravní sklad pro image. Je to archiv provozních artefaktů, které mohou být bezpečnostně cennější než běžící kontejner.
 
-Ve storage rodině je i veřejný Redis bez autentizace. Ten nevydal data pasivně. Dovolil přímý zápis do `/var/lib/redis/.ssh/authorized_keys`, a tím okamžitý SSH foothold. Je to krásný příklad služby, kde je write primitive ve skutečnosti rychlejší než jakýkoli read.
+Do stejné rodiny patří i [Postman](/postman), kde veřejný Redis bez autentizace nevydal data pasivně. Dovolil přímý zápis do `/var/lib/redis/.ssh/authorized_keys`, a tím okamžitý SSH foothold. Je to krásný příklad služby, kde je write primitive ve skutečnosti rychlejší než jakýkoli read.
 
-Další případ využil rsync export domácího adresáře uživatele. Jakmile se podařilo získat heslo k modulu, nešlo jen o čtení souborů. Bylo možné do home directory i zapisovat a podstrčit vlastní `authorized_keys`. To už není "sdílený souborový prostor". To je de facto vzdálený SSH onboarding pro útočníka.
+Na [Zettě](/zetta) další případ využil rsync export domácího adresáře uživatele. Jakmile se podařilo získat heslo k modulu, nešlo jen o čtení souborů. Bylo možné do home directory i zapisovat a podstrčit vlastní `authorized_keys`. To už není "sdílený souborový prostor". To je de facto vzdálený SSH onboarding pro útočníka.
 
 ## Co mají tyto služby společné
 

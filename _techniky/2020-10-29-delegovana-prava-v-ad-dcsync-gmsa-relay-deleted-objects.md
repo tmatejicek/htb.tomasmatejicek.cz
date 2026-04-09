@@ -9,7 +9,7 @@ tags: active-directory windows dcsync gmsa relay acl
 
 V Active Directory se často hledá jednoduchá hranice: buď je někdo `Domain Admin`, nebo není. V praxi je to výrazně složitější. Doménová kompromitace často nevzniká z přímého členství v privilegované skupině, ale z méně nápadných práv, která se v prostředí nahromadila kvůli provozu: delegované ACL, možnost relaynout autentizaci do LDAP, právo číst heslo gMSA, přístup k deleted objects nebo synchronizační účet, který drží dešifrovatelné tajemství.
 
-Forest, Intelligence, Cascade, APT a Monteverde ukazují různé varianty stejného problému. Útočník nemusí dostat "admin účet" klasickou cestou. Stačí mu identita nebo servisní kontext, který umí:
+[Forest](/forest), [Intelligence](/intelligence), [Cascade](/cascade), [APT](/apt) a [Monteverde](/monteverde) ukazují různé varianty stejného problému. Útočník nemusí dostat "admin účet" klasickou cestou. Stačí mu identita nebo servisní kontext, který umí:
 
 - změnit oprávnění v adresáři,
 - číst tajemství jiného účtu,
@@ -50,7 +50,7 @@ Machine account, synchronizační služba nebo servisní komponenta často nevyp
 
 ## Forest: delegovaná Exchange práva, relay a DCSync
 
-Forest je čistá ukázka toho, že mezi obyčejným servisním účtem a plným převzetím domény může stát jen několik delegovaných kroků. Po AS-REP roastu vznikne foothold v podobě `svc-alfresco`, ale ten sám o sobě ještě není doménový admin. Zásadní je až to, co [BloodHound](/nastroje/bloodhound) ukáže o jeho vztahu ke skupině `Exchange Windows Permissions`.
+[Forest](/forest) je čistá ukázka toho, že mezi obyčejným servisním účtem a plným převzetím domény může stát jen několik delegovaných kroků. Po AS-REP roastu vznikne foothold v podobě `svc-alfresco`, ale ten sám o sobě ještě není doménový admin. Zásadní je až to, co [BloodHound](/nastroje/bloodhound) ukáže o jeho vztahu ke skupině `Exchange Windows Permissions`.
 
 Právě tady se hodí přestat myslet v kategoriích "admin / neadmin". Účet nemá plnou kontrolu nad doménou, ale má dost silnou pozici na to, aby šlo přes PrivExchange vynutit autentizaci a relaynout ji proti LDAP:
 
@@ -71,7 +71,7 @@ Forest je proto důležitý hlavně jako model: delegované provozní oprávněn
 
 ## Intelligence: gMSA jako most k cizí identitě
 
-Intelligence stojí na jiném typu delegace. Účet `Tiffany.Molina` sám o sobě nepřináší interaktivní shell ani privilegovanou roli, ale dovolí přečíst `downdetector.ps1`, tedy automatizační skript, který používá `Invoke-WebRequest -UseDefaultCredentials`. Přes DNS záznam a odchyt autentizace vznikne další účet: `Ted.Graves`.
+[Intelligence](/intelligence) stojí na jiném typu delegace. Účet `Tiffany.Molina` sám o sobě nepřináší interaktivní shell ani privilegovanou roli, ale dovolí přečíst `downdetector.ps1`, tedy automatizační skript, který používá `Invoke-WebRequest -UseDefaultCredentials`. Přes DNS záznam a odchyt autentizace vznikne další účet: `Ted.Graves`.
 
 Teprve ten otevře nejcennější otázku: kdo smí číst heslo gMSA `svc_int$`?
 
@@ -98,7 +98,7 @@ Tím se jasně ukazuje rozdíl mezi "mám servisní účet" a "mám nevýznamný
 
 ## Cascade: deleted objects a historická hesla nejsou nevinný archiv
 
-Cascade ukazuje třetí rodinu problémů. Řetězec nezačíná BloodHoundem ani relayem, ale čtením atributu `cascadeLegacyPwd`, z něhož se získá heslo `r.thompson`. Právě takové nenápadné LDAP atributy jde rychle vytáhnout třeba přes [windapsearch](/nastroje/windapsearch). Následně přibývají další stopy ve sdílených souborech a auditních nástrojích, až se účet `ArkSvc` dostane k deleted objects.
+[Cascade](/cascade) ukazuje třetí rodinu problémů. Řetězec nezačíná BloodHoundem ani relayem, ale čtením atributu `cascadeLegacyPwd`, z něhož se získá heslo `r.thompson`. Právě takové nenápadné LDAP atributy jde rychle vytáhnout třeba přes [windapsearch](/nastroje/windapsearch). Následně přibývají další stopy ve sdílených souborech a auditních nástrojích, až se účet `ArkSvc` dostane k deleted objects.
 
 Právě tam se objeví historický `TempAdmin`:
 
@@ -112,7 +112,7 @@ Cascade je důležitá připomínka, že AD není jen aktuální stav objektů. 
 
 ## APT: hodnotná nemusí být jen lidská identita
 
-APT přidává důležitý kontrast. Hlavní řetězec začíná únikem `backup.zip`, z nějž se offline vytěží doménová tajemství a otevře se účet `henry.vinson_adm`. Pro doménovou kompromitaci je ale důležité něco jiného: vynucená autentizace účtu stroje `APT$`.
+[APT](/apt) přidává důležitý kontrast. Hlavní řetězec začíná únikem `backup.zip`, z nějž se offline vytěží doménová tajemství a otevře se účet `henry.vinson_adm`. Pro doménovou kompromitaci je ale důležité něco jiného: vynucená autentizace účtu stroje `APT$`.
 
 ```text
 [SMB] NTLMv1 Username : HTB\APT$
@@ -128,7 +128,7 @@ APT tak dobře doplňuje zbytek článku: nepřímá cesta k doménovým tajemst
 
 ## Monteverde: hraniční, ale důležitý případ synchronizační služby
 
-Monteverde není čistý příklad ACL delegace, relaye ani deleted objects. Přesto do stejné rodiny patří. Účet `mhope` otevře host s Azure AD Connect a ten v sobě drží dešifrovatelné synchronizační tajemství. Z databáze `ADSync` a přítomné `mcrypt.dll` pak lze dostat doménové přihlašovací údaje pro `administrator`.
+[Monteverde](/monteverde) není čistý příklad ACL delegace, relaye ani deleted objects. Přesto do stejné rodiny patří. Účet `mhope` otevře host s Azure AD Connect a ten v sobě drží dešifrovatelné synchronizační tajemství. Z databáze `ADSync` a přítomné `mcrypt.dll` pak lze dostat doménové přihlašovací údaje pro `administrator`.
 
 Tenhle případ je důležitý hlavně jako varování před příliš úzkou definicí delegovaných práv. Někdy nejde o ACL v AD objektu. Jde o to, že vedle domény žije synchronizační komponenta, která v sobě drží plnohodnotné identity tajemství:
 

@@ -7,7 +7,7 @@ tags: linux rce ssh sudo php exploit
 ---
 ## Úvod a kontext
 
-BountyHunter je přímočarý, ale velmi instruktivní řetězec. Nenápadný tracker formulář zpracovává XML a přes `tracker_diRbPr00f314.php` se z něj stane XXE, které dovolí číst lokální soubory. Přes `/etc/passwd` se dá potvrdit účet `development` a přes `db.php` vytáhnout heslo správce databáze.
+BountyHunter je přímočarý, ale velmi instruktivní řetězec. Nenápadný tracker formulář zpracovává XML a přes `tracker_diRbPr00f314.php` se z něj stane XXE, které dovolí číst lokální soubory. Přes `/etc/passwd` se dá potvrdit účet `development` a přes `db.php` vytáhnout heslo správce databáze. Tenhle typ útoku shrnuji obecněji i v článku [XXE a XML workflow](/techniky/xxe-a-xml-workflow).
 
 Hodnota článku ale neleží jen v prvním footholdu. Root část ukazuje úplně jinou třídu chyby: `sudo` pravidlo pro `ticketValidator.py`, které používá `eval` nad obsahem markdown ticketu. To je dobrý příklad, jak se z interní utility stane přímý privesc vektor.
 
@@ -16,6 +16,8 @@ Hodnota článku ale neleží jen v prvním footholdu. Root část ukazuje úpln
 ### Vyhledání otevřených portů
 
 Nejprve mapuji veřejně dostupné služby, protože právě z otevřených portů odvodím, které protokoly a aplikace má smysl zkoumat detailněji.
+
+Praktický základ úvodního skenu rozebírám i v článku [Nmap](/nastroje/nmap).
 ```bash
 ports=$(nmap -p- --min-rate=1000 -T4 $IP | grep ^[0-9] | cut -d "/" -f 1 | tr "\n" "," | sed s/,$//);echo $ports;nmap -p $ports -A -sC -sV -v $IP
 ```
@@ -45,7 +47,7 @@ Service Info: OS: Linux; CPE: cpe:/o:linux:linux_kernel
 
 ### Enumerace webu
 
-Ve webové vrstvě hledám neveřejné cesty, vývojové artefakty a chybně vystavené soubory, protože právě ty často prozradí technologii aplikace, interní workflow nebo přímo přístupové údaje.
+Ve webové vrstvě hledám neveřejné cesty, vývojové artefakty a chybně vystavené soubory, protože právě ty často prozradí technologii aplikace, interní workflow nebo přímo přístupové údaje. Praktickou logiku takové content discovery rozebírám i v článku [Dirsearch](/nastroje/dirsearch).
 ```bash
 ./dirsearch/dirsearch.py -u http://$IP -e php -x 403 -r
 ```
@@ -65,7 +67,7 @@ Ve webové vrstvě hledám neveřejné cesty, vývojové artefakty a chybně vys
 
 ### XXE v trackeru
 
-`README.txt` sice mluví jen o tracker skriptu a test účtu, ale skutečný problém je v parseru XML. `tracker_diRbPr00f314.php` načítá externí entity a bez další ochrany vrací obsah lokálních souborů.
+`README.txt` sice mluví jen o tracker skriptu a test účtu, ale skutečný problém je v parseru XML. `tracker_diRbPr00f314.php` načítá externí entity a bez další ochrany vrací obsah lokálních souborů. Právě tím se z nenápadného tracker workflow stává plnohodnotný file-read primitivum.
 ```text
 http://10.10.11.100/resources/README.txt
 ```

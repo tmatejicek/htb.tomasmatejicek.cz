@@ -7,7 +7,7 @@ tags: windows privesc services drivers spooler system
 ---
 ## Úvod a kontext
 
-Po prvním shellu na Windows hostu padá často stejná otázka: co teď má největší šanci vést k `SYSTEM`? Chyba bývá v tom, že se odpověď hledá jako seznam exploitů. Ve skutečnosti je užitečnější rozdělit si lokální privesc podle typu primitiva, které na hostu skutečně existuje. Buff, Control, Driver a Fuse ukazují čtyři velmi praktické rodiny:
+Po prvním shellu na Windows hostu padá často stejná otázka: co teď má největší šanci vést k `SYSTEM`? Chyba bývá v tom, že se odpověď hledá jako seznam exploitů. Ve skutečnosti je užitečnější rozdělit si lokální privesc podle typu primitiva, které na hostu skutečně existuje. [Buff](/buff), [Control](/control), [Driver](/driver) a [Fuse](/fuse) ukazují čtyři velmi praktické rodiny:
 
 - zneužitelná služba a její ACL,
 - lokální zranitelná aplikace dostupná až po footholdu,

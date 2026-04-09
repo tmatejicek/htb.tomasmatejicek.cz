@@ -16,7 +16,7 @@ Právě proto dává smysl uvažovat o SUID systematicky. Důležitá není popu
 - umí načítat skripty, pluginy nebo jednotky,
 - nebo je sama interpretem či shellem.
 
-Jarvis, Mango a Rope ukazují tři různé varianty stejného principu. Jedna binárka spravuje systemd, druhá interpretuje JavaScript s přístupem k Java API a třetí je obyčejný shell. Všechny ale při SUID bitu překračují hranici mezi běžným uživatelem a rootem.
+[Jarvis](/jarvis), [Mango](/mango) a [Rope](/rope) ukazují tři různé varianty stejného principu. Jedna binárka spravuje systemd, druhá interpretuje JavaScript s přístupem k Java API a třetí je obyčejný shell. Všechny ale při SUID bitu překračují hranici mezi běžným uživatelem a rootem.
 
 ## Proč seznam SUID binárek sám nestačí
 
@@ -84,13 +84,13 @@ To je obecně silná heuristika. Pokud SUID binárka zpracovává externí jedno
 
 ### Jarvis: SUID `systemctl` a vlastní systemd jednotka
 
-Na Jarvisu ukázal [linpeas](/nastroje/linpeas) mezi SUID binárkami `systemctl`. To samo o sobě už je varovný signál, protože systemd je centrální orchestrátor služeb. Praktický dopad byl přímočarý: stačilo vytvořit dočasný `.service` soubor s vlastním `ExecStart`, přilinkovat ho a nechat `systemctl` službu spustit.
+Na [Jarvisu](/jarvis) ukázal [linpeas](/nastroje/linpeas) mezi SUID binárkami `systemctl`. To samo o sobě už je varovný signál, protože systemd je centrální orchestrátor služeb. Praktický dopad byl přímočarý: stačilo vytvořit dočasný `.service` soubor s vlastním `ExecStart`, přilinkovat ho a nechat `systemctl` službu spustit.
 
 Tady je důležité pochopit, proč je to nebezpečné. `systemctl` není problém jen proto, že "někdo našel trik". Je nebezpečné z definice, protože umí delegovat spouštění procesu do systemd s root kontextem.
 
 ### Mango: SUID `jjs` a file-read přes Java API
 
-Na Mangu byl root mnohem méně nápadný. Mezi SUID soubory se objevil `jjs`, JavaScript shell pro Nashorn. Kdo čeká jen shellové utility, mohl by ho snadno přeskočit. Jenže `jjs` je interpreter s přímým přístupem k Java třídám. To znamená, že SUID `jjs` může:
+Na [Mangu](/mango) byl root mnohem méně nápadný. Mezi SUID soubory se objevil `jjs`, JavaScript shell pro Nashorn. Kdo čeká jen shellové utility, mohl by ho snadno přeskočit. Jenže `jjs` je interpreter s přímým přístupem k Java třídám. To znamená, že SUID `jjs` může:
 
 - otevřít soubor přes `java.io`,
 - číst jeho obsah,
@@ -107,7 +107,7 @@ To je přesně důvod, proč se SUID audit nesmí omezit na známé binárky z c
 
 ### Rope: SUID `bash` a zachování efektivního UID
 
-Rope ukazuje nejjednodušší, ale zároveň nejdůležitější variantu: shell s omylem ponechaným SUID bitem. V takové situaci není co "exploitovat". Stačí použít správný přepínač a shell si ponechá efektivní UID roota.
+[Rope](/rope) ukazuje nejjednodušší, ale zároveň nejdůležitější variantu: shell s omylem ponechaným SUID bitem. V takové situaci není co "exploitovat". Stačí použít správný přepínač a shell si ponechá efektivní UID roota.
 
 Technická náročnost předešlé části útoku zde není podstatná. Podstatné je, že jediný špatný permission bit na `/bin/bash` zrušil všechnu další obranu hostu.
 

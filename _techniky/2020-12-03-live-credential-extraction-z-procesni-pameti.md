@@ -15,7 +15,7 @@ Po prvním shellu většina lidí automaticky sahá po souborech: `.env`, `confi
 - v paměti aplikace, která si právě drží session nebo heslo,
 - nebo v procesech, které na serveru nemají co dělat.
 
-Heist je čistý případ právě proto, že root nevzniká z konfiguračního souboru ani z exploitu služby. Vzniká z toho, že na serveru běží Firefox s aktivním přihlášením a jeho paměť obsahuje administrátorské tajemství.
+[Heist](/heist) je čistý případ právě proto, že root nevzniká z konfiguračního souboru ani z exploitu služby. Vzniká z toho, že na serveru běží Firefox s aktivním přihlášením a jeho paměť obsahuje administrátorské tajemství.
 
 Tenhle článek je o tom, jak přemýšlet o běžících procesech jako o credential store. Ne o dumpování paměti pro efekt, ale o situacích, kdy aktivní proces nese víc hodnoty než celý filesystem.
 
@@ -42,7 +42,7 @@ To je důležitá obranná i útočná hranice. Když uživatel nebo admin uděl
 
 ## Heist: Firefox na serveru jako trezor s hesly
 
-Na Heist byl první stabilní přístup otevřen přes WinRM účtem `Chase`. V tu chvíli ještě root nevyplýval z žádné lokální zranitelnosti. Rozhodující byly až běžící procesy:
+Na [Heistu](/heist) byl první stabilní přístup otevřen přes WinRM účtem `Chase`. V tu chvíli ještě root nevyplýval z žádné lokální zranitelnosti. Rozhodující byly až běžící procesy:
 
 ```text
 Get-Process Fire*
@@ -92,7 +92,7 @@ Heist je v tomhle směru učebnicový: aktivní browser proces obsahoval přesn�
 
 ## Sharp jako hraniční připomínka runtime kontextu
 
-Sharp není čistý procesní dump případ jako Heist. Je ale užitečný jako připomínka, že běžící služba a její runtime kontext často řeknou víc než statické soubory.
+[Sharp](/sharp) není čistý procesní dump případ jako [Heist](/heist). Je ale užitečný jako připomínka, že běžící služba a její runtime kontext často řeknou víc než statické soubory.
 
 U Sharp byla hlavní hodnota v kombinaci:
 

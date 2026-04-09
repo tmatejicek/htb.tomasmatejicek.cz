@@ -75,7 +75,7 @@ Právě proto je dobré mluvit spíš o nulovém přístupu ke Kerberosu než je
 
 ### Forest: anonymní enumerace a účet bez pre-auth
 
-Forest je velmi čistý příklad toho, kdy sama doména vydá seznam účtů a jeden z nich je přímo roastovatelný. `GetADUsers.py` poskytl dostatečný přehled identit a `GetNPUsers.py` pak ukázal, že `svc-alfresco` nemá Kerberos pre-auth. Výstup šel přímo do `hashcat` a po cracknutí hesla `s3rvice` už byl k dispozici stabilní vstup přes WinRM. Praktickou stránku těchto utilit rozebírám podrobněji v článku [Impacket pro AD enumeraci a první identity](/nastroje/impacket-pro-ad-enumeraci-a-prvni-identity).
+[Forest](/forest) je velmi čistý příklad toho, kdy sama doména vydá seznam účtů a jeden z nich je přímo roastovatelný. `GetADUsers.py` poskytl dostatečný přehled identit a `GetNPUsers.py` pak ukázal, že `svc-alfresco` nemá Kerberos pre-auth. Výstup šel přímo do `hashcat` a po cracknutí hesla `s3rvice` už byl k dispozici stabilní vstup přes WinRM. Praktickou stránku těchto utilit rozebírám podrobněji v článku [Impacket pro AD enumeraci a první identity](/nastroje/impacket-pro-ad-enumeraci-a-prvni-identity).
 
 Na tomhle případu je důležitá jedna věc: foothold nevznikl kvůli slabému webu nebo SMB share. Vznikl čistě z kombinace identitní enumerace a špatně nastaveného servisního účtu.
 

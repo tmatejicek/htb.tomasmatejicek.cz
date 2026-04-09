@@ -70,7 +70,7 @@ Jakmile workflow dokument předá LibreOffice, WinRARu, preview handleru nebo ji
 
 ## BountyHunter: XML tracker, který se změnil ve čtení souborů
 
-BountyHunter je dobrý minimální příklad. Webový tracker nepůsobí jako dokumentové workflow v kancelářském smyslu, ale logika je stejná: aplikace přijme strukturovaný vstup, pošle ho do XML parseru a důvěřuje výsledku. Endpoint `tracker_diRbPr00f314.php` načítá XML s povolenými externími entitami:
+[BountyHunter](/bountyhunter) je dobrý minimální příklad. Webový tracker nepůsobí jako dokumentové workflow v kancelářském smyslu, ale logika je stejná: aplikace přijme strukturovaný vstup, pošle ho do XML parseru a důvěřuje výsledku. Endpoint `tracker_diRbPr00f314.php` načítá XML s povolenými externími entitami:
 
 ```php
 libxml_disable_entity_loader(false);
@@ -84,7 +84,7 @@ Na BountyHunter je dobře vidět důležitá lekce: i "malé" importní workflow
 
 ## Patents: když `docx` znamená XML, ZIP a převodník v jednom
 
-Patents je bohatší a proto výukově cennější případ. Veřejné `release notes`, `.DS_Store` a `installed.json` prozradí, že web nepřijímá dokumenty jen k uložení, ale předává je do `convert.php` a backendu `gears/pdf`. Důležité je už tohle zjištění: útoková plocha neleží v samotném formuláři, ale v konverzní vrstvě.
+[Patents](/patents) je bohatší a proto výukově cennější případ. Veřejné `release notes`, `.DS_Store` a `installed.json` prozradí, že web nepřijímá dokumenty jen k uložení, ale předává je do `convert.php` a backendu `gears/pdf`. Důležité je už tohle zjištění: útoková plocha neleží v samotném formuláři, ale v konverzní vrstvě.
 
 Release notes navíc přímo naznačí dvě věci:
 
@@ -110,7 +110,7 @@ Každá z těchto vrstev může být sama o sobě primitivem pro file-read nebo 
 
 ## Bucket: HTML-to-PDF jako server-side čtečka souborů
 
-Bucket ukazuje jinou, ale stejně praktickou variantu. `bucket-app` si bere HTML uložené v DynamoDB tabulce `alerts`, zapisuje ho do souboru a následně ho předává Java rendereru `pd4ml_demo.jar`:
+Na [Bucketu](/bucket) je vidět jiná, ale stejně praktická varianta. `bucket-app` si bere HTML uložené v DynamoDB tabulce `alerts`, zapisuje ho do souboru a následně ho předává Java rendereru `pd4ml_demo.jar`:
 
 ```php
 file_put_contents('files/'.$name,$item["data"]);
@@ -133,7 +133,7 @@ Bucket připomíná, že dokumentové workflow neznamená jen Word a XML. Stejn�
 
 ## RE: dokument jako vstup do celé analýzové pipeline
 
-RE jde ještě o krok dál. `malware_dropbox` není klasický upload formulář, ale vstup do interní pipeline, která:
+[RE](/re) jde ještě o krok dál. `malware_dropbox` není klasický upload formulář, ale vstup do interní pipeline, která:
 
 - soubor přesune do pracovního adresáře,
 - přejmenuje `.ods` na `.zip`,

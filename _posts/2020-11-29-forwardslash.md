@@ -7,15 +7,15 @@ tags: linux lfi rce ssh sudo php
 ---
 ## Úvod a kontext
 
-ForwardSlash je dobrý příklad řetězce, kde první foothold vznikne z webové chyby, ale root už je čistě lokální Python a `sudo` problém. Začíná to vhosty `forwardslash.htb` a `backup.forwardslash.htb`, pokračuje file read přes `php://filter` a pak se útok přesune z webu na SSH.
+ForwardSlash je dobrý příklad řetězce, kde první foothold vznikne z webové chyby, ale root už je čistě lokální Python a `sudo` problém. Začíná to vhosty `forwardslash.htb` a `backup.forwardslash.htb`, pokračuje file read přes `php://filter` a pak se útok přesune z webu na SSH. První půlka dobře navazuje i na článek [File read a include varianty mimo klasické LFI](/techniky/file-read-a-include-varianty-mimo-klasicke-lfi).
 
-Na tom stroji je důležité správně číst návaznost kroků. LFI na `backup.forwardslash.htb` dává heslo pro účet `pain`; ten díky `sudo` pravidlům otevře šifrovanou zálohu a z ní získá klíč k účtu `chiv`. Teprve `chiv` má pak přístup k rootu přes špatně navržený Python backup skript a `PYTHONPATH` hijacking.
+Na tom stroji je důležité správně číst návaznost kroků. LFI na `backup.forwardslash.htb` dává heslo pro účet `pain`; ten díky `sudo` pravidlům otevře šifrovanou zálohu a z ní získá klíč k účtu `chiv`. Teprve `chiv` má pak přístup k rootu přes špatně navržený Python backup skript a `PYTHONPATH` hijacking. Druhá půlka tedy přímo odpovídá i článku [PATH, PYTHONPATH a wrapper hijack](/techniky/path-pythonpath-a-wrapper-hijack).
 
 ## Počáteční průzkum
 
 ### Vhosty a vývojová část webu
 
-První `nmap` ukáže jen SSH a Apache, takže stejně jako u jiných vhostových strojů dává smysl hledat další hostname. Hlavní web navíc obsahuje `note.txt` a druhý vhost `backup.forwardslash.htb`, na kterém leží vývojová cesta `/dev/`.
+První `nmap` ukáže jen SSH a Apache, takže stejně jako u jiných vhostových strojů dává smysl hledat další hostname. Hlavní web navíc obsahuje `note.txt` a druhý vhost `backup.forwardslash.htb`, na kterém leží vývojová cesta `/dev/`. Praktický základ prvního skenu rozebírám i v článku [Nmap](/nastroje/nmap).
 ```bash
 ports=$(nmap -p- --min-rate=1000 -T4 $IP | grep ^[0-9] | cut -d "/" -f 1 | tr "\n" "," | sed s/,$//);echo $ports;nmap -p $ports -A -sC -sV -v $IP
 dirb http://forwardslash.htb -X ,.php,.txt,.log,.xml
@@ -33,7 +33,7 @@ wfuzz -H "Host: FUZZ.forwardslash.htb" -w /usr/share/wordlists/wfuzz/general/com
 
 ### File read přes `api.php`
 
-V `/dev/` se ukáže endpoint `api.php`, který server-side načítá adresu poslanou v parametru `url`. Jakmile přijme i `php://filter`, nejde už o obyčejný helper pro upload, ale o čitelný lokální file include.
+V `/dev/` se ukáže endpoint `api.php`, který server-side načítá adresu poslanou v parametru `url`. Jakmile přijme i `php://filter`, nejde už o obyčejný helper pro upload, ale o čitelný lokální file include. Tady je dobře vidět, že runtime nečte "jen cestu", ale plnohodnotný stream wrapper se změněnou sémantikou vstupu.
 ```bash
 curl -F "url=php://filter/convert.base64-encode/resource=/etc/passwd" -H "Cookie: PHPSESSID=tt2u04m6a1pb9vavplb2e88vvt;" http://backup.forwardslash.htb/api.php | base64 -d -
 curl -F "url=php://filter/convert.base64-encode/resource=config.php" -H "Cookie: PHPSESSID=tt2u04m6a1pb9vavplb2e88vvt;" http://backup.forwardslash.htb/api.php | base64 -d -
@@ -83,7 +83,7 @@ __CENSORED__
 
 ### `backup`, Python importy a `PYTHONPATH`
 
-Účet `chiv` má přes `sudo` povolený binární wrapper `/usr/bin/backup`. Ten je napsaný v Pythonu a při běhu importuje standardní moduly bez ochrany proti přepsání importní cesty. To je přesně situace, kdy dává smysl uvažovat o Python library hijackingu místo hledání SUID nebo kernel exploitu.
+Účet `chiv` má přes `sudo` povolený binární wrapper `/usr/bin/backup`. Ten je napsaný v Pythonu a při běhu importuje standardní moduly bez ochrany proti přepsání importní cesty. To je přesně situace, kdy dává smysl uvažovat o Python library hijackingu místo hledání SUID nebo kernel exploitu. Ve skutečnosti tu nejde o chybu Pythonu samotného, ale o wrapper, který důvěřuje útočníkem ovlivněnému prostředí.
 
 Stačí do vlastního adresáře připravit škodlivý modul se stejným jménem jako importovaná knihovna, nasměrovat `PYTHONPATH` na tento adresář a pak spustit `backup` přes `sudo`. Root proces pak načte útočníkův modul a vykoná jeho kód ještě před vlastním během skriptu.
 ```bash

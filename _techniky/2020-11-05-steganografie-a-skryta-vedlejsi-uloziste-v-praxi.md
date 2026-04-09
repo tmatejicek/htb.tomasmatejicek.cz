@@ -14,7 +14,7 @@ Ne každé tajemství leží v `config.php`, `.env` nebo `authorized_keys`. V n�
 - do vedlejšího metadata souboru,
 - nebo do jiného úložiště, které běžný průzkum snadno přehlédne.
 
-Irked a BigHead ukazují dvě užitečné varianty téhož problému. Na Irked je tajemství ukryté přímo ve steganografickém obsahu obrázku. Na BigHead neleží v obrázku samotném, ale v alternativním datovém proudu `Zone.Identifier`, který dovede útočníka ke KeePass databázi a key file.
+[Irked](/irked) a [BigHead](/bighead) ukazují dvě užitečné varianty téhož problému. Na [Irkedu](/irked) je tajemství ukryté přímo ve steganografickém obsahu obrázku. Na [BigHeadu](/bighead) neleží v obrázku samotném, ale v alternativním datovém proudu `Zone.Identifier`, který dovede útočníka ke KeePass databázi a key file.
 
 Tyto případy nejsou hlavní proud většiny průniků. Právě proto ale bývají snadno podceněné. Kdo hledá jen plaintext hesla, podobný řetězec prostě přehlédne.
 

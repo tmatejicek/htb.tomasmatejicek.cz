@@ -98,6 +98,8 @@ Claim `tenant_id`, `project_id` nebo `account_id` bývá považovaný za harmles
 
 Když se signing secret někdy dostal ven, dopad se dramaticky zvyšuje u tokenů s dlouhou expirací nebo bez revokačního modelu. Útočník si pak může vytvářet vlastní "věčně platné" identity i dlouho po opravě původního leaku, pokud nedojde i k rotaci klíče.
 
+Na [Cerealu](/cereal) je tenhle dopad dobře vidět v celé šíři. Starý commit vydal signing secret, podvržený token otevřel admin kontext a teprve ten umožnil další zneužití přes stored XSS a server-side deserializaci. Samotný secret tedy ještě nebyl koncem řetězce, ale stal se prvním důvěryhodným krokem k němu.
+
 ## Co z úniku secretu naopak neplyne automaticky
 
 Je užitečné nepřeceňovat dopad mechanicky. Uniklý secret neznamená vždy totéž jako plný účet administrátora.

@@ -120,6 +120,8 @@ To vede k typickým chybám:
 
 Tahle věta sama o sobě neřeší nic, pokud existuje veřejný endpoint, který umí interní URL načítat nebo přeposílat.
 
+[Forge](/forge) je čistý praktický příklad. `admin.forge.htb` bylo dostupné jen z localhostu, ale hlavní aplikace současně nabízela fetch URL funkci. Jakmile šel blacklist obejít přes `ADMIN.FORGE.htb`, z localhost-only panelu se stal veřejně dosažitelný zdroj FTP credentialů a soukromého SSH klíče.
+
 ### 2. Proxy chrání cestu, ale ne její význam
 
 Veřejná vrstva může skrývat manager, admin panel nebo interní API, ale backend pořád věří požadavku, který se k němu dostane správným tvarem cesty nebo přes jinou routu.

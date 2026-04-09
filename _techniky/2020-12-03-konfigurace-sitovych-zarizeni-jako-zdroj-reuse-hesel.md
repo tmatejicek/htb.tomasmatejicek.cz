@@ -18,7 +18,7 @@ Konfigurace routerů, switchů a firewallů se často berou jako čistě síťa�
 
 nejde už jen o síťovou konfiguraci. Jde o credential dump jiné vrstvy infrastruktury.
 
-Heist je velmi čistý příklad právě proto, že žádný router není konečný cíl útoku. Cisco konfigurace je jen zdrojem hesel, která se později použijí proti doménovým účtům a WinRM. To je přesně hranice, kterou je potřeba chápat správně: únik síťové konfigurace je často identitní problém, ne jen problém síťového týmu.
+[Heist](/heist) je velmi čistý příklad právě proto, že žádný router není konečný cíl útoku. Cisco konfigurace je jen zdrojem hesel, která se později použijí proti doménovým účtům a WinRM. To je přesně hranice, kterou je potřeba chápat správně: únik síťové konfigurace je často identitní problém, ne jen problém síťového týmu.
 
 ## Proč jsou config exporty bezpečnostně citlivé
 
@@ -40,7 +40,7 @@ Právě poslední bod bývá rozhodující. Jakmile správce použije stejné he
 
 ## Heist: od Cisco configu k WinRM
 
-Na Heist byl prvním relevantním artefaktem support portál se zveřejněnou Cisco konfigurací. Ta obsahovala několik různých forem tajemství:
+Na [Heistu](/heist) byl prvním relevantním artefaktem support portál se zveřejněnou Cisco konfigurací. Ta obsahovala několik různých forem tajemství:
 
 ```text
 enable secret 5 $1$pdQG$o8nrSzsGXeaduXrjlvKc91

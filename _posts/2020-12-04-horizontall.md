@@ -9,13 +9,13 @@ tags: linux ssh php exploit enumeration privesc
 
 Horizontall je dvoukrokový webový řetězec rozdělený mezi dva různé frameworky. Veřejný vhost `api-prod.horizontall.htb` běží na Strapi a dává první shell přes známou zranitelnost v resetu hesla a instalaci pluginů. Root ale neleží ve Strapi, nýbrž v interním Laravelu dostupném jen na `127.0.0.1:8000`.
 
-To je na tom stroji nejzajímavější: první exploit sice otevře SSH foothold, ale po něm je potřeba přepnout myšlení a hledat, co ještě běží jen lokálně. `netstat` ukáže skrytou službu na `8000` a až SSH port-forward odkryje druhou aplikaci, která vede k rootu.
+To je na tom stroji nejzajímavější: první exploit sice otevře SSH foothold, ale po něm je potřeba přepnout myšlení a hledat, co ještě běží jen lokálně. `netstat` ukáže skrytou službu na `8000` a až SSH port-forward odkryje druhou aplikaci, která vede k rootu. Přesně tenhle mentální model rozebírám i v článku [Lokálně dostupné služby po footholdu: localhost není boundary](/techniky/lokalne-dostupne-sluzby-po-footholdu-localhost-neni-boundary).
 
 ## Počáteční průzkum
 
 ### Veřejný web a vedlejší API vhost
 
-Na první pohled jsou otevřené jen SSH a nginx. Přesně v takové situaci má smysl hledat další hostname. `wfuzz` rychle odhalí `api-prod.horizontall.htb`, který je podstatně zajímavější než hlavní marketingová stránka. Praktickou roli tohoto typu vhost enumerace rozebírám i v článku [Wfuzz](/nastroje/wfuzz).
+Na první pohled jsou otevřené jen SSH a nginx. Přesně v takové situaci má smysl začít s [Nmapem](/nastroje/nmap), pak hledat další hostname. `wfuzz` rychle odhalí `api-prod.horizontall.htb`, který je podstatně zajímavější než hlavní marketingová stránka. Praktickou roli tohoto typu vhost enumerace rozebírám i v článku [Wfuzz](/nastroje/wfuzz).
 ```bash
 ports=$(nmap -p- --min-rate=1000 -T4 $IP | grep ^[0-9] | cut -d "/" -f 1 | tr "\n" "," | sed s/,$//);echo $ports;nmap -p $ports -A -sC -sV -v $IP
 wfuzz -H "Host: FUZZ.horizontall.htb" -w SecLists/Discovery/DNS/subdomains-top1million-110000.txt --sc 200 http://10.10.11.105
@@ -71,6 +71,9 @@ tcp  0  0 127.0.0.1:3306  0.0.0.0:*  LISTEN  -
 ```
 
 Proto následuje port-forward a identifikace interního Laravelu:
+
+Praktickou roli podobných tunelů shrnuji i v článku [Port forwarding, proxy a protokolové mosty jako exploitační primitivum](/techniky/port-forwarding-proxy-a-protokolove-mosty-jako-exploitacni-primitivum).
+
 ```text
 ssh strapi@horizontall.htb -L 8000:127.0.0.1:8000
 => Laravel

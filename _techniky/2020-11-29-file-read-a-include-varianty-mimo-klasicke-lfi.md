@@ -43,6 +43,8 @@ php://filter/convert.base64-encode/resource=/etc/passwd
 
 změnit význam celé operace. Už nejde o běžné načtení lokálního souboru, ale o wrapper, který obsah nejdřív přečte a pak ho před vrácením zakóduje.
 
+[ForwardSlash](/forwardslash) je přesně ten typ případu, kde se tohle chování neukázalo jako "zajímavá syntaxe", ale jako plnohodnotný foothold mezikrok. `api.php` akceptovalo `php://filter`, takže místo prostého helperu na načtení zdroje vznikl spolehlivý čtecí kanál ke `config.php` i dalším lokálním souborům.
+
 Praktický dopad je dvojí:
 
 - obejde se jednoduchá ochrana, která počítá jen s relativní cestou,

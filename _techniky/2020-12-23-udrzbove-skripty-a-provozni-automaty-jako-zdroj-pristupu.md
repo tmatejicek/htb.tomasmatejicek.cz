@@ -59,6 +59,8 @@ Registry ukazuje variantu, kde automatizace sama neplánuje běh periodicky, ale
 
 To je podstatné. Jakmile má privilegovaný proces číst data a posílat je na backend, musí být:
 
+[Craft](/craft) přidává ještě jinou provozní variantu téhož problému. `vault-ssh-helper` a možnost vyžádat si root OTP nevypadají jako "skript na hesla", ale logika je stejná: existuje automatizovaný privilegovaný kanál, který má správcům usnadnit práci. Jakmile ho může ovlivnit kompromitovaný uživatel, promění se v přímý přístupový most k rootu.
+
 - pevně dané, co se smí zálohovat,
 - pevně dané, kam se to smí poslat,
 - a pevně dané, kdo backend určuje.
