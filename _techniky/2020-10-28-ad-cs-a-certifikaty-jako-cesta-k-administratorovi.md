@@ -9,7 +9,7 @@ tags: adcs active-directory windows kerberos certificates pkinit
 
 Když se v Active Directory mluví o kompromitaci identity, většina lidí si představí heslo, NT hash nebo Kerberos ticket. Active Directory Certificate Services ale otevírají jinou rovinu. Pokud doména důvěřuje certifikátu pro autentizaci, může být certifikát pro privilegovaný účet stejně cenný jako jeho heslo, a někdy i praktičtější. Útočník pak nepotřebuje znát password. Stačí mu schopnost získat certifikát, který se na doméně mapuje na cílovou identitu.
 
-Na Anubis to bylo vidět velmi čistě. První foothold i laterální pohyb jsou důležité jen proto, aby se útočník dostal k prostředí, kde lze pracovat se šablonami certifikátů. Skutečný zlom přijde ve chvíli, kdy se upraví šablona `Web`, vystaví certifikát pro `Administrator` a přes PKINIT se z něj získá TGT. Od této chvíle už nejde o heslo nebo hash. Jde o plnohodnotný alternativní autentizační materiál.
+Na [Anubisu](/anubis) to bylo vidět velmi čistě. První foothold i laterální pohyb jsou důležité jen proto, aby se útočník dostal k prostředí, kde lze pracovat se šablonami certifikátů. Skutečný zlom přijde ve chvíli, kdy se upraví šablona `Web`, vystaví certifikát pro `Administrator` a přes PKINIT se z něj získá TGT. Od této chvíle už nejde o heslo nebo hash. Jde o plnohodnotný alternativní autentizační materiál.
 
 ## Co AD CS v doméně skutečně znamená
 
@@ -72,7 +72,7 @@ earth.windcorp.htb_windcorp-CA.crt
 windcorp-CA.crl
 ```
 
-To ale ještě není exploitační moment. Ten přichází až s pochopením šablony `Web`. V daném prostředí šlo upravit její EKU tak, aby se z původně méně nebezpečné šablony stal nástroj pro autentizaci:
+To ale ještě není exploitační moment. Ten přichází až s pochopením šablony `Web`. Na [Anubisu](/anubis) šlo upravit její EKU tak, aby se z původně méně nebezpečné šablony stal nástroj pro autentizaci:
 
 ```powershell
 $EKUs=@("1.3.6.1.5.5.7.3.2", "1.3.6.1.4.1.311.20.2.2")
@@ -92,7 +92,7 @@ Jakmile CA takový certifikát vydá, nevznikne jen další soubor. Vznikne dův
 
 ## Co přesně dělá PKINIT
 
-PKINIT je způsob, jak použít certifikát a soukromý klíč při Kerberos autentizaci. Prakticky to znamená, že místo klasického hesla nebo hashe lze požádat o TGT s využitím certifikátu:
+PKINIT je způsob, jak použít certifikát a soukromý klíč při Kerberos autentizaci. Prakticky to znamená, že místo klasického hesla nebo hashe lze požádat o TGT s využitím certifikátu. Širší kontext ke Kerberos identitám a tomu, jak se z nich stává použitelný přístup, shrnuji i v článku [Kerberos útoky z nulového přístupu: AS-REP roast a práce s kandidátními uživateli](/techniky/kerberos-utoky-z-nuloveho-pristupu-as-rep-roast-a-prace-s-kandidatnimi-uzivateli):
 
 ```text
 kinit -X X509_user_identity=FILE:admin.cer,admin.key Administrator@WINDCORP.HTB

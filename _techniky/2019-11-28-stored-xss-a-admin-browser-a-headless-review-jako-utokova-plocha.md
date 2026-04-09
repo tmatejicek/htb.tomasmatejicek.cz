@@ -86,11 +86,11 @@ V ten moment stored XSS není jen klientská chyba. Stává se z ní most mezi n
 
 ## Jak se tenhle vzorec projevil v konkrétních případech
 
-Na jednom rozboru stroje byl komentář k bankovní transakci zobrazen v headless prohlížeči administrátora. To umožnilo vytáhnout admin cookies a převzít session v rozhraní, které obsahovalo localhost-only nástroj pro spouštění příkazů. XSS tedy nevedla k shellu přímo. Nejdřív otevřela cizí browser kontext a teprve ten odemkl interní funkci.
+Na [Bankrobberu](/bankrobber) byl komentář k bankovní transakci zobrazen v headless prohlížeči administrátora. To umožnilo vytáhnout admin cookies a převzít session v rozhraní, které obsahovalo localhost-only nástroj pro spouštění příkazů. XSS tedy nevedla k shellu přímo. Nejdřív otevřela cizí browser kontext a teprve ten odemkl interní funkci.
 
-Jiný případ stál na tom, že uložený JavaScript běžel v kontextu, který dokázal číst `file:///home/reader/.ssh/id_rsa`. Tam nebyla nejdůležitější session, ale hranice mezi webovým workflow a lokálními soubory hostu. Jakmile se vykonal kód ve správném rendereru, XSS vydala rovnou SSH materiál.
+Na [Booku](/book) stál jiný případ na tom, že uložený JavaScript běžel v kontextu, který dokázal číst `file:///home/reader/.ssh/id_rsa`. Tam nebyla nejdůležitější session, ale hranice mezi webovým workflow a lokálními soubory hostu. Jakmile se vykonal kód ve správném rendereru, XSS vydala rovnou SSH materiál.
 
-Ve třetím případě se JavaScript spouštěl v interním admin preview a jeho hodnota nebyla v prohlížení DOMu, ale v tom, že mohl poslat autentizovaný požadavek, který backend následně zpracoval server-side. Tady stored XSS fungovala jako ovladač cizí privilegované akce, ne jako finální exploit sama o sobě.
+Na [Cerealu](/cereal) se JavaScript spouštěl v interním admin preview a jeho hodnota nebyla v prohlížení DOMu, ale v tom, že mohl poslat autentizovaný požadavek, který backend následně zpracoval server-side. Tady stored XSS fungovala jako ovladač cizí privilegované akce, ne jako finální exploit sama o sobě.
 
 ## Co je na těchto scénářích jiné než u "běžné XSS"
 

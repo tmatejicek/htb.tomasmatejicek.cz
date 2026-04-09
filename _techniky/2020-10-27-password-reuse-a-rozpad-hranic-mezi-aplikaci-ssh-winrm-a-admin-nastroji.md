@@ -85,13 +85,13 @@ Taková hodnota může působit okrajově, ale v reálném řetězci často fung
 
 ## Jak tento vzorec vypadal v různých případech
 
-V jednom případě veřejně dostupné administrativní soubory vydaly seznam přístupových údajů a skutečná hodnota přišla až ve chvíli, kdy se jedno z hesel potvrdilo na SSH účtu `waldo`. Rozhodující nebyl samotný únik textového souboru, ale zjištění, že údaje nejsou omezené jen na FTP nebo WordPress.
+Na [Admireru](/admirer) veřejně dostupné administrativní soubory vydaly seznam přístupových údajů a skutečná hodnota přišla až ve chvíli, kdy se jedno z hesel potvrdilo na SSH účtu `waldo`. Rozhodující nebyl samotný únik textového souboru, ale zjištění, že údaje nejsou omezené jen na FTP nebo WordPress.
 
-Jinde webový shell odhalil databázový účet a hodnoty z aplikační tabulky. Až jejich reuse na systémovém účtu `theseus` proměnil webový foothold v trvalý SSH přístup. Útočník v takové chvíli nepotřebuje další zranitelnost, jen správně přečíst vztah mezi aplikací a hostem.
+Na [Magic](/magic) webový shell odhalil databázový účet a hodnoty z aplikační tabulky. Až jejich reuse na systémovém účtu `theseus` proměnil webový foothold v trvalý SSH přístup. Útočník v takové chvíli nepotřebuje další zranitelnost, jen správně přečíst vztah mezi aplikací a hostem.
 
-Na windowsovém hostu vedla záloha webu a provozní logy k heslu administrátora Umbraca. Po prvním footholdu se ale ukázalo, že lokálně uložené TeamViewer tajemství funguje i pro `Administrator` přes WinRM. Tady je krásně vidět, že reuse nemusí vypadat jako stejný login ve dvou formulářích. Může jít i o sdílené tajemství mezi desktopovým nástrojem a privilegovaným systémovým účtem.
+Na [Remote](/remote) vedla záloha webu a provozní logy k heslu administrátora Umbraca. Po prvním footholdu se ale ukázalo, že lokálně uložené TeamViewer tajemství funguje i pro `Administrator` přes WinRM. Tady je krásně vidět, že reuse nemusí vypadat jako stejný login ve dvou formulářích. Může jít i o sdílené tajemství mezi desktopovým nástrojem a privilegovaným systémovým účtem.
 
-Další případ stál na tom, že passphrase k nalezenému `id_rsa.bak` nebyla důležitá jen pro klíč samotný. Stejná hodnota otevřela i lokální účet a následně správu ve Webminu. Tím se z jednoho na první pohled vedlejšího artefaktu stal průchod hned přes několik vrstev.
+Na [Postmanu](/postman) stál další případ na tom, že passphrase k nalezenému `id_rsa.bak` nebyla důležitá jen pro klíč samotný. Stejná hodnota otevřela i lokální účet a následně správu ve Webminu. Tím se z jednoho na první pohled vedlejšího artefaktu stal průchod hned přes několik vrstev.
 
 ## Jak reuse disciplinovaně ověřovat
 

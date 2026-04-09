@@ -48,7 +48,7 @@ To je důležitý rozdíl. Kryptografie sama ještě nedělá z klientského vst
 
 ## Příklad z praxe: Arkham a JSF ViewState
 
-Arkham ukazuje tento vzor velmi čistě. Samotný Tomcat na `:8080` nebyl hlavní problém. Rozhodující byla až záloha aplikace `appserver.zip`, z níž šlo vytáhnout konfiguraci s klíčem `org.apache.myfaces.SECRET`. Tím se otevřela cesta ke zneužití JSF ViewState.
+[Arkham](/arkham) ukazuje tento vzor velmi čistě. Samotný Tomcat na `:8080` nebyl hlavní problém. Rozhodující byla až záloha aplikace `appserver.zip`, z níž šlo vytáhnout konfiguraci s klíčem `org.apache.myfaces.SECRET`. Tím se otevřela cesta ke zneužití JSF ViewState.
 
 To je přesně ta situace, kde je potřeba nepřeskočit příčinu a následek:
 

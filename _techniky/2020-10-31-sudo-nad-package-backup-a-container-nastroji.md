@@ -16,7 +16,7 @@ Právě proto je chyba hodnotit `sudo` jen podle názvu binárky. Smysluplnějš
 - sahat do container namespace,
 - nebo delegovat další vykonávání kódu.
 
-Armageddon, Schooled, Registry a TheNotebook ukazují čtyři různé varianty stejného problému. `sudo` zde nedává "malou administrativu". Dává nepřímý root.
+[Armageddon](/armageddon), [Schooled](/schooled), [Registry](/registry) a [TheNotebook](/thenotebook) ukazují čtyři různé varianty stejného problému. `sudo` zde nedává "malou administrativu". Dává nepřímý root.
 
 ## Proč jsou tyto nástroje rizikové už ze své podstaty
 
@@ -50,7 +50,7 @@ Jakmile přes `sudo` dovolíte spustit backup s uživatelsky ovlivnitelným cíl
 
 ### Armageddon: `snap install *` jako instalační hook pod rootem
 
-Na Armageddonu vycházelo:
+Na [Armageddonu](/armageddon) vycházelo:
 
 ```text
 (root) NOPASSWD: /usr/bin/snap install *
@@ -62,7 +62,7 @@ Podstatná není konkrétní syntaxe exploitu. Podstatné je, že instalace bal�
 
 ### Schooled: `pkg install *` a `+PRE_INSTALL`
 
-Schooled ukazuje stejný princip na FreeBSD. Uživatel `jamie` směl přes `sudo` spouštět:
+[Schooled](/schooled) ukazuje stejný princip na FreeBSD. Uživatel `jamie` směl přes `sudo` spouštět:
 
 ```text
 (ALL) NOPASSWD: /usr/sbin/pkg update
@@ -80,7 +80,7 @@ Na tomhle příkladu je dobře vidět, proč nestačí argumentovat "ale uživat
 
 ### Registry: `restic backup` jako delegované čtení root dat
 
-Na Registry byl problém méně nápadný, ale stejně závažný:
+Na [Registry](/registry) byl problém méně nápadný, ale stejně závažný:
 
 ```text
 (root) NOPASSWD: /usr/bin/restic backup -r rest*
@@ -92,7 +92,7 @@ To je důležitá lekce: privilegované čtení je plnohodnotná forma eskalace.
 
 ### TheNotebook: `docker exec` a kontrola nad runtime
 
-TheNotebook přidal čtvrtou variantu. Uživatel `noah` směl spouštět:
+[TheNotebook](/thenotebook) přidal čtvrtou variantu. Uživatel `noah` směl spouštět:
 
 ```text
 (ALL) NOPASSWD: /usr/bin/docker exec -it webapp-dev01*

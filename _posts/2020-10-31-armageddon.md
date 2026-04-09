@@ -7,15 +7,17 @@ tags: linux ssh sudo php exploit enumeration
 ---
 ## Úvod a kontext
 
-Armageddon je přímočará, ale velmi praktická ukázka toho, jak veřejně dostupné CMS selže ve dvou vrstvách najednou. Nejdřív otevře cestu `Drupalgeddon2`, potom z lokální konfigurace a databáze vyplynou údaje, které fungují i pro systémový účet `brucetherealadmin`.
+Armageddon je přímočará, ale velmi praktická ukázka toho, jak veřejně dostupné CMS selže ve dvou vrstvách najednou. Nejdřív otevře cestu `Drupalgeddon2`, potom z lokální konfigurace a databáze vyplynou údaje, které fungují i pro systémový účet `brucetherealadmin`. Z pohledu řetězce je to zároveň čistý případ problému popsaného v textu [Password reuse a rozpad hranic mezi aplikací, SSH, WinRM a admin nástroji](/techniky/password-reuse-a-rozpad-hranic-mezi-aplikaci-ssh-winrm-a-admin-nastroji).
 
-Hodnota článku není v samotném exploitu Drupalu, ale v přechodu od jednorázového webového RCE ke stabilnímu SSH přístupu. Root pak znovu nepřináší novou zranitelnost, jen špatně navržené `sudo` pravidlo pro `snap install`.
+Hodnota článku není v samotném exploitu Drupalu, ale v přechodu od jednorázového webového RCE ke stabilnímu SSH přístupu. Root pak znovu nepřináší novou zranitelnost, jen špatně navržené `sudo` pravidlo pro `snap install`. Tenhle vzorec shrnuji obecněji i v článku [`sudo` nad package, backup a container nástroji](/techniky/sudo-nad-package-backup-a-container-nastroji).
 
 ## Počáteční průzkum
 
 ### Vyhledání otevřených portů
 
 Nejprve mapuji veřejně dostupné služby, protože právě z otevřených portů odvodím, které protokoly a aplikace má smysl zkoumat detailněji.
+
+Praktický základ úvodního skenu popisuji i v článku [Nmap](/nastroje/nmap).
 ```bash
 ports=$(nmap -p- --min-rate=1000 -T4 $IP | grep ^[0-9] | cut -d "/" -f 1 | tr "\n" "," | sed s/,$//);echo $ports;nmap -p $ports -A -sC -sV -v $IP
 ```
@@ -44,7 +46,7 @@ PORT   STATE SERVICE VERSION
 
 ### Identifikace a hledání exploitu
 
-Zjišťuji technologii a ověřuji známé zranitelnosti.
+Zjišťuji technologii a ověřuji známé zranitelnosti. Kdy je `searchsploit` jen filtr kandidátů a kdy už dává smysl jít dál, rozebírám i v článku [Searchsploit](/nastroje/searchsploit).
 ```bash
 searchsploit Drupal 7.56
 ```
@@ -101,7 +103,7 @@ $ sudo -l
 
 ### Získání root flagu
 
-Rozhodující nebyl samotný `sudo` záznam, ale jeho dopad: možnost spouštět `snap install` jako root prakticky deleguje instalaci vlastního balíčku se skripty běžícími během nasazení. Jakmile si útočník připraví škodlivý snap, mění se takové pravidlo přímo ve vektor eskalace oprávnění.
+Rozhodující nebyl samotný `sudo` záznam, ale jeho dopad: možnost spouštět `snap install` jako root prakticky deleguje instalaci vlastního balíčku se skripty běžícími během nasazení. Jakmile si útočník připraví škodlivý snap, mění se takové pravidlo přímo ve vektor eskalace oprávnění. Je to přesně ta varianta nepřímého rootu, kterou shrnuji i v článku [`sudo` nad package, backup a container nástroji](/techniky/sudo-nad-package-backup-a-container-nastroji).
 ```bash
 cat root.txt
 ```

@@ -19,7 +19,7 @@ APT a Zetta ukazují, že IPv6 nemusí být dekorace nebo síťařská kuriozita
 
 ## Jaký je rozdíl proti „topologickému leaku“
 
-Je užitečné tenhle článek držet odděleně od textu o síťové topologii jako leaku.
+Je užitečné tenhle článek držet odděleně od textu o [Síťové topologii jako leaku: WPAD, Squid, FXP a interní mapování](/techniky/sitova-topologie-jako-leak-wpad-squid-fxp-a-interni-mapovani).
 
 Tam je hlavní otázka:
 
@@ -45,7 +45,7 @@ Proto má smysl o IPv6 uvažovat jako o samostatné attack surface, ne jako o do
 
 ## APT: IPv4 skoro nic, IPv6 plná doména
 
-APT je nejčistší případ. Přes IPv4 bylo zvenku vidět v zásadě jen minimum:
+[APT](/apt) je nejčistší případ. Přes IPv4 bylo zvenku vidět v zásadě jen minimum:
 
 ```text
 80/tcp  open  http
@@ -76,7 +76,7 @@ APT je proto výborná připomínka, že obrana může vidět „chudý“ IPv4 
 
 ## Zetta: interní IPv6 jako most k další službě
 
-Zetta ukazuje jiný vzor. Tady IPv6 nefunguje jako okamžitě veřejně zjevná druhá realita. Nejdřív bylo potřeba získat interní IPv6 adresu přes chování Pure-FTPd a FXP/EPRT.
+[Zetta](/zetta) ukazuje jiný vzor. Tady IPv6 nefunguje jako okamžitě veřejně zjevná druhá realita. Nejdřív bylo potřeba získat interní IPv6 adresu přes chování Pure-FTPd a FXP/EPRT.
 
 Jakmile se ale adresa objevila:
 
@@ -94,7 +94,7 @@ Tady je důležité správně interpretovat roli IPv6. Nejde jen o to, že „un
 
 ## Kde do toho zapadá Tentacle
 
-Tentacle není čistě IPv6 příklad v tom samém smyslu jako APT nebo Zetta. Je ale dobrý kontrast.
+[Tentacle](/tentacle) není čistě IPv6 příklad v tom samém smyslu jako APT nebo Zetta. Je ale dobrý kontrast.
 
 Na Tentacle se ukazuje stejný obranný omyl: tým si myslí, že vidí síť tak, jak je skutečně dostupná, ale ve skutečnosti existuje druhá rovina dosažitelnosti přes proxy, WPAD a interní segmenty. U IPv6 je tenhle problém ještě zrádnější, protože druhá rovina není jen „za proxy“. Je to samostatná adresní rodina, kterou část nástrojů a procesů vůbec nevidí.
 
