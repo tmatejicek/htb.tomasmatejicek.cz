@@ -95,6 +95,10 @@ Na [Fatty](/fatty) stál další případ na tom, že vlastní Java klient komun
 
 [Cereal](/cereal) přidává ještě jinou variantu téhož vzorce. Server po admin akci stáhl JSON s typem `Cereal.DownloadHelper`, deserializoval ho a vytvořil z něj server-side download workflow. Znovu tedy nešlo o to, že by klient "poslal data". Klient poslal instrukci, jaký objekt má server vytvořit a co s ním udělat.
 
+[Tenet](/tenet) ukazuje stejný problém v PHP a je užitečný právě tím, že nejde o exotický enterprise stack. `unserialize()` nad parametrem `arepo` dovolilo vytvořit objekt `DatabaseExport`, jehož destruktor zapisoval soubor na server. Praktický dopad byl stejný jako jinde: klient neurčoval jen hodnoty, ale i to, jaký objekt a s jakým vedlejším efektem má server zpracovat.
+
+[Time](/time) zase dobře připomíná, že „JSON parser“ a deserializace nejsou totéž. Backend s Jacksonem nepřijímal jen nevinný dokument, ale polymorfní vstup, který se přes H2 `INIT=RUNSCRIPT` změnil v gadget chain a nakonec v RCE. Formát vstupu byl textový a na první pohled běžný, ale bezpečnostní podstata zůstala stejná: data určovala typ a tím i chování.
+
 ## Jak takový problém poznat při review
 
 Při code review a architekturní analýze se vyplatí hledat několik konkrétních signálů.

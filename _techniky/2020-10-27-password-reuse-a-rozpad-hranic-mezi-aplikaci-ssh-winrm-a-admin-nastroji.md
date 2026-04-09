@@ -93,6 +93,8 @@ Na [OpenAdminu](/openadmin) se stejný vzorec ukázal ještě přímočařeji. D
 
 Na [Schooledu](/schooled) reuse nevznikl z databázového configu, ale z webového administrativního řetězce uvnitř Moodle. Hash `Jamie Borham` po cracknutí vydal `!QAZ2wsx`, které nefungovalo jen v aplikaci, ale i pro systémový SSH účet `jamie`. To je důležitá varianta stejného problému: reuse nemusí spojovat web a databázi, může spojovat aplikativní administraci a shell.
 
+Na [Tabby](/tabby) zase reuse nevznikl z klasického `config.php`, ale z chráněného ZIP archivu. Heslo `admin@it` samo o sobě neotevřelo nový endpoint ani nevedlo k další webové funkci. Jeho hodnota se ukázala až ve chvíli, kdy fungovalo i pro lokální účet `ash`. To je dobrá připomínka, že reuse se často schovává v pomocných artefaktech, které na první pohled nepůsobí jako systémová tajemství.
+
 Na [Remote](/remote) vedla záloha webu a provozní logy k heslu administrátora Umbraca. Po prvním footholdu se ale ukázalo, že lokálně uložené TeamViewer tajemství funguje i pro `Administrator` přes WinRM. Tady je krásně vidět, že reuse nemusí vypadat jako stejný login ve dvou formulářích. Může jít i o sdílené tajemství mezi desktopovým nástrojem a privilegovaným systémovým účtem.
 
 Na [Postmanu](/postman) stál další případ na tom, že passphrase k nalezenému `id_rsa.bak` nebyla důležitá jen pro klíč samotný. Stejná hodnota otevřela i lokální účet a následně správu ve Webminu. Tím se z jednoho na první pohled vedlejšího artefaktu stal průchod hned přes několik vrstev.

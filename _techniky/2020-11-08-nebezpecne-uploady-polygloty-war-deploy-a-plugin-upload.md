@@ -88,6 +88,8 @@ Na [Magicu](/magic) upload přijímal obrázek dostatečně povrchně na to, aby
 
 Na [Jerrym](/jerry) byl celý řetězec ještě přímočařejší: veřejně dostupný Tomcat Manager chránilo slabé heslo a samotná administrace umožnila nahrát `WAR`. Tam už nešlo o obcházení filtru. Šlo o to, že deployment rozhraní bylo fakticky otevřeným RCE kanálem.
 
+Na [Tabby](/tabby) se stejný mechanismus objevil v o něco zajímavější podobě. Tomcat Manager nebyl otevřený výchozím heslem, ale odemkl ho až předchozí LFI do `tomcat-users.xml`. Samotný WAR upload pak znovu potvrdil, že deploy rozhraní není „jen admin funkce“, ale hotová cesta ke spuštění vlastního kódu, jakmile někdo získá odpovídající credential.
+
 Na [Nibbles](/nibbles) a [Blunderu](/blunder) byl problém v tom, že blogovací nebo CMS administrace sama dovolovala nahrát soubor, plugin nebo obrázek způsobem, který vedl ke spuštění kódu. Jakmile se podařilo získat přístup do adminu, upload už nebyl omezením. Byl právě tou oficiální funkcí, přes kterou se na host dostal payload.
 
 ## Proč je chyba často jinde než v validaci

@@ -133,6 +133,8 @@ To je velmi důležitý pattern při lokální analýze:
 
 [Spectra](/spectra) ukazuje velmi podobný model v init systému. `katie` sama o sobě neměla root, ale mohla měnit testovací job a pak přes `sudo /sbin/initctl start ...` přimět roota, aby její upravený obsah opravdu spustil. Zápis do jobu tedy nebyl "jen konfigurace", ale odložené root execution.
 
+[Time](/time) přidává stejný vzorec v čistší systemd podobě. Uživatel `pericles` mohl zapisovat do `/usr/bin/timer_backup.sh`, který pak root pravidelně spouštěl přes timer. Tady už opravdu není co „exploitovat“. Jakmile má neprivilegovaný účet write do souboru, který vykonává privilegovaná automatika, write samo o sobě je téměř hotový root.
+
 ## Jak tenhle pattern poznat systematicky
 
 Když někde najdeš write přístup, má smysl projít tyto otázky:

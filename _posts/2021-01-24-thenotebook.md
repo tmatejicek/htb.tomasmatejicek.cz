@@ -7,9 +7,9 @@ tags: linux ssh sudo php exploit enumeration
 ---
 ## Úvod a kontext
 
-TheNotebook začíná nenápadnou chybou v práci s JWT. Aplikace sice používá asymetrické podepisování, ale při ověřování slepě důvěřuje adrese v hlavičce `kid` a stáhne si klíč z URL, kterou určí útočník. Tím se z ochrany podpisem stává mechanika, kterou lze plně obejít.
+TheNotebook začíná nenápadnou chybou v práci s JWT. Aplikace sice používá asymetrické podepisování, ale při ověřování slepě důvěřuje adrese v hlavičce `kid` a stáhne si klíč z URL, kterou určí útočník. Tím se z ochrany podpisem stává mechanika, kterou lze plně obejít, přesně v duchu článku [kid/jku a vzdálené načítání klíčů](/techniky/kid-jku-a-vzdalene-nacitani-klicu).
 
-Druhá polovina řetězce je o provozním detailu kolem Dockeru. Upload formulář zapisuje soubory do cesty, která je bind mountnutá z hosta, takže nahraný `rev.php` se neprovede v kontejneru, ale přes nginx přímo na hostitelském systému. Root pak stojí na starém `runc` a právu spouštět `docker exec`.
+Druhá polovina řetězce je o provozním detailu kolem Dockeru. Upload formulář zapisuje soubory do cesty, která je bind mountnutá z hosta, takže nahraný `rev.php` se neprovede v kontejneru, ale přes nginx přímo na hostitelském systému. Root pak stojí na starém `runc` a právu spouštět `docker exec`, tedy přesně na patternu popsaném v [Container boundary mistakes: bind mounty, `docker exec`, `runc`, `privileged`](/techniky/container-boundary-mistakes-bind-mounty-docker-exec-runc-privileged).
 
 ## Počáteční průzkum
 
@@ -48,7 +48,7 @@ Původní token vypadal logicky takto:
 }
 ```
 
-To je kritická chyba návrhu. Server se nesmí nechat přimět, aby si ověřovací klíč stahoval z útočníkem řízené adresy. Jakmile to dovolí, stačí si vytvořit vlastní pár klíčů, hostovat jej a podepsat libovolný token.
+To je kritická chyba návrhu. Server se nesmí nechat přimět, aby si ověřovací klíč stahoval z útočníkem řízené adresy. Jakmile to dovolí, stačí si vytvořit vlastní pár klíčů, hostovat jej a podepsat libovolný token. Tady nejde o uniklý signing secret, ale o rozbitý trust model kolem key lookupu.
 
 ### Vytvoření vlastního admin tokenu
 
@@ -117,7 +117,7 @@ Nejdůležitější výstup z `sudo -l` byl:
 (ALL) NOPASSWD: /usr/bin/docker exec -it webapp-dev01*
 ```
 
-To samo o sobě ještě není automatický root. Rozhodující je verze Dockeru a `runc`. Na hostu běžel Docker 18.06, tedy zranitelný vůči `CVE-2019-5736`.
+To samo o sobě ještě není automatický root. Rozhodující je verze Dockeru a `runc`. Na hostu běžel Docker 18.06, tedy zranitelný vůči `CVE-2019-5736`. Zároveň je to dobrý příklad toho, proč i zdánlivě úzké `sudo` nad container runtime patří do stejné rodiny problémů jako [`sudo` nad package, backup a container nástroji](/techniky/sudo-nad-package-backup-a-container-nastroji).
 
 Princip této chyby je v tom, že proces uvnitř kontejneru dokáže při správném postupu přepsat hostitelský `runc`. Při dalším `docker exec` se pak spustí útočníkův payload na hostu jako root.
 
