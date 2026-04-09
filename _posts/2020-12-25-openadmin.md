@@ -51,6 +51,8 @@ OpenNetAdmin 18.1.1 - Remote Code Execution | https://www.exploit-db.com/exploit
 ```
 
 Po spuštění exploitu je nejdůležitější podívat se do `local/config/database_settings.inc.php`. Tam leží databázové heslo `n1nj4W4rri0R!`, které není jen pro MySQL, ale funguje i pro systémového uživatele `jimmy`.
+
+Je to velmi čistý příklad vzorce rozebraného v článku [Password reuse a rozpad hranic mezi aplikací, SSH, WinRM a admin nástroji](/techniky/password-reuse-a-rozpad-hranic-mezi-aplikaci-ssh-winrm-a-admin-nastroji): credential nalezená v aplikaci sama o sobě ještě není shell, ale její reuse na systémovém účtu už ano.
 ```text
 $ona_contexts['DEFAULT']['databases'][0]['db_login'] = 'ona_sys'
 $ona_contexts['DEFAULT']['databases'][0]['db_passwd'] = 'n1nj4W4rri0R!'
@@ -63,6 +65,8 @@ To je přesně ten moment, kdy se vyplatí přejít na SSH. Místo křehkého we
 ### `jimmy`, interní vhost a klíč `joanna`
 
 SSH jako `jimmy` samo o sobě ještě nestačí. Lokální konfigurace Apache ale prozradí localhost-only vhost `internal.openadmin.htb` na `127.0.0.1:52846`, který běží pod uživatelem `joanna`.
+
+Je to další praktická ukázka článku [Lokálně dostupné služby po footholdu: localhost není boundary](/techniky/lokalne-dostupne-sluzby-po-footholdu-localhost-neni-boundary): interní web na `127.0.0.1` není po prvním shellu vedlejší detail, ale další vrstva systému, která může vydat přístup pro úplně jiného uživatele.
 ```text
 Listen 127.0.0.1:52846
 ServerName internal.openadmin.htb

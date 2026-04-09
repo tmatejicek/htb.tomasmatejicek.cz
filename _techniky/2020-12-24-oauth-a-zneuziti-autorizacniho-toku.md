@@ -9,7 +9,7 @@ tags: oauth web auth session oidc
 
 OAuth se často vysvětluje zkratkou "přihlášení přes třetí stranu", ale to je jen část reality. Ve skutečnosti jde o delegaci: klientská aplikace získá omezený přístup k nějakému zdroji nebo identitě na základě autorizačního toku mezi několika stranami. Bezpečnostní problém proto málokdy vzniká tím, že by "OAuth byl rozbitý". Vzniká spíš tím, že aplikace špatně váže dohromady redirect, session, vydaný kód, lokální účet a výsledná oprávnění.
 
-Na Oouch je to vidět velmi čistě. Consumer aplikace, autorizační server a interní API vytvářejí řetězec, kde útočník nemusí lámat kryptografii ani obcházet login formulář. Stačí pochopit, kdo komu v daném toku věří a kde se privilegovaný výsledek autorizačního procesu přelévá do jiného kontextu. Schooled je naopak užitečný kontrast: tam nejde o čistý OAuth bug, ale o session theft a role abuse. Právě tím pomáhá oddělit, co je ještě OAuth problém a co už jen podobně vypadající chyba ve vazbě mezi identitou a lokální rolí.
+Na [Oouchu](/oouch) je to vidět velmi čistě. Consumer aplikace, autorizační server a interní API vytvářejí řetězec, kde útočník nemusí lámat kryptografii ani obcházet login formulář. Stačí pochopit, kdo komu v daném toku věří a kde se privilegovaný výsledek autorizačního procesu přelévá do jiného kontextu. [Schooled](/schooled) je naopak užitečný kontrast: tam nejde o čistý OAuth bug, ale o session theft a role abuse. Právě tím pomáhá oddělit, co je ještě OAuth problém a co už jen podobně vypadající chyba ve vazbě mezi identitou a lokální rolí.
 
 ## Co OAuth řeší a co už ne
 
@@ -79,7 +79,7 @@ Zvlášť nebezpečné je, když aplikace vydává tokeny typu `client_credentia
 
 Oouch je dobrý příklad právě proto, že se na něm potkají skoro všechny výše popsané chyby. Zvenku je vidět consumer aplikace, ale anonymní FTP hned na začátku prozradí architekturu: Flask consumer a oddělený Django authorization server. To je první důležitý krok, protože od té chvíle dává smysl vnímat `/oauth` ne jako detail přihlášení, ale jako samostatnou hranici důvěry.
 
-První kritický moment vznikne ve chvíli, kdy kontaktní mechanizmus dovolí server-side návštěvu zadané URL. Tím se z něj stane SSRF. V kombinaci s OAuth tokem to znamená, že server nebo privilegovaná obsluha navštíví autorizační URL v kontextu, který útočník sám nemá. Výsledkem není rovnou shell, ale mnohem důležitější artefakt: autorizační `code` vydaný v cizím, silnějším kontextu.
+První kritický moment vznikne ve chvíli, kdy kontaktní mechanizmus dovolí server-side návštěvu zadané URL. Tím se z něj stane SSRF, přesně v duchu článku [SSRF, reverse proxy a localhost trust assumptions](/techniky/ssrf-reverse-proxy-a-localhost-trust-assumptions). V kombinaci s OAuth tokem to znamená, že server nebo privilegovaná obsluha navštíví autorizační URL v kontextu, který útočník sám nemá. Výsledkem není rovnou shell, ale mnohem důležitější artefakt: autorizační `code` vydaný v cizím, silnějším kontextu.
 
 Další chyba neleží v samotném kódu. Leží v tom, co s ním systém dovolí dělat dál. Přístupové údaje `develop:supermegasecureklarabubu123!` otevřou registraci vlastní OAuth aplikace, následně lze přes stejný trust chain získat administrátorskou `sessionid` na authorization serveru a vytvořit klienta s grantem `client_credentials`.
 

@@ -89,6 +89,8 @@ Na [Admireru](/admirer) veřejně dostupné administrativní soubory vydaly sezn
 
 Na [Magic](/magic) webový shell odhalil databázový účet a hodnoty z aplikační tabulky. Až jejich reuse na systémovém účtu `theseus` proměnil webový foothold v trvalý SSH přístup. Útočník v takové chvíli nepotřebuje další zranitelnost, jen správně přečíst vztah mezi aplikací a hostem.
 
+Na [OpenAdminu](/openadmin) se stejný vzorec ukázal ještě přímočařeji. Databázové heslo z konfigurace OpenNetAdminu nepatřilo jen aplikaci, ale fungovalo i pro SSH účet `jimmy`, takže webová RCE jen otevřela cestu k reuse místo toho, aby sama rozhodla celý stroj.
+
 Na [Remote](/remote) vedla záloha webu a provozní logy k heslu administrátora Umbraca. Po prvním footholdu se ale ukázalo, že lokálně uložené TeamViewer tajemství funguje i pro `Administrator` přes WinRM. Tady je krásně vidět, že reuse nemusí vypadat jako stejný login ve dvou formulářích. Může jít i o sdílené tajemství mezi desktopovým nástrojem a privilegovaným systémovým účtem.
 
 Na [Postmanu](/postman) stál další případ na tom, že passphrase k nalezenému `id_rsa.bak` nebyla důležitá jen pro klíč samotný. Stejná hodnota otevřela i lokální účet a následně správu ve Webminu. Tím se z jednoho na první pohled vedlejšího artefaktu stal průchod hned přes několik vrstev.

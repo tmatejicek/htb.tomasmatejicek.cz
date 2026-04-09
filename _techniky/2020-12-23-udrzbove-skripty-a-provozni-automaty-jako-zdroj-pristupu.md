@@ -31,7 +31,7 @@ Každá z těchto vlastností samostatně ještě nemusí stačit. Ale dohromady
 
 ### 1. Automatické resetování nebo nastavování přístupů
 
-Omni je čistý příklad. Skrytý `r.bat` neběžel jako náhodný pomocný skript, ale jako provozní rutina, která:
+[Omni](/omni) je čistý příklad. Skrytý `r.bat` neběžel jako náhodný pomocný skript, ale jako provozní rutina, která:
 
 - resetovala heslo `administrator`,
 - spravovala členství ve skupině `administrators`,
@@ -43,7 +43,7 @@ To je důležitá lekce: automatické „dočasné“ recovery nebo provisioning
 
 ### 2. Kopírování nebo synchronizace z útočníkem ovlivnitelné cesty
 
-Tentacle ukazuje jiný vzor. Cron job `log_backup.sh` pravidelně kopíroval obsah `/var/log/squid/` do domovského adresáře `admin`. Samotný skript nevypadal dramaticky. Nebyl v něm `eval`, shell injection ani zjevný exploit. Problém byl v tom, že zdrojovou cestu mohl ovlivnit méně privilegovaný uživatel.
+[Tentacle](/tentacle) ukazuje jiný vzor. Cron job `log_backup.sh` pravidelně kopíroval obsah `/var/log/squid/` do domovského adresáře `admin`. Samotný skript nevypadal dramaticky. Nebyl v něm `eval`, shell injection ani zjevný exploit. Problém byl v tom, že zdrojovou cestu mohl ovlivnit méně privilegovaný uživatel.
 
 Jakmile šlo do log adresáře vložit `.k5login`, skript tento skrytý soubor poslušně zkopíroval do `/home/admin/`. Tím se z běžného backup helperu stal autentizační bridge mezi dvěma účty.
 
@@ -55,7 +55,7 @@ Právě to je klasický provozní antipattern:
 
 ### 3. Zálohovací nástroje s útočníkem řízeným backendem
 
-Registry ukazuje variantu, kde automatizace sama neplánuje běh periodicky, ale systém už má připravený provozní workflow a důvěru k zálohovacímu nástroji. `restic` zde nebyl náhodný binární soubor v `sudoers`, ale součást skutečného backup modelu s REST backendem.
+[Registry](/registry) ukazuje variantu, kde automatizace sama neplánuje běh periodicky, ale systém už má připravený provozní workflow a důvěru k zálohovacímu nástroji. `restic` zde nebyl náhodný binární soubor v `sudoers`, ale součást skutečného backup modelu s REST backendem.
 
 To je podstatné. Jakmile má privilegovaný proces číst data a posílat je na backend, musí být:
 
@@ -69,7 +69,7 @@ Pokud může útočník backend podstrčit nebo přesměrovat, helper z něj ud�
 
 ### 4. Provozní agenti, kteří umí nahrát a spustit skript
 
-ServMon stojí na NSClient++, což není klasický cron job, ale stále jde o provozní automatizační komponentu. Umí přijímat konfigurační změny, uploadnout skript a spustit check v privilegovaném kontextu. Jakmile z lokální konfigurace unikne heslo a útočník se k API dostane přes port forwarding, agent sám provede zbytek.
+[ServMon](/servmon) stojí na NSClient++, což není klasický cron job, ale stále jde o provozní automatizační komponentu. Umí přijímat konfigurační změny, uploadnout skript a spustit check v privilegovaném kontextu. Jakmile z lokální konfigurace unikne heslo a útočník se k API dostane přes port forwarding, agent sám provede zbytek.
 
 Tady je důležité, že chyba neleží jen v jednom hesle. Leží v celém modelu:
 

@@ -16,6 +16,8 @@ Vzdělávací hodnota stroje leží v tom, že každá část je „domácí“ 
 ### `BadHTTPServer` na portu `8080`
 
 Scan ukáže jen SSH a vlastní HTTP službu na `8080/tcp`. Už samotný banner `BadHTTPServer` je silný signál, že nepůjde o běžný framework a že bude stát za to zkusit získat zdrojový kód.
+
+Na přímé tahání zdrojáků a rychlé testování endpointů se v podobné chvíli hodí hlavně [wget a curl](/nastroje/curl), protože umožní pracovat s path traversal a vlastními URL bez dalšího mezikroku.
 ```bash
 nmap -p 1-65535 -T4 -A -sC -v $IP
 ```
@@ -35,6 +37,8 @@ curl http://obscurity.htb:8080/..%2fmain.py
 ### Code injection v `SuperSecureServer.py`
 
 Zdrojový kód hned ukáže chybu: server skládá řetězec `output = 'Document: {}'` a předává ho do `exec()`. Protože do formátovaného řetězce vkládá cestu z URL, stačí payload uzavřít apostrofem a doplnit vlastní Python.
+
+Kandidáta na veřejně známý exploit se i tady vyplatí nejdřív potvrdit přes [Searchsploit](/nastroje/searchsploit) a teprve potom číst zdroj a chystat vlastní payload.
 ```python
 info = "output = 'Document: {}'"
 print(exec(info.format(path)))
@@ -85,6 +89,8 @@ sudo /usr/bin/python3 /home/robert/BetterSSH/BetterSSH.py
 ```
 
 Jakmile se podaří získat hash `root`, zbývá ho cracknout a přepnout se na root standardním `su`.
+
+V praxi se tady typicky hodí [John the Ripper](/nastroje/john-the-ripper), protože převádí „uniklý hash“ z helperu typu `BetterSSH.py` na ověřitelnou hypotézu o skutečném root heslu.
 ```text
 root:$6$riekpK4m$__CENSORED__:18226:0:99999:7
 /usr/sbin/john Obscurity-shadow --wordlist=/usr/share/wordlists/rockyou.txt
