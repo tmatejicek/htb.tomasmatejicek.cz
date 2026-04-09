@@ -131,6 +131,8 @@ To je velmi důležitý pattern při lokální analýze:
 
 často znamená totéž jako přímé spuštění kódu pod cizí identitou, jen s malým zpožděním.
 
+[Spectra](/spectra) ukazuje velmi podobný model v init systému. `katie` sama o sobě neměla root, ale mohla měnit testovací job a pak přes `sudo /sbin/initctl start ...` přimět roota, aby její upravený obsah opravdu spustil. Zápis do jobu tedy nebyl "jen konfigurace", ale odložené root execution.
+
 ## Jak tenhle pattern poznat systematicky
 
 Když někde najdeš write přístup, má smysl projít tyto otázky:

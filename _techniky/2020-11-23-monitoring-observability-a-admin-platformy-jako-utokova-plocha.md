@@ -62,6 +62,12 @@ Wall je dobrý příklad toho, že monitoring panel není jen přehled služeb. 
 
 Jakmile se podařilo autentizovat, authenticated RCE exploit využil právě tuhle řídicí rovinu platformy. To je klíčová lekce: slabé heslo v monitoringu je nebezpečnější než stejné heslo v obyčejném informačním webu, protože za ním stojí systém navržený ke spouštění akcí.
 
+### Shibboleth: Zabbix jako legitimní RCE kanál
+
+[Shibboleth](/shibboleth) ukazuje podobný princip na Zabbixu. První heslo nepřišlo z webové zranitelnosti, ale z IPMI hashe, který se po cracknutí znovu použil pro účet `Administrator` v monitoringu. Jakmile byl admin přístup k dispozici, funkce `system.run` nefungovala jako "pomocná diagnostika", ale jako přímý execution kanál na hostu.
+
+To je důležité zdůraznit: monitoring se nestal nebezpečným kvůli vzdálenému exploitu v Zabbixu. Nebezpečný byl tím, že po kompromitaci účtu už sám obsahoval schopnost spouštět příkazy.
+
 ### Doctor: Splunk jako root kanál přes appku
 
 Doctor ukazuje jinou variantu. Splunkd běžel na `8089` a stejné heslo `Guitar123`, které uniklo z Apache logu, fungovalo i pro účet `shaun` ve Splunku. Právě tady je dobře vidět, že observability platforma není izolovaný produkt. Byla navázaná na stejnou identitu a zároveň dovolovala vzdáleně doručit škodlivou appku přes SplunkWhisperer2.

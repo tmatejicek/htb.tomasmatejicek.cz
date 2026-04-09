@@ -7,7 +7,7 @@ tags: linux rce exploit enumeration privesc hackthebox
 ---
 ## Úvod a kontext
 
-Shibboleth je stroj, kde rozhodující stopa neleží na webu, ale na netypicky otevřeném IPMI portu. Webová enumerace sice ukáže několik virtuálních hostů, ale bez přístupu do Zabbixu by sama o sobě nestačila. Klíč k footholdu přinese až IPMI hash, jeho prolomení a reuse stejného hesla v administraci monitoringu.
+Shibboleth je stroj, kde rozhodující stopa neleží na webu, ale na netypicky otevřeném IPMI portu. Webová enumerace sice ukáže několik virtuálních hostů, ale bez přístupu do Zabbixu by sama o sobě nestačila. Klíč k footholdu přinese až IPMI hash, jeho prolomení a reuse stejného hesla v administraci monitoringu. Tohle propojení reuse a monitorovací platformy dobře zapadá i do článků [Password reuse a rozpad hranic mezi aplikací, SSH, WinRM a admin nástroji](/techniky/password-reuse-a-rozpad-hranic-mezi-aplikaci-ssh-winrm-a-admin-nastroji) a [Monitoring, observability a admin platformy jako útoková plocha](/techniky/monitoring-observability-a-admin-platformy-jako-utokova-plocha).
 
 Root část pak dobře ukazuje rozdíl mezi databázovým účtem a databázovým serverem. Únik hesla do MariaDB ještě automaticky nedává roota, ale v kombinaci se zranitelným Galera `wsrep_provider` už ano.
 
@@ -43,7 +43,7 @@ Port `623/udp` znamená IPMI. To je silná stopa, protože špatně chráněné 
 
 ### Dump hashů z IPMI
 
-Na IPMI se hodí specializovaný skener, který umí vytáhnout hash autentizace:
+Na IPMI se hodí specializovaný skener, který umí vytáhnout hash autentizace. Praktickou roli `msfconsole` jako frameworku pro podobné pomocné moduly rozebírám i v článku [Metasploit: msfconsole a msfvenom](/nastroje/metasploit-msfconsole-a-msfvenom):
 
 ```text
 msfconsole

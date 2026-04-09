@@ -7,7 +7,7 @@ tags: linux ssh sudo php exploit enumeration
 ---
 ## Úvod a kontext
 
-SneakyMailer je zajímavý tím, že první přístup nevzniká klasickou technickou zranitelností, ale phishingem. Technická část začíná až ve chvíli, kdy se podaří získat cizí heslo a proměnit ho v přístup k interním službám. Díky tomu je celý stroj spíš o řetězení důvěry mezi poštou, webem, FTP a interním PyPI repozitářem než o jednom konkrétním exploitu.
+SneakyMailer je zajímavý tím, že první přístup nevzniká klasickou technickou zranitelností, ale phishingem. Technická část začíná až ve chvíli, kdy se podaří získat cizí heslo a proměnit ho v přístup k interním službám. Díky tomu je celý stroj spíš o řetězení důvěry mezi poštou, webem, FTP a interním PyPI repozitářem než o jednom konkrétním exploitu. Celý tenhle model rozebírám obecněji i v článcích [Phishing jako technický pivot do interních služeb](/techniky/phishing-jako-technicky-pivot-do-internich-sluzeb) a [Supply chain uvnitř firmy: interní package registry](/techniky/supply-chain-uvnitr-firmy-interni-package-registry).
 
 Foothold vede přes vhost `dev.sneakycorp.htb`, FTP přístup účtu `developer` a jednoduchý webshell. Další pivot na uživatele `low` pak přichází přes interní balíčkovací infrastrukturu. Root část je už čistá konfigurace: `sudo pip3 install` bez omezení je v praxi téměř přímý root shell.
 
@@ -173,7 +173,7 @@ sudo -l
 (root) NOPASSWD: /usr/bin/pip3
 ```
 
-To je velmi silné oprávnění, protože `pip` při instalaci balíčku provádí kód ze `setup.py`. V praxi tedy nejde jen o správu Python balíčků, ale o možnost spustit libovolný kód jako root.
+To je velmi silné oprávnění, protože `pip` při instalaci balíčku provádí kód ze `setup.py`. V praxi tedy nejde jen o správu Python balíčků, ale o možnost spustit libovolný kód jako root. Stejný bezpečnostní vzorec popisuje i článek [`sudo` nad package, backup a container nástroji](/techniky/sudo-nad-package-backup-a-container-nastroji).
 
 Stačilo vytvořit dočasný adresář s vlastním `setup.py`:
 

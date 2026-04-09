@@ -72,6 +72,8 @@ Nemusí ale myslet na to, že operační systém a runtime mohou považovat sí�
 
 Tohle už není jen file read. Pokud daný runtime include zároveň vykonává, mění se chyba velmi rychle v RCE bez klasického uploadu.
 
+[Sniper](/sniper) je přesně ten praktický případ, kde se tohle stalo v plné síle. Parametr `lang` v blogu přijal UNC cestu na útočníkův SMB share, IIS/PHP z ní includoval `cmd.php` a stejným mechanismem bylo možné dotáhnout i `nc.exe`. Výsledkem nebylo "jen čtení souboru přes síť", ale přímo webové RCE bez uploadu do lokálního webrootu.
+
 ## Varianta 3: validace před jinou normalizací než používá aplikace
 
 Další častý vzorec je, že filtr kontroluje surový vstup, ale otevření souboru proběhne až po normalizaci, canonicalizaci nebo jiném převodu znaků.
