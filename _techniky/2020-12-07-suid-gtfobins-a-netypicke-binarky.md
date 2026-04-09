@@ -111,6 +111,8 @@ To je přesně důvod, proč se SUID audit nesmí omezit na známé binárky z c
 
 Technická náročnost předešlé části útoku zde není podstatná. Podstatné je, že jediný špatný permission bit na `/bin/bash` zrušil všechnu další obranu hostu.
 
+[Wall](/wall) přidává další klasickou, ale pořád podceňovanou variantu: starý SUID `screen-4.5.0`. Na první pohled nejde o shell ani interpreter, ale historicky jde o velmi známý privesc kandidát přes `ld.so.preload`. Je to dobrá připomínka, že do stejné kategorie nepatří jen „moderní GTFOBins triky“, ale i staré distribuční binárky, které už mají dávno zmapovaný lokální exploit chain.
+
 ## Praktický postup po nalezení SUID binárky
 
 ### 1. Nejdřív priorizovat, ne zkoušet všechno

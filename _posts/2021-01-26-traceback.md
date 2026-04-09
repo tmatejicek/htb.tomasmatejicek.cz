@@ -9,7 +9,7 @@ tags: linux rce ssh sudo php exploit
 
 Traceback nezačíná nalezením nové zranitelnosti, ale rozpoznáním známého webshellu, který už na serveru běží. To je samo o sobě dobré připomenutí, že při incident response nebo pentestu nemusí být prvním cílem „najít exploit“, ale pochopit, co na hostu zůstalo po předchozí kompromitaci.
 
-Další postup je pak čisté řetězení špatně delegovaných práv. Webshell otevře účet `webadmin`, ten může přes `sudo` spouštět interpret `luvit` jako `sysadmin`, a `sysadmin` zase může upravovat skripty v `/etc/update-motd.d`, které se spouštějí jako root při každém přihlášení.
+Další postup je pak čisté řetězení špatně delegovaných práv. Webshell otevře účet `webadmin`, ten může přes `sudo` spouštět interpret `luvit` jako `sysadmin`, a `sysadmin` zase může upravovat skripty v `/etc/update-motd.d`, které se spouštějí jako root při každém přihlášení. Právě poslední krok dobře zapadá do témat [Údržbové skripty a provozní automaty jako zdroj přístupů](/techniky/udrzbove-skripty-a-provozni-automaty-jako-zdroj-pristupu) a [Zápis do prostoru, který se pak vykoná nebo použije pro autentizaci](/techniky/zapis-do-prostoru-ktery-se-pak-vykona-nebo-pouzije-pro-autentizaci).
 
 ## Počáteční průzkum
 
@@ -118,7 +118,7 @@ __CENSORED__
 
 Na účtu `sysadmin` byla nejdůležitější schopnost zapisovat do `/etc/update-motd.d/`. Tyto skripty nejsou jen kosmetika pro banner po přihlášení. `pam_motd` je spouští jako root při každém loginu.
 
-To z nich dělá ideální privesc vektor: pokud lze změnit obsah skriptu a následně vyvolat nové SSH přihlášení před obnovou původního stavu, spustí se útočníkův kód jako root.
+To z nich dělá ideální privesc vektor: pokud lze změnit obsah skriptu a následně vyvolat nové SSH přihlášení před obnovou původního stavu, spustí se útočníkův kód jako root. Write oprávnění se tu tedy mění v odložené root execution při loginu.
 
 Prakticky stačilo upravit například `00-header` a přidat příkaz, který zkopíruje `sysadmin` klíč i rootovi:
 

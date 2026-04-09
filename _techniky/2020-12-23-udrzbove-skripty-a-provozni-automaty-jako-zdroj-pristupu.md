@@ -77,6 +77,8 @@ Tady je důležité, že chyba neleží jen v jednom hesle. Leží v celém mode
 - je navržený k vykonávání provozních úloh,
 - a jeho „legitimní“ administrativní funkce jsou po compromise hostu přesně tím, co útočník potřebuje.
 
+[Traceback](/traceback) ukazuje ještě úspornější variantu stejného principu. `sysadmin` mohl zapisovat do `/etc/update-motd.d/`, tedy do sady skriptů, které PAM spouští jako root při každém přihlášení. Není tam žádný složitý parser ani backend. Jen existující login automatika, která už sama představuje execution trigger. Jakmile do ní může méně privilegovaný účet zapisovat, přihlášení se samo změní v privesc mechanismus.
+
 ## Na co se při analýze zaměřit
 
 U těchto situací se vyplatí jít po konkrétních otázkách.

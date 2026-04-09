@@ -56,6 +56,8 @@ Server pak při ověřování slepě sáhl na adresu z tokenu, stáhl si odtud k
 
 Tím se ochrana podpisem nezlomila kryptograficky. Zlomila se architektonicky. Server neověřoval, zda token podepsal důvěryhodný issuer, ale zda ho dokáže ověřit klíčem, který mu sám token podstrčil.
 
+[Unicode](/unicode) ukazuje blízkou, ale technicky o něco rafinovanější variantu. Aplikace sice nechtěla dovolit úplně libovolný externí `jku`, jenže současně nabízela otevřený redirect na důvěryhodné doméně. Výsledek byl stejný jako na TheNotebooku: server si stáhl cizí JWK set a přijal podvržený administrátorský token. Rozdíl je důležitý právě pro audit. Trust model se nemusí rozpadnout jen přímým fetch z útočníkovy URL; může se rozpadnout i přes vedlejší aplikační funkci, která důvěryhodnou adresu přesměruje dál.
+
 ## Proč je to jiné než uniklý signing secret
 
 Je užitečné ten rozdíl držet ostře, protože v praxi se tyto problémy často slévají pod obecné „JWT bypass“.

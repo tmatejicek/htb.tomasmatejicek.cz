@@ -7,7 +7,7 @@ tags: linux ssh web exploit privesc
 ---
 ## Úvod a kontext
 
-Traverxec je postavený na méně obvyklém webserveru Nostromo. Právě to je na něm didakticky zajímavé: první část útoku nestojí na známém Apache nebo nginx workflow, ale na správném rozpoznání konkrétní verze `nostromo 1.9.6` a její RCE chyby.
+Traverxec je postavený na méně obvyklém webserveru Nostromo. Právě to je na něm didakticky zajímavé: první část útoku nestojí na známém Apache nebo nginx workflow, ale na správném rozpoznání konkrétní verze `nostromo 1.9.6` a její RCE chyby. Je to dobrý příklad toho, co rozebírám i v článku [Legacy infrastruktura, kde banner prakticky rozhodne exploit](/techniky/legacy-infrastruktura-kde-banner-prakticky-rozhodne-exploit).
 
 Po webovém footholdu následuje pěkný lokální pivot. Konfigurace Nostroma prozradí existenci chráněné domácí zóny uživatele `david`, odkud se dá stáhnout záloha SSH identity. Root část je pak klasická GTFOBins situace kolem `journalctl`, ale důležité je nejdřív pochopit, odkud se vůbec bere možnost spouštět jej přes `sudo`.
 
@@ -53,7 +53,7 @@ Konfigurace ukazovala dvě podstatné věci:
 david:$1$e7NfNpNi$A6nCwOTqrNR2oDuIKirRZ/
 ```
 
-Ten šel cracknout:
+Ten šel cracknout pomocí [Johna the Rippera](/nastroje/john-the-ripper):
 
 ```bash
 /usr/sbin/john Traverxec-htpasswd.txt --wordlist=/usr/share/wordlists/rockyou.txt
@@ -71,7 +71,7 @@ Díky `homedirs_public public_www` bylo možné přistupovat do části webovéh
 http://10.10.10.165/~david/protected-file-area/backup-ssh-identity-files.tgz
 ```
 
-Archiv obsahoval `id_rsa`, ale klíč byl chráněný passphrase. Tu šlo zpracovat přes `ssh2john.py` a následně cracknout:
+Archiv obsahoval `id_rsa`, ale klíč byl chráněný passphrase. Tu šlo zpracovat přes `ssh2john.py` a následně cracknout, což je další připomínka, že i záložní SSH identita je po footholdu plnohodnotný autentizační materiál:
 
 ```bash
 /usr/share/john/ssh2john.py Traverxec-ssh/id_rsa > Traverxec-ssh/id_rsa.john
